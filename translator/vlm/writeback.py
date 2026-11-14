@@ -20,6 +20,9 @@ from __future__ import annotations
 from translator.vlm import config
 
 EXTRACTOR = "vlm_check"
+# VLM boxes are approximate (normalised 0-1000 boxes from a general model, not traced outlines), and the
+# confidence config.VLM_CONFIDENCE is a fixed value, not calibrated.
+BOX_PROPS = {"box_quality": "approximate", "confidence_kind": "fixed, not calibrated"}
 ROOM_CATS = {"kitchen": ("kitchen", "kitchens"), "bathroom": ("bathroom", "bathrooms")}
 OBJECT_CATS = {"shower": ("shower", "bathtub")}
 OPENING_CATS = {"doors": "door", "windows": "window"}
@@ -134,7 +137,8 @@ def apply(doc: dict, outcome: dict, enabled: dict | None = None) -> dict:
                   "subtype": None, "is_outdoor": False, "polygon_px": _rect(b) if b else None,
                   "polygon_m": None,
                   "area_m2": None, "confidence": conf, "provenance": _prov(cat, outcome, {"box_px": b}),
-                  "status": "active", "flags": ["vlm_check"] + ([] if b else ["vlm_no_box"])}  # fmt: skip
+                  "status": "active", "flags": ["vlm_check"] + ([] if b else ["vlm_no_box"]),
+                  "properties": dict(BOX_PROPS)}  # fmt: skip
             made.append(el)
         rooms.extend(made)
         backing = (made + [e for e, _ in confirmed])[:1]
@@ -164,7 +168,8 @@ def apply(doc: dict, outcome: dict, enabled: dict | None = None) -> dict:
         for k, b in enumerate(new + [None] * boxless):
             el = {"id": f"{coll[:-1]}-vlm-{cat}-{k}", "bbox_px": b, "polygon_px": _rect(b) if b else None,
                   "polygon_m": None, "confidence": conf, "provenance": _prov(cat, outcome),
-                  "status": "active", "flags": ["vlm_check"] + ([] if b else ["vlm_no_box"])}  # fmt: skip
+                  "status": "active", "flags": ["vlm_check"] + ([] if b else ["vlm_no_box"]),
+                  "properties": dict(BOX_PROPS)}  # fmt: skip
             if cat in OBJECT_CATS:  # the VLM counts showers and bathtubs together and does not say which
                 el.update(category="shower", subtype="shower_or_bathtub")
             else:
@@ -187,7 +192,8 @@ def apply(doc: dict, outcome: dict, enabled: dict | None = None) -> dict:
                 made.append({"id": f"level-vlm-{k}", "name": f"floor {k + 1}", "elevation_m": None,
                              "height_m": None, "bbox_px": b, "confidence": conf,
                              "provenance": _prov(cat, outcome), "status": "active",
-                             "flags": ["vlm_check"] + ([] if b else ["vlm_no_box"])})  # fmt: skip
+                             "flags": ["vlm_check"] + ([] if b else ["vlm_no_box"]),
+                             "properties": dict(BOX_PROPS)})  # fmt: skip
             for lv in old:
                 lv["status"], lv["superseded_by"] = "superseded", made[0]["id"] if made else None
                 ids_sup.append(lv["id"])

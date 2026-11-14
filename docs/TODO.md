@@ -297,3 +297,62 @@ index copy. Each image has an EN and an FI question, so 2 questions = 1 image. D
   |---|---|---|---|
   | kitchens | 87.7 | 93.8 | 13/130 images |
   | bathrooms | 66.0 | 87.2 | 32/94 images |
+
+## Step 9 (VLM checker), 2026-11-14, branch step-7-ocr, dev only, IN PROGRESS (stage 1 of 2 done)
+- **Interface** (`translator/vlm/`): `VLMClient.check(image_bytes, category, prompt, *, source, crop)`.
+  - Every client inherits `BaseClient.check`, which runs in order: hold-out guard, cache, budget, call,
+    and scrubs the key from any error.
+  - Clients by env `STOA_VLM`: `gemini` (default, REST via urllib, no SDK; key in the `x-goog-api-key`
+    header only), `fake` (tests), `qwen` (stub).
+  - Only `translator/vlm/gemini.py` talks to the Gemini API. `answering_agent/` (teammate) uses the
+    google-genai SDK on its own and is left alone.
+- **Hold-out guard:** names only (normalised path, basename, stem; case-insensitive), checked before any
+  file is read.
+  - The first version also hashed the hold-out files' bytes. It ran in the two step-a smoke processes,
+    in memory only, and no hash was written anywhere. It has been removed.
+- **Model:** `gemini-3.8-flash`, stable (aistudio.google.com/docs/models, model page "Latest update:
+  September 2026"); 2.5 Flash is deprecated. Thinking level `low` ("minimal" is not supported by this model).
+- **Prices** (config.PRICES_USD_PER_MTOK, aistudio.google.com/docs/pricing, read 2026-11-14): $0.75 per 1M
+  input tokens, $3.75 per 1M output tokens incl. thinking, through Dec 31 2026 (both double from Jan 1
+  2027). Image token cost is not documented on the pages read; measured about 1,200–1,300 input tokens
+  per image.
+- **Cache:** `index/_raw/vlm/<key>.json`, key = image hash + category + prompt + model + settings. Never
+  sent twice. The run is resumable.
+- **Budget:** the default cap is $1.00. Hard max $1.50 without k's approval. Stage 1 ran at $1.30 (k).
+- **Timeout:** 300 s, one retry with backoff, latency logged. One step-a call timed out at 120 s and may
+  have been billed: recorded in run_summary.json as an estimate of $0.025.
+- **VLM elements:** extractor `vlm_check`, source_ref `vlm:<category>`,
+  `properties.box_quality = "approximate"`. Confidence 0.6 is a FIXED value, not calibrated.
+- **Write-back:** OFF by default for every category (`config.WRITEBACK_ENABLED`). k decides per category
+  after the dev scores.
+- **Shower variant:** A (one downscaled whole page, one call), chosen on 3 images.
+  - B (wet-room crops) stays in code, off. Both were 3/3; A was cheaper.
+  - Low vs default thinking on the same 3 images: both 3/3; $0.0030 vs $0.0091 per image.
+- **Step b** (5 images, 11 calls, $0.053): 7/11 right. Overlays are in `index/debug_vlm/` (not committed).
+- **Stage 1 — shower gate** (183 of 193 dev images = 94.8% gate rate; 175 new calls, $0.813,
+  19:11–19:50 UTC). Dev, clean index copy, write-back on for showers only:
+
+  | template | VLM off | VLM shower write-back on |
+  |---|---|---|
+  | showers + baths | 9.1 (34/372) | **68.8** (256/372) |
+  | every other template | — | unchanged (no drops) |
+  | CubiCasa / TOTAL | 63.6 / 79.9 | 70.0 / 83.4 |
+
+  - **Honest baseline:** "always answer 1" scores 72.0% on this template, so 68.8% is still below it.
+  - **Per image** (186 with gold): right 17 → 128. Of the 58 wrong, 41 are under-counts and 17 over-counts.
+    Long side < 1000 px: 80/117 right; ≥ 1000 px: 48/69. Multi-floor pages: 21/38.
+  - **Not gated:** 8 images have no wet region in the segmentation, so the VLM never saw them (4 are in
+    the worst 20).
+  - **Causes seen on the overlays of the worst 20:**
+    - missed small or faint symbols on small or noisy scans (colorful-34 507 px, hqa-5602, 4561, 9488,
+      6299, 12085 upside-down, 13048);
+    - shower rooms of NEIGHBOURING flats at the page edge counted (hqa-11866, 11280, 5742, 13767);
+    - one wet room counted twice (hqa-7549);
+    - false positives on noisy or annotated scans (hqa-10254, 10000);
+    - a multi-unit page with 5 items, only 1 found (hqa-7098).
+  - **Cost:** $0.0047 per gated image, $0.0044 per dev image (target < $0.002: not met). Thinking is
+    956 tokens on average (max 6,578).
+  - **Spend so far:** $0.943 logged + $0.025 estimated = $0.968 (run_summary.json).
+- **Saved for later (not run):** step-e candidate: pages with a long side under about 1000 px are upscaled
+  to 1280 px before sending (`config.UPSCALE_BELOW_PX`, off). Prompt candidates suggested by the failures:
+  "count only the apartment in the centre / not cut-off neighbours". Not applied (no tuning before k decides).

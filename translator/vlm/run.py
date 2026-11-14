@@ -86,6 +86,37 @@ def run(tasks: list[Task], client: BaseClient, name: str, root=None) -> tuple[li
     return out, abort
 
 
+def load_outcomes() -> dict[tuple[str, str], dict]:
+    """Latest outcome per (source, category) over every saved run (index/_raw/vlm/outcomes/*.jsonl)."""
+    out: dict[tuple[str, str], dict] = {}
+    for p in sorted((cache_dir() / "outcomes").glob("*.jsonl"), key=lambda p: p.stat().st_mtime):
+        for line in p.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                o = json.loads(line)
+                out[(o["source"], o["category"])] = o
+    return out
+
+
+def apply_to_index(out_dir: Path, enable: set[str], sources: list[str] | None = None) -> dict:
+    """Write every dev CubiCasa document, with VLM outcomes of the enabled categories written back, to
+    out_dir/cubicasa5k/ (schema-validated). index/ itself is never modified. -> counts per category."""
+    from translator.store import write_drawing
+    from translator.vlm import writeback
+
+    outcomes = load_outcomes()
+    cats = (*writeback.ROOM_CATS, *writeback.OBJECT_CATS, *writeback.OPENING_CATS, "floors")
+    enabled = {c: c in enable for c in cats}
+    applied: dict[str, int] = {}
+    for src in sources or dev_sources():
+        doc = gate.load_doc(src)  # guarded
+        for (s, cat), o in outcomes.items():
+            if s == src and enabled.get(cat):
+                writeback.apply(doc, o, enabled=enabled)
+                applied[cat] = applied.get(cat, 0) + 1
+        write_drawing(doc, out_dir)
+    return applied
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--images", help="comma-separated image stems (default: every dev image with a raw file)")
@@ -95,7 +126,13 @@ def main(argv=None) -> int:
     ap.add_argument("--per-call", type=float, default=0.003, help="USD per call for the estimate")
     ap.add_argument("--debug", action="store_true", help="overlays + write-back preview to index/debug_vlm/")
     ap.add_argument("--name", default="run")
+    ap.add_argument("--apply-to", help="write dev documents with VLM write-back to this index dir; no call")
+    ap.add_argument("--enable", default="", help="categories to write back with --apply-to, e.g. shower")
     args = ap.parse_args(argv)
+    if args.apply_to:
+        applied = apply_to_index(Path(args.apply_to), set(filter(None, args.enable.split(","))))
+        print(f"wrote dev documents to {args.apply_to}; write-back applied: {applied}")
+        return 0
     sources = [f"data/cubicasa5k/{s}.png" for s in args.images.split(",")] if args.images else dev_sources()
     tasks = plan(sources, tuple(args.gates.split(",")))
     by = {}

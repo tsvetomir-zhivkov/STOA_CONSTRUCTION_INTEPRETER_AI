@@ -32,11 +32,18 @@ def _encode(img: np.ndarray) -> bytes:
     return buf.tobytes()
 
 
-def page_image(img: np.ndarray, max_side: int = config.MAX_SIDE_PX) -> tuple[bytes, Crop]:
-    """The whole page, downscaled so its longest side <= max_side (never upscaled)."""
+def page_image(
+    img: np.ndarray, max_side: int = config.MAX_SIDE_PX, upscale_below: int | None = None
+) -> tuple[bytes, Crop]:
+    """The whole page, downscaled so its longest side <= max_side. Upscaled to config.UPSCALE_TO_PX only when
+    upscale_below (default config.UPSCALE_BELOW_PX, off) is set and the long side is below it."""
     h, w = img.shape[:2]
+    below = config.UPSCALE_BELOW_PX if upscale_below is None else upscale_below
     s = min(1.0, max_side / max(h, w))
-    out = img if s == 1.0 else cv2.resize(img, (round(w * s), round(h * s)), interpolation=cv2.INTER_AREA)
+    if below and max(h, w) < below:
+        s = min(config.UPSCALE_TO_PX, max_side) / max(h, w)
+    interp = cv2.INTER_AREA if s < 1 else cv2.INTER_CUBIC
+    out = img if s == 1.0 else cv2.resize(img, (round(w * s), round(h * s)), interpolation=interp)
     return _encode(out), Crop(0.0, 0.0, s, out.shape[1], out.shape[0])
 
 

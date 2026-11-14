@@ -31,6 +31,11 @@ GENERATION = {"response_mime_type": "application/json"}
 BUDGET_CAP_USD = 1.00  # k's cap for this run
 BUDGET_HARD_MAX_USD = 1.50  # a cap above this needs k's explicit approval (approved_over_hard_max=True)
 
+# Step-e candidate, saved for later (k, 2026-11-14), NOT run yet: pages whose long side is under
+# UPSCALE_BELOW_PX are upscaled to UPSCALE_TO_PX before sending (same token cost per image). None = off.
+UPSCALE_BELOW_PX: int | None = None  # candidate: 1000
+UPSCALE_TO_PX = 1280
+
 MAX_SIDE_PX = 1536  # longest side of an image sent to the model (downscaled, never upscaled)
 CROP_PAD_FRAC = 0.15  # padding around a room crop, as a share of the room's longest side
 CROP_MIN_PAD_PX = 24

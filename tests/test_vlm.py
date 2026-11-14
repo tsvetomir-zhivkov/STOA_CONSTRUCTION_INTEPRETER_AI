@@ -87,6 +87,14 @@ def test_page_image_is_downscaled_never_upscaled():
     assert crop.box_to_page([0, 0, 1000, 1000]) == [0.0, 0.0, 3072.0, 2000.0]
     _, small = images.page_image(np.zeros((100, 100, 3), np.uint8))
     assert small.scale == 1.0
+    assert config.UPSCALE_BELOW_PX is None  # the step-e upscale candidate is off by default
+    _, up = images.page_image(np.zeros((500, 250, 3), np.uint8), upscale_below=1000)
+    assert (up.sent_w, up.sent_h) == (640, 1280) and up.box_to_page([0, 0, 1000, 1000]) == [
+        0.0,
+        0.0,
+        250.0,
+        500.0,
+    ]
 
 
 # ------------------------------------------------------------------ hold-out guard
@@ -472,6 +480,7 @@ def test_writeback_vlm_confirms_the_prior():
     assert _n(doc, "kitchen") == 1 and res["new"] == [new["id"]]
     assert a["status"] == "superseded" and a["superseded_by"] == new["id"]
     assert new["provenance"]["source_ref"] == "vlm:kitchen" and new["polygon_px"][0] == [100, 100]
+    assert new["properties"]["box_quality"] == "approximate"
     cov = _cov_of(doc, "kitchens")
     assert cov["status"] == "analysed" and cov["confidence"] == config.VLM_CONFIDENCE
     h = doc["history"][-1]
