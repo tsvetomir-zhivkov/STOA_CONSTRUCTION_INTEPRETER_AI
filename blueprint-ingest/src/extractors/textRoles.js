@@ -1,6 +1,6 @@
 /**
  * Deterministic text-role classification. Cheap regexes settle the obvious roles (area, scale note,
- * dimension, level title, unit label) so Gemini only ever sees the texts that are genuinely ambiguous.
+ * dimension, level title, unit label); texts no regex can decide keep no role ("unknown").
  */
 
 const NUM = String.raw`\d{1,4}(?:[.,]\d{1,3})?`;
@@ -37,8 +37,8 @@ export function parseDimension(raw) {
 
 const LEVEL_RE = /^(?:(?:level|floor|storey|story|etage|étage|kerros|niveau)\s*[-+]?\d{1,2}[a-z]?|\d{1,2}\.?\s*(?:krs|kerros|floor|etage|étage|fl\.?)|krs\.?\s*\d{1,2}|(?:ground|first|second|third|top|upper|lower|main)\s+floor|ground level|basement|cellar|attic|kellari|ullakko|vind)$/i;
 
-/** "Whg. A", "Wohnung 3", "Apt B2", "Asunto A 12", "Unit 4" -> { raw, label } | null */
-const UNIT_RE = /^(?:whg\.?|wohnung|apt\.?|apartment|appartement|unit|flat|asunto|as\.?|lgh\.?|lägenhet|korter)\s*([A-Z]{1,2}\s?\d{0,3}|\d{1,3}[A-Z]?)$/i;
+/** "Whg. A", "App. A", "Appt. B", "Wohnung 3", "Apt B2", "Asunto A 12", "Unit 4" -> { raw, label } | null */
+const UNIT_RE = /^(?:whg|wohnung|apt|appt?|apartment|appartement|appartamento|unit|flat|asunto|as|lgh|lägenhet|korter)(?:\.\s*|\s+)([A-Z]{1,2}\s?\d{0,3}|\d{1,3}[A-Z]?)$/i;
 /** @param {string} raw */
 export function parseUnitLabel(raw) {
   const m = UNIT_RE.exec(cleanText(raw));

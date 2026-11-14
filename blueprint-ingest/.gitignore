@@ -1,2 +1,10 @@
 .env.example
 node_modules
+# local run outputs (regenerate with npm start)
+big/
+bsc/
+ko/
+out3/
+out/samples/
+out/clinic.*.json
+reports/

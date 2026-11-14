@@ -10,7 +10,12 @@ import fs from 'node:fs/promises';
 import { parseDxf, INSUNITS_M } from './cad/dxfParser.js';
 import { parseXml } from './cad/xml.js';
 import { emptyBundle, makeCanvas } from './bundle.js';
-import { bboxOfPoints, polygonArea, minAreaRect, cleanRing, circlePolygon, round, bboxesOverlap, matMul, matApply, IDENTITY } from '../geometry/geom.js';
+import { bboxOfPoints, polygonArea, minAreaRect, cleanRing, circlePolygon, round, bboxesOverlap, matMul, matApply, IDENTITY, pointInPolygon } from '../geometry/geom.js';
+import { wallsFromSegments } from './dxfWalls.js';
+import { detectFlights, assembleStaircases, STAIR_LAYER_RE } from './stairs.js';
+import { classifyFixture } from './fixtures.js';
+import { policyConfidence, FLAGS } from './confidence.js';
+import { lookupRoomName, foldText } from '../mappers/glossary.js';
 import { classifyTextContent, parseScaleDenominator, cleanText } from './textRoles.js';
 
 // ---- name -> class ------------------------------------------------------------------------------------------
@@ -20,7 +25,7 @@ const CLASS_RULES = [
   ['door', /door|ovi\b|\bovet\b|t[uü]r\b|porte|puerta|dr\b|\bdoor/i],
   ['wall', /wall|sein[aä]|mur\b|wand|muro|a-wall|partition|v[aä]ggar?/i],
   ['room', /\broom|space|zone|huone|tila|raum|pi[eè]ce|habitaci|a-area|a-room|\barea\b/i],
-  ['stair', /stair|portaat|treppe|escalier|escalera/i],
+  ['stair', STAIR_LAYER_RE],
   ['dimension', /dim|mitta|bema|cotation/i],
   ['text', /text|annot|label|teksti|beschrift/i],
   ['object', /furn|fixt|sanit|equip|kalust|m[oö]bel|meuble|toilet|wc\b|appliance|column|pilari|pylv/i],
@@ -66,6 +71,7 @@ function linkOpeningsToWalls(b) {
 }
 
 function addCoverage(b, flags) {
+  const stairs = flags.stairs ?? { status: 'not_analysed', confidence: 0.3 };
   const cov = (category, status, confidence, note) => b.coverage.push({ category, status, confidence, ...(note ? { note } : {}) });
   const classified = (n) => (n ? 'analysed' : 'partial');
   cov('walls', classified(b.walls.length), 0.8, b.walls.length ? undefined : 'no wall layer/class found');
@@ -76,7 +82,7 @@ function addCoverage(b, flags) {
   cov('dimensions', flags.dimensions ? 'analysed' : 'partial', 0.8);
   cov('fixtures', b.objects.length ? 'partial' : 'not_analysed', 0.5);
   cov('scale', b.scale.source === 'vector_units' ? 'analysed' : b.scale.source === 'none' ? 'not_analysed' : 'partial', b.scale.confidence);
-  cov('stairs', 'not_analysed', 0.3);
+  cov('stairs', stairs.status, stairs.confidence, stairs.note);
   cov('symbols', 'not_analysed', 0.3);
   cov('legend', 'not_analysed', 0.3);
 }
@@ -90,7 +96,7 @@ function addCoverage(b, flags) {
  * @param {{ config: import('../config.js').PipelineConfig, logger?: any }} opts
  * @returns {Promise<import('./bundle.js').Bundle[]>}
  */
-export async function extractDxf(filePath, { config }) {
+export async function extractDxf(filePath, { config, logger, corrections }) {
   const text = await fs.readFile(filePath, 'utf8');
   if (/^\s*AutoCAD Binary DXF/.test(text.slice(0, 40))) throw new Error('Binary DXF is not supported; export as ASCII DXF');
   const dxf = parseDxf(text);
@@ -104,6 +110,17 @@ export async function extractDxf(filePath, { config }) {
   const rawTexts = [];
   const rawDims = [];
   const unclassified = {};
+  /** every LINE / LWPOLYLINE segment of the drawing, any layer (stair treads are looked for in all of them) */
+  const allSegs = [];
+  // human corrections "layer:NAME": { as: "<class>" } replace the keyword classification of that layer
+  const layerAs = corrections?.layerAs ?? new Map();
+  const correctedLayers = new Map(); // folded layer -> rule key
+  const layerClass = (layer) => {
+    const k = foldText(layer ?? '');
+    if (layerAs.has(k)) { correctedLayers.set(k, layerAs.get(k).rule); return layerAs.get(k).as; }
+    return classifyName(layer ?? '');
+  };
+  const correction = (layer) => correctedLayers.get(foldText(layer ?? '')) ?? null;
 
   const arcPts = (c, r, a0, a1) => {
     let s = (a0 * Math.PI) / 180, e = (a1 * Math.PI) / 180;
@@ -144,10 +161,11 @@ export async function extractDxf(filePath, { config }) {
   };
 
   for (const e of dxf.entities) {
-    const cls = classifyName(e.layer);
+    const cls = layerClass(e.layer);
     switch (e.type) {
       case 'LINE':
       case 'LWPOLYLINE':
+        for (let i = 1; i < e.pts.length + (e.closed ? 1 : 0); i++) allSegs.push({ a: e.pts[i - 1], b: e.pts[i % e.pts.length], layer: e.layer, cls });
         if (cls) polys.push({ kind: 'poly', pts: e.pts, closed: e.closed, layer: e.layer, cls });
         else unclassified[e.layer] = (unclassified[e.layer] ?? 0) + 1;
         break;
@@ -161,7 +179,7 @@ export async function extractDxf(filePath, { config }) {
         rawDims.push(e);
         break;
       case 'INSERT': {
-        const nameCls = classifyName(e.name);
+        const nameCls = layerAs.has(foldText(e.layer ?? '')) ? null : classifyName(e.name);
         const icls = cls === 'wall' || cls === 'room' ? cls : (nameCls ?? cls ?? 'object');
         const g = blockGeometry(e.name, insertMatrix(e, dxf.blocks.get(e.name)?.base ?? [0, 0]), 0);
         if (g.pts.length) inserts.push({ layer: e.layer, name: e.name, cls: icls, pts: g.pts, lineLens: g.lineLens });
@@ -201,37 +219,53 @@ export async function extractDxf(filePath, { config }) {
   let n = 0;
   const key = (p) => `${p}${++n}`;
 
-  // ---- rooms / walls from closed polylines -------------------------------------------------------------------
+  // ---- rooms, openings, objects from polylines; wall segments are collected for line pairing ----------------------
+  // confidences follow ./confidence.js (policy values are caps: nothing rises without new evidence)
   const minRoomM2 = 1.0;
-  let assumedWalls = 0;
+  const roomRings = []; // world rings of emitted rooms, for the stair search
+  const wallSegs = [];
+  const stairLayerSegs = [];
   for (const p of polys) {
     const ring = cleanRing(p.pts, 1e-9);
+    const corr = correction(p.layer);
     if (p.cls === 'room' && p.closed && ring.length >= 3) {
       if (polygonArea(ring) * mPerUnit * mPerUnit < minRoomM2) continue;
-      bundle.rooms.push({ layer: p.layer, key: key('room'), polygonPx: ring.map(P), rawName: null, confidence: 0.8 });
+      bundle.rooms.push({ layer: p.layer, key: key('room'), polygonPx: ring.map(P), rawName: null, confidence: policyConfidence({ classRead: true, measured: true }, 0.8), correctedBy: corr });
+      roomRings.push(ring);
     } else if (p.cls === 'wall') {
-      if (p.closed && ring.length >= 3) {
-        const r = minAreaRect(ring);
-        if (r && r.width * mPerUnit <= 0.6) { // thin closed ring = a wall body
-          bundle.walls.push({ layer: p.layer, key: key('wall'), polygonPx: ring.map(P), centerlinePx: null, thicknessPx: round(r.width * ppm * mPerUnit, 2), confidence: 0.8 });
-          continue;
-        }
-      }
-      // outline or single line: every edge becomes a centreline wall of assumed thickness
-      const pts = p.closed ? [...p.pts, p.pts[0]] : p.pts;
-      for (let i = 1; i < pts.length; i++) {
-        const a = pts[i - 1], c = pts[i];
-        if (Math.hypot(c[0] - a[0], c[1] - a[1]) * mPerUnit < 0.2) continue;
-        bundle.walls.push({ layer: p.layer, key: key('wall'), polygonPx: rectFromSegment(a, c, 0.2 / mPerUnit).map(P), centerlinePx: [P(a), P(c)], thicknessPx: null, confidence: 0.4 });
-        assumedWalls++;
-      }
+      const closed = p.closed && ring.length >= 3;
+      const r = closed ? minAreaRect(ring) : null;
+      const thinRing = !!(r && r.width * mPerUnit <= 0.6); // was already measured (0.8) before line pairing
+      const pts = closed ? [...ring, ring[0]] : p.pts;
+      for (let i = 1; i < pts.length; i++) wallSegs.push({ a: pts[i - 1], b: pts[i], layer: p.layer, ring: closed ? ring : null, thinRing });
     } else if (p.cls === 'door' || p.cls === 'window') {
-      if (ring.length >= 3) bundle.openings.push({ layer: p.layer, key: key(p.cls), kind: p.cls, polygonPx: ring.map(P), widthPx: null, confidence: 0.7 });
-    } else if (p.cls === 'object' || p.cls === 'stair') {
-      if (ring.length >= 3) bundle.objects.push({ layer: p.layer, key: key('obj'), category: p.cls === 'stair' ? 'stair' : humanize(p.layer).toLowerCase(), polygonPx: ring.map(P), confidence: 0.6 });
+      if (ring.length >= 3) bundle.openings.push({ layer: p.layer, key: key(p.cls), kind: p.cls, polygonPx: ring.map(P), widthPx: null, confidence: policyConfidence({ classRead: true, measured: true }, 0.7), correctedBy: corr });
+    } else if (p.cls === 'stair') {
+      const pts = p.closed ? [...p.pts, p.pts[0]] : p.pts;
+      for (let i = 1; i < pts.length; i++) stairLayerSegs.push({ a: pts[i - 1], b: pts[i], layer: p.layer, ring: ring.length >= 3 && p.closed ? ring : null });
+    } else if (p.cls === 'object') {
+      if (ring.length < 3) continue;
+      const fx = classifyFixture({ block: null, layer: p.layer });
+      bundle.objects.push({
+        layer: p.layer, key: key('obj'), category: fx.category ?? 'other', subtype: humanize(p.layer).toLowerCase(), polygonPx: ring.map(P),
+        confidence: policyConfidence({ classRead: !!fx.category, measured: true }, 0.6), correctedBy: corr,
+      });
     }
   }
-  if (assumedWalls) warnings.push(`${assumedWalls} wall edges had no drawn thickness; an assumed 0.2 m thickness was used for their polygons (low confidence)`);
+
+  // ---- walls: line pairing (measured), unpaired lines fall back to an assumed 0.2 m ------------------------------------
+  const wr = wallsFromSegments(wallSegs, { mPerUnit });
+  for (const w of wr.walls) {
+    bundle.walls.push({
+      layer: w.layer, key: key('wall'), polygonPx: w.polygon.map(P), centerlinePx: w.centerline.map(P),
+      thicknessPx: round(w.thickness * mPerUnit * ppm, 2), // measured, or the assumed 0.2 m (then flagged)
+      confidence: w.assumed ? policyConfidence({ classRead: true, measured: false, assumed: true }) : policyConfidence({ classRead: true, measured: true }, w.thinRing ? 0.8 : 1),
+      flags: w.assumed ? [FLAGS.assumedThickness] : [], correctedBy: correction(w.layer),
+      ...(w.merged || w.joined ? { properties: { ...(w.merged ? { merged_from: w.merged + 1 } : {}), ...(w.joined ? { joined_ends: w.joined } : {}) } } : {}),
+    });
+  }
+  if (wr.stats.assumed) warnings.push(`${wr.stats.assumed} wall lines had no parallel partner; an assumed 0.2 m thickness was used for them (confidence 0.4, flag assumed_thickness)`);
+  logger?.info?.(`walls: ${wr.stats.measured} measured, ${wr.stats.assumed} assumed, ${wr.stats.merged} merged, ${wr.stats.bridged} bridged across T/X junctions, ${wr.stats.junctions} junctions closed (${wr.stats.corners} corners, ${wr.stats.tees} tees; ${wr.stats.covered} assumed pieces inside measured walls dropped, ${wr.stats.solidRings ?? 0} small closed outlines kept as solid walls, ${wr.stats.pairs} line pairs, ${wr.stats.capsDropped} end caps dropped)`);
 
   // ---- inserts ---------------------------------------------------------------------------------------------------------
   let objCapped = 0;
@@ -241,10 +275,14 @@ export async function extractDxf(filePath, { config }) {
     const poly = r.corners.map(P);
     if (ins.cls === 'door' || ins.cls === 'window') {
       const w = ins.lineLens.length ? Math.max(...ins.lineLens) : r.length;
-      bundle.openings.push({ layer: ins.layer, properties: { block: ins.name }, key: key(ins.cls), kind: ins.cls, subtype: null, polygonPx: poly, widthPx: round(w * mPerUnit * ppm, 2), confidence: 0.75 });
+      bundle.openings.push({ layer: ins.layer, properties: { source_block: ins.name }, key: key(ins.cls), kind: ins.cls, subtype: null, polygonPx: poly, widthPx: round(w * mPerUnit * ppm, 2), confidence: policyConfidence({ classRead: true, measured: true }, 0.75), correctedBy: correction(ins.layer) });
     } else if (ins.cls === 'object' || ins.cls === 'stair') {
       if (bundle.objects.length >= config.cad.maxObjects) { objCapped++; continue; }
-      bundle.objects.push({ layer: ins.layer, properties: { block: ins.name }, key: key('obj'), category: ins.cls === 'stair' ? 'stair' : humanize(ins.name).toLowerCase().slice(0, 40) || 'block', name: ins.name, polygonPx: poly, confidence: 0.55 });
+      const fx = ins.cls === 'stair' ? { category: 'stair' } : classifyFixture({ block: ins.name, layer: ins.layer });
+      bundle.objects.push({
+        layer: ins.layer, properties: { source_block: ins.name }, key: key('obj'), category: fx.category ?? 'other', subtype: humanize(ins.name).toLowerCase().slice(0, 40) || 'block',
+        name: ins.name, polygonPx: poly, confidence: policyConfidence({ classRead: !!fx.category, measured: true }, 0.55), correctedBy: correction(ins.layer),
+      });
     }
   }
   if (objCapped) warnings.push(`${objCapped} blocks beyond the cap of ${config.cad.maxObjects} were not emitted`);
@@ -269,12 +307,90 @@ export async function extractDxf(filePath, { config }) {
     bundle.texts.push({ key: key('text'), raw: label, bboxPx: bb.map((v) => round(v, 2)), roleHint: 'dimension', value: { number: round(metres * 1000, 1), unit: 'mm' }, confidence: 0.9 });
   }
 
+  // ---- stairs ---------------------------------------------------------------------------------------------------------------
+  const stairs = findStairs({ stairLayerSegs, allSegs, roomRings, rawTexts, mPerUnit, ppm, P, key, correction });
+  bundle.objects.push(...stairs.objects);
+  if (stairs.objects.length || stairs.note) logger?.info?.(`stairs: ${stairs.objects.length} staircase(s), ${stairs.flights} flight(s), ${stairs.landings} landing(s) (${stairs.byLayer} by layer, ${stairs.byRoom} by tread lines in stair rooms)`);
+
   linkOpeningsToWalls(bundle);
-  addCoverage(bundle, { dimensions: rawDims.length > 0 });
-  bundle.stats = { entities: dxf.entities.length, rooms: bundle.rooms.length, walls: bundle.walls.length, openings: bundle.openings.length, objects: bundle.objects.length, texts: bundle.texts.length, metresPerUnit: mPerUnit };
+  addCoverage(bundle, { dimensions: rawDims.length > 0, stairs: stairs.coverage });
+  bundle.stats = { wallsMeasured: wr.stats.measured, wallsAssumed: wr.stats.assumed, wallsMerged: wr.stats.merged, wallJunctions: wr.stats.junctions, stairs: stairs.objects.length, entities: dxf.entities.length, rooms: bundle.rooms.length, walls: bundle.walls.length, openings: bundle.openings.length, objects: bundle.objects.length, texts: bundle.texts.length, metresPerUnit: mPerUnit };
   bundle.semantic = { insUnits: dxf.insUnits, layers: [...dxf.layers].slice(0, 60), unclassifiedLayers: unclassified, unsupportedEntities: dxf.skipped, pxPerMetre: round(ppm, 3) };
   bundle.warnings = warnings;
   return [bundle];
+}
+
+/**
+ * Stairs, two paths:
+ *   1. stair-named layers: tread runs among their segments (class read + measured: 0.9). A stair layer without tread runs
+ *      keeps the old behaviour (one stair object per closed ring, 0.6).
+ *   2. rooms whose label is a stair word ("Treppenhaus", "Cage d'escalier", "Vano scala"...): tread runs among the
+ *      segments inside the room, any layer (class inferred from the room: 0.7, flag inferred_from_room).
+ * Coverage: analysed when a stair layer exists, partial when only path 2 found flights, otherwise not_analysed
+ * (nothing found is NOT reported as "no stairs").
+ */
+function findStairs({ stairLayerSegs, allSegs, roomRings, rawTexts, mPerUnit, ppm, P, key, correction }) {
+  const objects = [];
+  let byLayer = 0, byRoom = 0, nFlights = 0, nLandings = 0;
+  const px = (len) => round(len * mPerUnit * ppm, 2); // drawing units -> page px (metres are derived by recomputeMetres)
+  const pxPt = (p) => P(p).map((v) => round(v, 2));
+  /** one object per staircase: flights[] and inferred landings[]; *_m fields are filled from the *_px ones by recomputeMetres */
+  const emit = (st, layer, conf, flags, detectedBy) => {
+    const flights = st.flights.map((f) => {
+      const a = P(f.start), b = P([f.start[0] + f.dir[0], f.start[1] + f.dir[1]]); // plan frame (px: y down)
+      const deg = ((Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI + 360) % 360;
+      return { tread_count: f.n, direction_deg: round(deg, 1), start_px: pxPt(f.start), width_px: px(f.width), going_px: px(f.going), start_m: null, width_m: null, going_m: null };
+    });
+    const landings = st.landings.map((l) => ({ polygon_px: l.polygon.map(pxPt), polygon_m: null, at_height_m: null, after_tread: l.afterTread, side: l.side }));
+    objects.push({
+      layer, key: key('stair'), category: 'stair', subtype: null, polygonPx: st.polygon.map(P), confidence: conf,
+      flags: [...flags, ...(st.landings.some((l) => l.side === 'assumed') ? ['landing_side_assumed'] : [])],
+      properties: { tread_count: st.treads, flights, landings, rise_direction: 'unknown', detected_by: detectedBy }, correctedBy: correction(layer),
+    });
+    nFlights += flights.length; nLandings += landings.length;
+  };
+
+  // path 1: stair layers
+  const layers = [...new Set(stairLayerSegs.map((s) => s.layer))];
+  for (const layer of layers) {
+    const segs = stairLayerSegs.filter((s) => s.layer === layer);
+    const flights = detectFlights(segs, { mPerUnit });
+    if (flights.length) {
+      for (const st of assembleStaircases(flights, { mPerUnit })) { emit(st, layer, policyConfidence({ classRead: true, measured: true }), [], 'layer'); byLayer++; }
+      continue;
+    }
+    const rings = [...new Map(segs.filter((s) => s.ring).map((s) => [s.ring, s.ring])).values()];
+    for (const ring of rings) {
+      objects.push({ layer, key: key('obj'), category: 'stair', subtype: null, polygonPx: ring.map(P), confidence: policyConfidence({ classRead: true, measured: true }, 0.6), correctedBy: correction(layer), properties: { detected_by: 'layer' } });
+      byLayer++;
+    }
+  }
+
+  // path 2: tread lines inside rooms named as stairs
+  const isStairName = (raw) => {
+    const t = cleanText(raw);
+    if (!t || classifyTextContent(t).role) return false; // "Scala 1:100" is a scale note, not a stair
+    return lookupRoomName(t)?.type === 'stair' || STAIR_LAYER_RE.test(t);
+  };
+  const stairRooms = roomRings.filter((ring) => rawTexts.some((t) => isStairName(t.text) && pointInPolygon(t.at, ring)));
+  for (const ring of stairRooms) {
+    const bb = bboxOfPoints(ring);
+    const inside = allSegs.filter((s) => s.cls !== 'room' && s.cls !== 'text' && s.cls !== 'dimension'
+      && pointInPolygon([(s.a[0] + s.b[0]) / 2, (s.a[1] + s.b[1]) / 2], ring)
+      && [s.a, s.b].every((p) => p[0] >= bb[0] && p[0] <= bb[2] && p[1] >= bb[1] && p[1] <= bb[3]));
+    const flights = detectFlights(inside, { mPerUnit });
+    if (!flights.length) continue;
+    const counts = {};
+    for (const s of inside) counts[s.layer] = (counts[s.layer] ?? 0) + 1;
+    const layer = Object.entries(counts).sort((x, y) => y[1] - x[1])[0][0];
+    for (const st of assembleStaircases(flights, { mPerUnit, room: ring })) { emit(st, layer, policyConfidence({ classRead: false, measured: true }), [FLAGS.inferredFromRoom], 'room_geometry'); byRoom++; }
+  }
+
+  let coverage;
+  if (layers.length) coverage = { status: 'analysed', confidence: byLayer ? 0.8 : 0.6, note: byLayer ? `stair layer(s): ${layers.join(', ')}` : `stair layer(s) ${layers.join(', ')} present but no stair geometry found` };
+  else if (byRoom) coverage = { status: 'partial', confidence: 0.6, note: `${byRoom} staircase(s), ${nFlights} flight(s) from tread lines inside ${stairRooms.length} room(s) named as stairs; stairs drawn elsewhere are not detected` };
+  else coverage = { status: 'not_analysed', confidence: 0.3, note: stairRooms.length ? `${stairRooms.length} room(s) named as stairs, but no tread lines found in them` : undefined };
+  return { objects, byLayer, byRoom, flights: nFlights, landings: nLandings, coverage, note: coverage.note };
 }
 
 // =====================================================================================================

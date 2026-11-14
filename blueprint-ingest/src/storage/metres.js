@@ -54,6 +54,12 @@ export function recomputeMetres(doc) {
   for (const o of doc.objects ?? []) {
     o.polygon_m = mpoly(o.polygon_px);
     o.area_m2 = has && o.polygon_px ? round(areaPx(o.polygon_px) * k * k, 3) : null;
+    // stair flights / landings keep pixels as the source too (properties.flights[].*_px, properties.landings[].polygon_px)
+    for (const f of Array.isArray(o.properties?.flights) ? o.properties.flights : []) {
+      if (f.start_px) f.start_m = has ? mpt(f.start_px) : null;
+      for (const q of ['width', 'going']) if (f[`${q}_px`] != null) f[`${q}_m`] = has ? r3(f[`${q}_px`] * k) : null;
+    }
+    for (const l of Array.isArray(o.properties?.landings) ? o.properties.landings : []) if (l.polygon_px) l.polygon_m = mpoly(l.polygon_px);
   }
   for (const u of doc.units ?? []) {
     u.polygon_m = mpoly(u.polygon_px);

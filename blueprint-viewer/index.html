@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blueprint Viewer</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.8/build/index.module.js",
+        "web-ifc": "./vendor/web-ifc/web-ifc-api.js"
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #eef0f3; --card: #ffffff; --text: #1d232b; --muted: #5d6673; --border: #d7dbe1;
+      --accent: #2563eb; --accent-text: #ffffff; --error: #b42318; --warn: #b45309; --assumed: #7c3aed; --glass: rgba(255, 255, 255, 0.9);
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #15181d; --card: #1f242c; --text: #e7eaee; --muted: #9aa3ae; --border: #333a45;
+        --accent: #60a5fa; --accent-text: #0b1220; --error: #f97066; --warn: #fbbf24; --assumed: #c4b5fd; --glass: rgba(31, 36, 44, 0.92);
+        color-scheme: dark;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body { background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    button { font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-text); padding: 10px 18px; }
+    button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    button.small { padding: 5px 10px; font-size: 13px; }
+    button.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    button.link { background: none; color: var(--accent); padding: 0; font-weight: 600; text-decoration: underline; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    select { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; max-width: 100%; }
+    [hidden] { display: none !important; }
+
+    /* start card */
+    #picker { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 32px 28px; width: min(420px, 100%); text-align: center; }
+    .card h1 { margin: 0 0 8px; font-size: 22px; letter-spacing: -0.01em; }
+    .card p { margin: 0 0 18px; color: var(--muted); }
+    #error { color: var(--error); margin: 16px 0 0; overflow-wrap: anywhere; white-space: pre-line; }
+    #error:empty { display: none; }
+    body.dragging::after { content: "Drop .json and .ifc files to add them"; position: fixed; inset: 12px; border: 3px dashed var(--accent); border-radius: 16px; display: grid; place-items: center; font-size: 20px; font-weight: 600; background: color-mix(in srgb, var(--bg) 70%, transparent); z-index: 10; pointer-events: none; }
+
+    #stage { position: fixed; inset: 0; display: none; }
+    #stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    body.viewing #stage { display: block; }
+    body.viewing #picker { display: none; }
+
+    .floating { background: var(--glass); border: 1px solid var(--border); border-radius: 10px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+
+    /* left column: bar, controls, then collapsible panels */
+    #hud { position: fixed; top: 12px; left: 12px; bottom: 12px; display: none; flex-direction: column; align-items: flex-start; gap: 8px; width: 290px; max-width: calc(100vw - 24px); overflow-y: auto; padding-right: 4px; }
+    body.viewing #hud { display: flex; }
+    #hud > * { width: 100%; flex: none; }
+    #bar { padding: 8px 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    #bar strong { flex: 1; }
+    #status { color: var(--muted); font-size: 12px; width: 100%; font-variant-numeric: tabular-nums; }
+
+    #controls { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 10px; touch-action: none; }
+    #controls .buttons { display: flex; gap: 6px; }
+    #controls .buttons button { flex: 1; }
+    #controls fieldset { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; }
+    legend.vh, .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    label.check { display: flex; align-items: center; gap: 7px; padding: 2px 0; cursor: pointer; }
+    input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
+    .slider { display: flex; flex-direction: column; gap: 4px; }
+    .slider span { display: flex; justify-content: space-between; color: var(--muted); }
+    output { color: var(--text); font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; margin: 0; accent-color: var(--accent); }
+    .sep { border-top: 1px solid var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+
+    details.floating { padding: 8px 12px 10px; }
+    details.floating > summary { cursor: pointer; font-weight: 600; }
+    details.floating .sub { color: var(--muted); font-size: 13px; margin: 4px 0; overflow-wrap: anywhere; }
+    .list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    .list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; align-items: center; }
+    .list li > * { min-width: 0; overflow-wrap: anywhere; }
+    .list li .name { font-weight: 600; overflow-wrap: anywhere; }
+    .list li .meta { grid-column: 1 / -1; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .list li .warn { grid-column: 1 / -1; color: var(--warn); font-size: 12px; font-weight: 600; }
+    .row { display: flex; align-items: center; gap: 6px; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border); flex: none; }
+    #legendList li { grid-template-columns: auto 1fr auto; cursor: pointer; border-radius: 6px; padding: 2px 4px; }
+    #legendList li[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+    #legendList li .meta { grid-column: 2 / -1; }
+    dl.kv { margin: 4px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
+    dl.kv dt { color: var(--muted); }
+    dl.kv dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    dd.none { color: var(--muted); }
+    dd.not_extracted, dd.unknown, dd.partial { color: var(--warn); font-weight: 600; }
+    .contentsBlock + .contentsBlock { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .note { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
+
+    /* banners: what the scene can and cannot claim */
+    #banners { position: fixed; top: 12px; left: 316px; right: 12px; display: none; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; }
+    body.viewing #banners { display: flex; }
+    .banner { pointer-events: auto; max-width: 560px; padding: 6px 10px; border-left: 4px solid var(--warn); font-size: 13px; display: grid; grid-template-columns: 1fr auto; gap: 0 8px; }
+    .banner strong { display: block; }
+    .banner .x { background: none; color: var(--muted); padding: 0 4px; font-size: 16px; line-height: 1; align-self: start; }
+    .banner span { grid-column: 1; }
+    .banner.info { border-left-color: var(--accent); }
+
+    /* inspector */
+    #panel { position: fixed; right: 12px; bottom: 12px; width: min(360px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow-y: auto; padding: 12px 14px; display: none; }
+    body.viewing #panel.open { display: block; }
+    #panel h2 { margin: 0 0 4px; font-size: 15px; overflow-wrap: anywhere; }
+    #panelSource { color: var(--muted); font-size: 12px; margin-bottom: 8px; overflow-wrap: anywhere; }
+    #panel dl { margin: 0; display: grid; grid-template-columns: minmax(0, 38%) minmax(0, 1fr); gap: 3px 12px; }
+    #panel dt { overflow-wrap: anywhere; }
+    #panel dt { color: var(--muted); }
+    #panel dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    #panel dt.assumed, #panel dd.assumed { color: var(--assumed); }
+    #panel dd.raw { color: var(--warn); }
+    #panel .conf { display: flex; align-items: center; gap: 8px; margin: 8px 0 2px; }
+    #panel .conf span:first-child { color: var(--muted); }
+    #panel .bar { flex: 1; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+    #panel .bar i { display: block; height: 100%; background: var(--accent); }
+    #panel .bar i.low { background: var(--warn); }
+    #panel ul { margin: 4px 0 0; padding-left: 18px; color: var(--muted); }
+    #panel ul.flags { color: var(--warn); }
+    #panel ul:empty { display: none; }
+    #panel .partof { margin-top: 8px; color: var(--muted); }
+    #panel .correct { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: grid; gap: 6px; }
+    #panel .correct label { display: grid; gap: 3px; color: var(--muted); }
+    #panel .pending { color: var(--warn); }
+    #panel .pending:empty { display: none; }
+    .legendKey { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    .legendKey b.assumed { color: var(--assumed); font-weight: 600; }
+
+    @media (max-width: 700px) {
+      #hud { bottom: auto; max-height: 50vh; }
+      #banners { left: 12px; top: auto; bottom: 12px; }
+      #panel { top: auto; bottom: 12px; left: 12px; width: auto; max-height: 45vh; }
+    }
+  </style>
+</head>
+<body>
+  <main id="picker">
+    <div class="card">
+      <h1>Blueprint Viewer</h1>
+      <p>Open drawing JSON files and IFC models: several at once, mixed, or drop them anywhere.</p>
+      <button id="openBtn" type="button">Open files (.json, .ifc)</button>
+      <input id="fileInput" type="file" accept=".json,.ifc,application/json" multiple hidden>
+      <p id="error" role="alert"></p>
+    </div>
+  </main>
+
+  <div id="stage"></div>
+
+  <div id="banners" aria-live="polite"></div>
+
+  <div id="hud">
+    <div id="bar" class="floating">
+      <strong>Blueprint Viewer</strong>
+      <button id="addBtn" class="small" type="button">Add files</button>
+      <button id="clearBtn" class="small ghost" type="button">Clear</button>
+      <div id="status" aria-live="off"></div>
+    </div>
+
+    <section id="controls" class="floating" aria-label="View controls">
+      <div class="buttons">
+        <button id="visAll" class="small ghost" type="button" aria-label="Show all groups">All</button>
+        <button id="visNone" class="small ghost" type="button" aria-label="Hide all groups">None</button>
+      </div>
+      <fieldset id="visList">
+        <legend class="vh">Visible groups</legend>
+        <label class="check"><input type="checkbox" data-group="floors" checked> Floors</label>
+        <label class="check"><input type="checkbox" data-group="walls" checked> Walls</label>
+        <label class="check"><input type="checkbox" data-group="doors" checked> Doors</label>
+        <label class="check"><input type="checkbox" data-group="windows" checked> Windows</label>
+        <label class="check"><input type="checkbox" data-group="fixtures" checked> Fixtures</label>
+        <label class="check"><input type="checkbox" data-group="stairs" checked> Stairs</label>
+        <label class="check"><input type="checkbox" data-group="structure" checked> Structure</label>
+        <label class="check"><input type="checkbox" data-group="services" checked> Services</label>
+        <label class="check"><input type="checkbox" data-group="roomNames" checked> Room names</label>
+        <label class="check"><input type="checkbox" data-group="areas" checked> Areas</label>
+      </fieldset>
+      <label class="slider"><span>Pull apart <output id="explodeOut">off</output></span>
+        <input id="explode" type="range" min="0" max="1" step="0.01" value="0" aria-label="Pull pieces apart"></label>
+      <label class="slider"><span>Separate levels <output id="sepOut">off</output></span>
+        <input id="sep" type="range" min="0" max="1" step="0.01" value="0" aria-label="Separate levels vertically"></label>
+      <label class="slider"><span>Cut at <output id="cutOut">off</output></span>
+        <input id="cut" type="range" min="0" max="3" step="0.05" value="3" aria-label="Cut height in metres"></label>
+      <div class="sep">
+        <label class="check"><input id="highlight" type="checkbox" checked> Highlight assumptions</label>
+        <button id="dlCorr" class="small ghost" type="button" disabled>Download corrections.json <span id="corrCount">(0)</span></button>
+      </div>
+    </section>
+
+    <details id="filesPanel" class="floating" open>
+      <summary>Files</summary>
+      <ul id="fileList" class="list"></ul>
+    </details>
+
+    <details id="levelsPanel" class="floating" open>
+      <summary>Levels</summary>
+      <ul id="levelList" class="list"></ul>
+    </details>
+
+    <details id="legendPanel" class="floating" open>
+      <summary>Fixtures legend</summary>
+      <div class="sub">Click a row to show only that category; click again for all.</div>
+      <ul id="legendList" class="list"></ul>
+    </details>
+
+    <details id="contents" class="floating" open>
+      <summary>What is in each file</summary>
+      <div id="contentsBody"></div>
+    </details>
+
+    <details id="unitsPanel" class="floating">
+      <summary>Property-set units</summary>
+      <div id="unitsBody" class="sub"></div>
+    </details>
+  </div>
+
+  <aside id="panel" class="floating" aria-live="polite">
+    <h2 id="panelTitle"></h2>
+    <div id="panelSource"></div>
+    <dl id="panelRows"></dl>
+    <div class="legendKey">Values in <b class="assumed">this colour</b> are assumptions (drawing conventions), not data from the file.</div>
+    <div id="panelConf" class="conf" hidden><span>confidence</span><div class="bar" role="meter" aria-label="confidence" aria-valuemin="0" aria-valuemax="1"><i></i></div><span id="panelConfNum"></span></div>
+    <ul id="panelFlags" class="flags" aria-label="flags: why the confidence is low"></ul>
+    <ul id="panelNotes" aria-label="notes"></ul>
+    <div id="panelPartOf" class="partof" hidden>part of <button id="partOfBtn" class="link" type="button"></button></div>
+    <div id="panelCorrect" class="correct" hidden>
+      <label>Correct <select id="corrValue" aria-label="Correct the classification"></select></label>
+      <label>Applies to <select id="corrScope" aria-label="Which elements the correction applies to"></select></label>
+      <span id="corrPending" class="pending"></span>
+    </div>
+  </aside>
+
+  <script type="module">
+    import { BlueprintViewer, FIXTURE_STYLE } from './blueprintViewer.js';
+
+    const $ = (id) => document.getElementById(id);
+    const input = $('fileInput');
+    let viewer = null; // one WebGL context for the page's lifetime
+    const ensureViewer = () => {
+      if (viewer) return viewer;
+      document.body.classList.add('viewing'); // the stage needs a size before the renderer measures it
+      viewer = new BlueprintViewer($('stage'), { onSelect: showSelection, onCorrectionsChange: showCorrectionCount, onChange: render });
+      window.viewer = viewer; // for inspection from the browser console
+      applyControls();
+      return viewer;
+    };
+
+    async function addFiles(list) {
+      const files = [...list].filter((f) => /\.(json|ifc)$/i.test(f.name));
+      if (!files.length) return;
+      $('error').textContent = '';
+      const hadViewer = !!viewer;
+      ensureViewer();
+      setStatus(`loading ${files.map((f) => f.name).join(', ')} …`);
+      const results = await viewer.addFiles(files);
+      const bad = results.filter((r) => !r.ok);
+      if (bad.length) {
+        const msg = bad.map((r) => `${r.name}: ${r.error}`).join('\n');
+        if (!viewer.bp.sources.length) { document.body.classList.remove('viewing'); $('error').textContent = msg; }
+        else addBanner('Some files could not be loaded', msg);
+      }
+      for (const r of results.filter((x) => x.ok && x.kind === 'ifc')) console.info(`[blueprint-viewer] ${r.name}: ${r.stats.elements} elements, ${r.stats.triangles} triangles, ${r.stats.batches} batches in ${r.ms} ms`);
+      viewer.resize();
+      if (!hadViewer || results.some((r) => r.ok)) cutRange();
+    }
+
+    $('openBtn').addEventListener('click', () => input.click());
+    $('addBtn').addEventListener('click', () => input.click());
+    $('clearBtn').addEventListener('click', () => { viewer?.bp.clearAll(); viewer?.afterChange(true); document.body.classList.remove('viewing'); });
+    input.addEventListener('change', () => { const f = [...input.files]; input.value = ''; addFiles(f); });
+    // drag and drop anywhere
+    let depth = 0;
+    addEventListener('dragenter', (e) => { if ([...e.dataTransfer.types].includes('Files')) { depth++; document.body.classList.add('dragging'); e.preventDefault(); } });
+    addEventListener('dragleave', () => { if (--depth <= 0) { depth = 0; document.body.classList.remove('dragging'); } });
+    addEventListener('dragover', (e) => e.preventDefault());
+    addEventListener('drop', (e) => { e.preventDefault(); depth = 0; document.body.classList.remove('dragging'); addFiles(e.dataTransfer.files); });
+
+    // ---- view controls (state lives in the DOM; applied to every load) -------------------------------------
+    const checks = [...document.querySelectorAll('#visList input')];
+    const explode = $('explode'), sep = $('sep'), cut = $('cut');
+    function applyControls() {
+      for (const c of checks) viewer.setGroupVisible(c.dataset.group, c.checked);
+      viewer.setHighlightAssumptions($('highlight').checked);
+      onExplode(); onSep(); onCut();
+    }
+    function onExplode() { const e = Number(explode.value); $('explodeOut').textContent = e ? `${Math.round(e * 100)}%` : 'off'; viewer?.setExplode(e); }
+    function onSep() { const s = Number(sep.value); $('sepOut').textContent = s ? `×${(1 + 2 * s).toFixed(1)}` : 'off'; viewer?.setLevelSeparation(s); }
+    function onCut() {
+      const h = Number(cut.value), off = h >= Number(cut.max);
+      $('cutOut').textContent = off ? 'off' : `${h.toFixed(2)} m`;
+      viewer?.setCut(off ? null : h);
+    }
+    /** the cut applies to the whole stack: its range follows the model's height */
+    function cutRange() {
+      if (!viewer) return;
+      const atMax = Number(cut.value) >= Number(cut.max);
+      cut.min = Math.floor(viewer.modelBottom * 10) / 10;
+      cut.max = Math.ceil((viewer.modelTop + 0.1) * 10) / 10;
+      if (atMax) cut.value = cut.max;
+      onCut();
+    }
+    for (const c of checks) c.addEventListener('change', () => viewer?.setGroupVisible(c.dataset.group, c.checked));
+    const setAll = (on) => { for (const c of checks) { c.checked = on; viewer?.setGroupVisible(c.dataset.group, on); } };
+    $('visAll').addEventListener('click', () => setAll(true));
+    $('visNone').addEventListener('click', () => setAll(false));
+    $('highlight').addEventListener('change', () => viewer?.setHighlightAssumptions($('highlight').checked));
+    explode.addEventListener('input', onExplode);
+    sep.addEventListener('input', () => { onSep(); cutRange(); });
+    cut.addEventListener('input', onCut);
+    for (const type of ['pointerdown', 'pointermove', 'pointerup', 'wheel', 'contextmenu']) {
+      for (const id of ['hud', 'panel', 'banners']) $(id).addEventListener(type, (ev) => ev.stopPropagation(), { passive: type !== 'contextmenu' });
+    }
+
+    // ---- status: frame rate and draw calls (the 60 fps check) ---------------------------------------------------
+    function setStatus(t) { $('status').textContent = t; }
+    setInterval(() => {
+      if (!viewer || !viewer.bp.sources.length) return;
+      const d = viewer.drawStats;
+      setStatus(`${viewer.fps.toFixed(0)} fps · ${d.calls} draw calls · ${(d.triangles / 1e6).toFixed(2)} M triangles`);
+    }, 1000);
+
+    // ---- panels from the scene summary ---------------------------------------------------------------------------
+    const LABELS = { rooms: 'Rooms', walls: 'Walls', doors: 'Doors', windows: 'Windows', fixtures: 'Fixtures', stairs: 'Stairs', text: 'Texts' };
+    const ROUTE = { ifc: 'IFC model', dxf: 'DXF (CAD)', svg: 'SVG', vector_pdf: 'vector PDF', raster: 'raster image', vlm: 'vision model' };
+    let isolatedCategory = null, isolatedLevel = null;
+
+    function render(sum) {
+      if (!sum.sources.length) { document.body.classList.remove('viewing'); return; }
+      // files
+      $('fileList').replaceChildren(...sum.sources.map((s) => {
+        const li = document.createElement('li');
+        const btn = Object.assign(document.createElement('button'), { className: 'small ghost', type: 'button', textContent: 'Remove' });
+        btn.setAttribute('aria-label', `Remove ${s.name}`);
+        btn.addEventListener('click', () => { viewer.remove(s.id); cutRange(); });
+        const meta = document.createElement('span'); meta.className = 'meta';
+        if (s.kind === 'ifc') meta.textContent = `geometry: ${s.geometry} · ${s.ifc.stats.elements} elements, ${(s.ifc.stats.triangles / 1e6).toFixed(2)} M triangles, ${s.ifc.stats.ms} ms · linked to JSON: ${s.match.withJson}/${s.match.meshes} meshes${s.ifc.stats.unsupported ? ` · ${s.ifc.stats.unsupported} representation(s) web-ifc could not mesh` : ''}`;
+        else meta.textContent = `geometry: ${s.geometry}${s.match?.elements ? ` · ${s.match.withMesh}/${s.match.elements} elements have a web-ifc mesh` : ''}`;
+        li.append(Object.assign(document.createElement('span'), { className: 'name', textContent: `${s.name} (${s.kind === 'ifc' ? 'IFC' : 'JSON'})` }), btn, meta);
+        if (s.frame?.note) li.append(Object.assign(document.createElement('span'), { className: 'warn', textContent: s.frame.note }));
+        if (s.vocabulary?.unmapped.length) li.append(Object.assign(document.createElement('span'), { className: 'warn', textContent: `${s.vocabulary.unmapped.length} type/category value(s) did not map to the shared vocabulary: ${[...new Set(s.vocabulary.unmapped.map((u) => u.value))].join(', ')}` }));
+        return li;
+      }));
+      // levels
+      $('levelList').replaceChildren(...sum.levels.map((lv) => {
+        const li = document.createElement('li');
+        const cb = Object.assign(document.createElement('input'), { type: 'checkbox', checked: !viewer.bp.view.hiddenLevels.has(lv.key) });
+        cb.addEventListener('change', () => viewer.setLevelVisible(lv.key, cb.checked));
+        const label = Object.assign(document.createElement('label'), { className: 'check' });
+        label.append(cb, ` ${lv.name} · ${lv.known ? `${lv.elevation >= 0 ? '+' : ''}${lv.elevation.toFixed(2)} m` : 'elevation unknown (0 m)'}`);
+        const iso = Object.assign(document.createElement('button'), { className: 'small ghost', type: 'button', textContent: isolatedLevel === lv.key ? 'Show all' : 'Isolate' });
+        iso.addEventListener('click', () => { isolatedLevel = isolatedLevel === lv.key ? null : lv.key; viewer.isolateLevel(isolatedLevel); render(viewer.summary()); });
+        li.append(label, iso);
+        for (const n of lv.notes) li.append(Object.assign(document.createElement('span'), { className: 'warn', textContent: n }));
+        return li;
+      }));
+      // legend
+      $('legendPanel').hidden = !sum.legend.length;
+      $('legendList').replaceChildren(...sum.legend.map((g) => {
+        const li = document.createElement('li');
+        li.tabIndex = 0; li.setAttribute('role', 'button'); li.setAttribute('aria-pressed', String(isolatedCategory === g.category));
+        const sw = Object.assign(document.createElement('span'), { className: 'swatch' }); sw.style.background = g.color;
+        li.append(sw, Object.assign(document.createElement('span'), { textContent: g.category.replace(/_/g, ' ') }), Object.assign(document.createElement('span'), { textContent: String(g.count) }),
+          Object.assign(document.createElement('span'), { className: 'meta', textContent: g.from.join(' + ') + (g.from.includes('JSON polygons') && FIXTURE_STYLE[g.category] ? ` · height ${FIXTURE_STYLE[g.category].h} m (assumed)` : '') }));
+        const toggle = () => { isolatedCategory = isolatedCategory === g.category ? null : g.category; viewer.isolateCategory(isolatedCategory); render(viewer.summary()); };
+        li.addEventListener('click', toggle); li.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+        return li;
+      }));
+      // contents per file
+      $('contentsBody').replaceChildren(...sum.sources.map(contentsBlock));
+      // units
+      $('unitsPanel').hidden = !sum.unitCheck.length;
+      $('unitsBody').replaceChildren(...sum.unitCheck.map((u) => Object.assign(document.createElement('div'), {
+        textContent: u.verdict === 'verified'
+          ? `${u.key ?? u.prop}: ${u.unit} (pset ÷ measured = ${u.median.toFixed(u.median > 10 ? 0 : 3)} over ${u.n} horizontal pipes, ${Math.round(u.agree * 100)} % agree; from ${u.source})`
+          : `${u.key ?? u.prop}: not verified (${u.n ? `median ratio ${u.median.toFixed(3)} over ${u.n} samples matches no unit` : 'no measurable samples'}): shown raw`,
+      })));
+      banners(sum);
+    }
+
+    function contentsBlock(s) {
+      const div = Object.assign(document.createElement('div'), { className: 'contentsBlock' });
+      if (s.kind === 'ifc') {
+        div.append(Object.assign(document.createElement('div'), { className: 'sub', textContent: `${s.name} · IFC model · ${s.ifc.storeys.length} storeys` }));
+        const dl = Object.assign(document.createElement('dl'), { className: 'kv' });
+        for (const [g, n] of Object.entries(s.ifc.groups)) dl.append(Object.assign(document.createElement('dt'), { textContent: g }), Object.assign(document.createElement('dd'), { textContent: String(n) }));
+        div.append(dl, Object.assign(document.createElement('p'), { className: 'note', textContent: `Most common types: ${s.ifc.types.join(', ')}. Meshes without a JSON element: ${s.match.withoutJson}${s.match.unmatchedTypes.length ? ` (${s.match.unmatchedTypes.join(', ')})` : ''}.` }));
+        return div;
+      }
+      const r = s.report;
+      div.append(Object.assign(document.createElement('div'), { className: 'sub', textContent: `${s.name} · route ${ROUTE[r.route] ?? r.route ?? 'unknown'} · drawing ${r.file ?? '?'}${r.part ? ` (${r.part})` : ''}${r.readFrom && r.file && !r.file.endsWith(r.readFrom) ? `, read from ${r.readFrom}` : ''}` }));
+      const dl = Object.assign(document.createElement('dl'), { className: 'kv' });
+      for (const line of s.contents) {
+        const dd = Object.assign(document.createElement('dd'), { className: line.state, textContent: line.text });
+        if (line.note) dd.title = line.note;
+        dl.append(Object.assign(document.createElement('dt'), { textContent: LABELS[line.category] ?? line.category }), dd);
+      }
+      const notes = [];
+      if (r.counts.walls) notes.push(`Walls: ${r.walls.measuredThickness} with measured thickness, ${r.walls.assumedThickness} assumed (0.2 m)${r.walls.noThickness ? `, ${r.walls.noThickness} without a thickness value` : ''}.`);
+      if (r.counts.rooms && r.counts.walls) notes.push('Room outlines and wall faces come from different layers and are not guaranteed to coincide; floors are drawn 20 mm lower and 10 mm inset.');
+      if (r.sameSpot.length) notes.push(`${r.sameSpot.length} pair(s) of elements share the same footprint (possible duplicates; click again to cycle).`);
+      notes.push(s.match?.withMesh ? 'Elements with a web-ifc mesh use the real geometry; the rest are extruded with assumed heights.' : 'Heights are assumptions unless the file gives them.');
+      div.append(dl, Object.assign(document.createElement('p'), { className: 'note', textContent: notes.join(' ') }));
+      return div;
+    }
+
+    // banners: one per kind of issue (files listed), dismissible until the set of files changes
+    let dismissed = new Set(), lastFiles = '';
+    function banners(sum) {
+      const files = sum.sources.map((s) => s.id).join();
+      if (files !== lastFiles) { dismissed = new Set(); lastFiles = files; }
+      const issues = new Map();
+      const add = (key, title, text, file, kind = '') => { const e = issues.get(key) ?? issues.set(key, { title, text, files: [], kind }).get(key); e.files.push(file); };
+      for (const s of sum.sources) {
+        if (s.kind === 'json') {
+          const r = s.report, c = r.counts;
+          const cov = new Map(r.coverage.map((x) => [x.category, x.status]));
+          const why = (cat) => (cov.get(cat) === 'analysed' ? 'none in this drawing' : cov.get(cat) === 'not_analysed' ? 'not extracted yet' : 'no coverage entry');
+          if (!c.rooms && !c.walls && !c.openings) add(`noarch:${why('rooms')}:${why('walls')}`, 'No architecture in this file', `No rooms, walls or openings (rooms: ${why('rooms')}, walls: ${why('walls')}, doors: ${why('doors')}); only objects, drawn on their own. That is the content of the file, not a rendering problem.`, `${s.name} (${c.objects} objects)`);
+          else if (!c.walls) add(`nowalls:${why('walls')}`, 'No walls in this file', `Walls: ${why('walls')}.`, s.name);
+          if (s.approximate) add('approx', 'Approximate geometry', `Drawn from 2D footprints with assumed heights. Load the .ifc as well for the real 3D solids.`, `${s.name} (needs ${r.readFrom ?? 'its .ifc'})`);
+          if (s.frame?.kind === 'unscaled') add('noscale', 'No scale', s.frame.note, s.name);
+          if (s.frame?.kind === 'page') add('noframe', 'Alignment not guaranteed', s.frame.note, s.name);
+        } else if (s.ifc.stats.unsupported) add('unsupported', 'Some IFC geometry not meshed', 'web-ifc 0.0.68 could not mesh some representation types; those parts are missing from the 3D view (still in the JSON if it is loaded).', `${s.name} (${s.ifc.stats.unsupported})`, 'info');
+      }
+      $('banners').replaceChildren(...[...issues].filter(([k]) => !dismissed.has(k)).map(([k, e]) => {
+        const b = Object.assign(document.createElement('div'), { className: `banner floating ${e.kind}` });
+        const x = Object.assign(document.createElement('button'), { className: 'x', type: 'button', textContent: '×' });
+        x.setAttribute('aria-label', `Dismiss: ${e.title}`);
+        x.addEventListener('click', () => { dismissed.add(k); b.remove(); });
+        b.append(Object.assign(document.createElement('strong'), { textContent: `${e.title}: ${e.files.join(', ')}` }), x, Object.assign(document.createElement('span'), { textContent: e.text }));
+        return b;
+      }));
+    }
+    function addBanner(title, text, kind = '') {
+      const b = Object.assign(document.createElement('div'), { className: `banner floating ${kind}` });
+      b.append(Object.assign(document.createElement('strong'), { textContent: title }), Object.assign(document.createElement('span'), { textContent: text }));
+      $('banners').append(b);
+    }
+
+    // ---- corrections ---------------------------------------------------------------------------------------------
+    function showCorrectionCount(list) { $('corrCount').textContent = `(${list.length})`; $('dlCorr').disabled = !list.length; }
+    $('dlCorr').addEventListener('click', () => {
+      const blob = new Blob([`${JSON.stringify(viewer.correctionsFile(), null, 2)}\n`], { type: 'application/json' });
+      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'corrections.json' });
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+    $('corrValue').addEventListener('change', () => { if (viewer?.selected) viewer.applyCorrection(viewer.selected, $('corrScope').value, $('corrValue').value); });
+    $('partOfBtn').addEventListener('click', () => { const id = Number($('partOfBtn').dataset.pick); if (id) viewer.select(id); });
+
+    // ---- inspector -----------------------------------------------------------------------------------------------
+    function showSelection(info) {
+      const panel = $('panel');
+      if (!info) { panel.classList.remove('open'); return; }
+      $('panelTitle').textContent = info.title;
+      $('panelSource').textContent = [info.source && `file: ${info.source}`, info.geometry && `geometry: ${info.geometry}`].filter(Boolean).join(' · ');
+      const dl = $('panelRows');
+      dl.replaceChildren();
+      for (const [k, v, cls] of info.rows) {
+        const dt = Object.assign(document.createElement('dt'), { textContent: k }), dd = Object.assign(document.createElement('dd'), { textContent: v });
+        if (cls) { dt.className = cls; dd.className = cls; }
+        dl.append(dt, dd);
+      }
+      const conf = info.confidence;
+      $('panelConf').hidden = conf == null;
+      if (conf != null) {
+        const bar = $('panelConf').querySelector('i');
+        bar.style.width = `${Math.round(conf * 100)}%`;
+        bar.classList.toggle('low', conf < 0.6);
+        $('panelConf').querySelector('.bar').setAttribute('aria-valuenow', String(conf));
+        $('panelConfNum').textContent = String(conf);
+      }
+      const list = (id, items) => $(id).replaceChildren(...items.map((t) => Object.assign(document.createElement('li'), { textContent: t })));
+      list('panelFlags', info.flags); list('panelNotes', info.notes);
+      $('panelPartOf').hidden = !info.partOf;
+      if (info.partOf) { $('partOfBtn').textContent = info.partOf.label; $('partOfBtn').dataset.pick = String(info.partOf.pickId); }
+      const c = info.correct;
+      $('panelCorrect').hidden = !c || !c.scopes.length;
+      if (c && c.scopes.length) {
+        $('corrValue').replaceChildren(...c.options.map((o) => new Option(o.replace(/_/g, ' '), o, false, o === c.current)));
+        $('corrScope').replaceChildren(...c.scopes.map((sc) => new Option(`${sc.label} (${sc.key})`, sc.key)));
+        $('corrPending').textContent = c.pending ? `corrected in this session: ${c.pending.from} → ${c.pending.to} (${c.pending.key}); download corrections.json and re-run the pipeline to keep it` : '';
+      }
+      panel.classList.add('open');
+    }
+  </script>
+</body>
+</html>

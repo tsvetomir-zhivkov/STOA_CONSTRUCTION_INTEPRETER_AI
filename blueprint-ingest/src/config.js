@@ -10,11 +10,6 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 export const SCHEMA_PATH = path.resolve(HERE, '..', 'schema', 'blueprint.schema.json');
 
-/** @param {string|undefined} v @param {number} d */
-const num = (v, d) => (v === undefined || v === '' || Number.isNaN(Number(v)) ? d : Number(v));
-/** @param {string|undefined} v */
-const list = (v) => (v ? v.split(',').map((s) => s.trim()).filter(Boolean) : []);
-
 /**
  * @typedef {ReturnType<typeof loadConfig>} PipelineConfig
  */
@@ -27,31 +22,8 @@ export function loadConfig(env = process.env) {
     schemaPath: SCHEMA_PATH,
     /** drawing.file is made relative to this folder unless the input path contains data/<source>/ (default: cwd) */
     datasetRoot: env.DATASET_ROOT || null,
-    gemini: {
-      apiKey: env.GEMINI_API_KEY || '',
-      models: {
-        primary: env.GEMINI_MODEL || 'gemini-4-hydrogen',
-        heavy: env.GEMINI_MODEL_HEAVY || 'gemini-4-carbon',
-        light: env.GEMINI_MODEL_LIGHT || 'gemini-3.8-flash',
-        fallbacks: list(env.GEMINI_MODEL_FALLBACKS ?? 'gemini-3.6-flash,gemini-3.5-flash'),
-      },
-      retry: {
-        retries: num(env.GEMINI_MAX_RETRIES, 5),
-        baseMs: num(env.GEMINI_RETRY_BASE_MS, 800),
-        maxMs: num(env.GEMINI_RETRY_MAX_MS, 30000),
-      },
-      pricing: {
-        pricePerMInput: env.GEMINI_PRICE_PER_M_INPUT ? Number(env.GEMINI_PRICE_PER_M_INPUT) : null,
-        pricePerMOutput: env.GEMINI_PRICE_PER_M_OUTPUT ? Number(env.GEMINI_PRICE_PER_M_OUTPUT) : null,
-      },
-    },
-    mapper: {
-      /** unique room names / unknown texts sent per Gemini call */
-      batchSize: num(env.MAPPER_BATCH_SIZE, 120),
-      /** texts shown to the model for page-level facts (level name, languages) */
-      factTextSamples: 40,
-      maxTextChars: 80,
-    },
+    /** human corrections lookup (see src/mappers/corrections.js); default: corrections.json at the repo root. Missing = none. */
+    correctionsPath: env.CORRECTIONS_FILE || path.resolve(HERE, '..', '..', 'corrections.json'),
     classifier: {
       /** a PDF page is "vector" when it has at least this many drawn path segments... */
       minVectorSegments: 40,
@@ -71,8 +43,6 @@ export function loadConfig(env = process.env) {
       curveSamples: 6,
       minRoomAreaFrac: 0.0015,
       maxRoomAreaFrac: 0.45,
-      /** 'auto' uploads the PDF to Gemini only for legend/schedule-like pages */
-      filesApi: 'auto',
     },
     cad: {
       targetPixelSide: 3000,
