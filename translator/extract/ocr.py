@@ -24,7 +24,8 @@ fuse() adds to a CubiCasa document (translator.extract.cubicasa.to_parts output)
                On the dev split it found 16% more room labels but lowered bedrooms and kitchens, so it is off.
   levels[]     storey titles (1. KRS, KELLARI, ...); without titles, one level per building blob (connected
                wall/room mask). If titles and blobs disagree, coverage 'floors' is partial, low confidence.
-               floors_rule 'titles' (default) or 'max' (whichever counts more storeys; waiting for k).
+               floors_rule 'max' (default, agreed with k): whichever signal counts more storeys, because
+               OCR misses storey titles far more often than it invents them; 'titles' = titles first.
 """
 
 from __future__ import annotations
@@ -551,7 +552,7 @@ def fuse(
     label_priority: bool = True,
     kitchen_fallback: bool = True,
     rotation: bool = False,
-    floors_rule: str = "titles",
+    floors_rule: str = "max",
 ) -> dict:
     """Add OCR texts, room names, merged rooms and levels to a CubiCasa document. Returns a summary."""
     summary: dict = {}
