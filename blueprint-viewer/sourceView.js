@@ -23,6 +23,7 @@ export function showSource(view,text,scope,format='svg'){
   const records=new Map(),layers=new Map();let sequence=0;
   for(const node of [...view.content.querySelectorAll('path,line,polyline,polygon,circle,ellipse,rect,text,use,image')]){
     if(node.closest('defs,clipPath,mask,pattern,marker,symbol'))continue;
+    if(format==='dxf'&&!node.dataset.sourceHandle)continue;
     const originalId=node.dataset.sourceHandle ?? node.id ?? '';
     const owner=node.closest('g[id]');
     const layer=node.dataset.layer ?? node.closest('[data-layer]')?.dataset.layer ?? owner?.getAttribute('inkscape:label') ?? owner?.id ?? 'Ungrouped';

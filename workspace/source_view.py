@@ -58,3 +58,29 @@ def make_preview(source: Path, folder: Path):
         with pymupdf.open(source) as document:
             if len(document):
                 document[0].get_pixmap(matrix=pymupdf.Matrix(0.6, 0.6)).save(folder / "thumbnail.png")
+
+
+def building_preview(building, destination):
+    """Thumbnail from actual stored plan geometry; never an invented illustration."""
+    polygons = []
+    levels = building.get("levels", [])
+    level = levels[0]["id"] if levels else None
+    for collection in ("rooms", "walls", "openings", "objects"):
+        for entity in building.get(collection, []):
+            if level and entity.get("level_id") != level:
+                continue
+            geometry = entity.get("geometry") or {}
+            if geometry.get("coordinate_system") == "world" and geometry.get("footprints"):
+                polygons.extend(p["exterior"] for p in geometry["footprints"] if p.get("exterior"))
+            elif entity.get("polygon_px"):
+                polygons.append(entity["polygon_px"])
+    points = [p for polygon in polygons for p in polygon]
+    if not points:
+        return
+    x, y = min(p[0] for p in points), min(p[1] for p in points)
+    width, height = max(p[0] for p in points) - x, max(p[1] for p in points) - y
+    pad = max(width, height) * .05 or 1
+    root = ET.Element("svg", xmlns="http://www.w3.org/2000/svg", viewBox=f"{x-pad} {y-pad} {width+2*pad} {height+2*pad}")
+    for polygon in polygons:
+        ET.SubElement(root, "polygon", points=" ".join(f"{p[0]},{p[1]}" for p in polygon), fill="none", stroke="#253e50", **{"stroke-width": "1", "vector-effect": "non-scaling-stroke"})
+    destination.write_text(ET.tostring(root, encoding="unicode"), encoding="utf-8")

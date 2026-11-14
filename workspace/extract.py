@@ -32,7 +32,11 @@ def extract(source, destination):
         if not list(destination.glob("*.json")):
             # Unsupported vision extraction is an explicit outcome, never an empty success.
             raise RuntimeError("No normalized building was produced; this format may need a configured vision extractor")
-    return [p.name for p in sorted(destination.glob("*.json"))]
+    results = sorted(destination.glob("*.json"))
+    if results and not (destination.parent / "preview.svg").exists():
+        from workspace.source_view import building_preview
+        building_preview(json.loads(results[0].read_text(encoding="utf-8")), destination.parent / "preview.svg")
+    return [p.name for p in results]
 
 
 if __name__ == "__main__":

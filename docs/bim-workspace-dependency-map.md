@@ -75,7 +75,7 @@ No viewer build/lint/typecheck scripts exist initially; start uses npx serve.
 - [x] 6. Synchronized parallel workspace.
 - [x] 7. Dedicated DXF/SVG environments.
 - [x] 8. Component inspection and removal.
-- [ ] 9. Reference-based UI, AI analysis and document library.
+- [x] 9. Reference-based UI, AI analysis and document library.
 - [ ] 10. Integration tests, performance/lifecycle verification and architecture docs.
 
 Stage 2: generation-owned serialized imports, visibility restoration, teardown, stale-state reset and parser failure cleanup; session tests pass. Full cross-format browser matrix remains a stage 10 gate.

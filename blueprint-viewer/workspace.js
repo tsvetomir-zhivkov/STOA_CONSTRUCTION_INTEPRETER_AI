@@ -1,3 +1,5 @@
+import {installLibrary} from './library.js';
+import {installAnalysis} from './analysis.js';
 import {installInspector} from './inspector.js';
 import {showSource} from './sourceView.js';
 import {PlanCache} from './plans.js';
@@ -17,7 +19,15 @@ export class Workspace {
     this.sourceRecords=new Map();this.layerVisibility=new Map();this.typeVisibility=new Map();
     this.planView=new PlanView($('planSurface'),{onSelect:key=>this.selectPlan(key),onHover:key=>this.viewer?.setHovered(this.pickByKey.get(key) ?? null)});
     for(const button of document.querySelectorAll('[data-mode]'))button.addEventListener('click',()=>this.setMode(button.dataset.mode));
-    installInspector(this);
+    installInspector(this);installLibrary(this);installAnalysis(this);
+    if(matchMedia('(max-width:900px)').matches)document.body.classList.add('sidebar-collapsed');
+    $('toggleSidebar').onclick=()=>{document.body.classList.toggle('sidebar-collapsed');requestAnimationFrame(()=>this.viewer?.resize());};
+    $('inspectorClose').onclick=()=>{this.viewer?.select(null);$('panel').classList.remove('open');document.body.classList.remove('inspector-open');this.viewer?.resize();};
+    const divider=$('viewDivider');
+    divider.onpointerdown=e=>{divider.setPointerCapture(e.pointerId);divider.dataset.dragging='true';};
+    divider.onpointermove=e=>{if(divider.dataset.dragging!=='true')return;const box=$('viewport').getBoundingClientRect();$('viewport').style.setProperty('--plan-width',`${Math.max(25,Math.min(75,(e.clientX-box.left)/box.width*100))}%`);this.viewer?.resize();};
+    divider.onpointerup=()=>{delete divider.dataset.dragging;};
+    divider.onkeydown=e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();const value=parseFloat($('viewport').style.getPropertyValue('--plan-width')||'50');$('viewport').style.setProperty('--plan-width',`${Math.max(25,Math.min(75,value+(e.key==='ArrowRight'?5:-5)))}%`);this.viewer?.resize();}};
     $('floorSelect').addEventListener('change',()=>this.setFloor($('floorSelect').value));
     $('planCut').addEventListener('change',()=>this.showFloor());
     $('fitView').addEventListener('click',()=>{this.viewer?.frame();this.planView.fit();});
@@ -28,7 +38,7 @@ export class Workspace {
   setMode(mode){
     this.mode=mode;document.body.dataset.mode=mode;
     for(const b of document.querySelectorAll('[data-mode]'))b.setAttribute('aria-pressed',String(b.dataset.mode===mode));
-    requestAnimationFrame(()=>{this.viewer?.resize();if(this.planView.content)this.planView.fit();});
+    requestAnimationFrame(()=>{this.viewer?.resize();this.viewer?.frame();if(this.planView.content)this.planView.fit();});
     if(mode!=='3d' && this.floor)this.showFloor();
   }
   async addFiles(files){
@@ -52,9 +62,9 @@ export class Workspace {
     this.refreshLibrary?.();
   }
   async openDocument(meta,file=null){
-    const epoch=this.epoch;this.activeDocument=meta;this.documents.set(meta.id,meta);
+    const epoch=this.epoch;this.analysisController?.abort();this.activeDocument=meta;this.documents.set(meta.id,meta);
     const viewer=this.app.ensureViewer();
-    if(viewer.bp.sources.some(s=>s.scope===meta.id)){this.message(meta.name);return;}
+    if(viewer.bp.sources.some(s=>s.scope===meta.id)){this.sceneChanged(viewer.summary());this.setMode('parallel');$('workspaceTitle').textContent=meta.name;this.refreshAnalysis?.();this.message(meta.name);return;}
     const buildings=meta.state==='READY'?await api(`/api/documents/${meta.id}/buildings`):[];
     if(epoch!==this.epoch)return;
     this.indexes.set(meta.id,buildings.map(indexBuilding));
@@ -73,13 +83,14 @@ export class Workspace {
       this.sceneChanged(viewer.summary());
       this.setMode(meta.type==='ifc'?'3d':'parallel');
     }else await this.openSource?.(meta);
+    this.refreshAnalysis?.();
     $('workspaceTitle').textContent=meta.name;
     document.body.classList.add('viewing');this.message(`${meta.name} · ${meta.state==='READY'?'validated building data':'source view'}`);
   }
   clear(){
-    this.epoch++;this.planGeneration++;this.planCache.clear();this.planView.clear();this.floor=null;this.activeDocument=null;
+    this.analysisController?.abort();this.epoch++;this.planGeneration++;this.planCache.clear();this.planView.clear();this.floor=null;this.activeDocument=null;
     for(const id of this.imports)api(`/api/documents/${id}`,{method:'DELETE'}).catch(()=>{});
-    this.imports.clear();this.viewer?.clear();this.pickByKey.clear();this.keyByPick.clear();
+    this.imports.clear();this.sourceRecords.clear();this.layerVisibility.clear();this.typeVisibility.clear();this.removedSource?.clear();$('sourcePanel').hidden=true;document.querySelector('#planPane iframe')?.remove();$('planSurface').hidden=false;this.viewer?.clear();this.pickByKey.clear();this.keyByPick.clear();
     this.message('Ready to open a drawing');
   }
   removeSource(sourceId){

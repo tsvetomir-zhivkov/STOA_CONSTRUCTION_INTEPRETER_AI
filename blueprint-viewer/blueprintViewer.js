@@ -104,7 +104,7 @@ const PALETTES = {
 
 const darkQuery = typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 const reducedMotionQuery = typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
-const currentPalette = () => (darkQuery?.matches ? PALETTES.dark : PALETTES.light);
+const currentPalette = () => ((typeof document!=='undefined' && document.body.dataset.theme==='dark') || darkQuery?.matches ? PALETTES.dark : PALETTES.light);
 
 // =====================================================================================================
 // geometry (no renderer needed: usable from Node for checks)
@@ -1401,7 +1401,10 @@ export class BlueprintViewer {
     const box = this.bp.bounds();
     if (box.isEmpty()) return;
     const c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
-    const span = Math.max(size.x, size.z, size.y, 1), d = span * 0.7;
+    this.resize();
+    const span = Math.max(size.x, size.z, size.y, 1);
+    const halfFov = Math.atan(Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * Math.min(1, this.camera.aspect));
+    const d = Math.max(size.length() / 2, .5) / Math.sin(halfFov) * 1.12 / Math.sqrt(3);
     this.camera.position.set(c.x + d, c.y + d, c.z + d);
     this.camera.near = Math.max(0.01, span / 2000);
     this.camera.far = span * 20 + 200;

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Blueprint Viewer</title>
+  <title>Stoa ? Building workspace</title>
   <script type="importmap">
     {
       "imports": {
@@ -142,27 +142,28 @@
   </style>
 <link rel="stylesheet" href="workspace.css">
 </head>
-<body>
+<body data-theme="dark" data-mode="3d">
   <main id="picker">
     <div class="card">
-      <h1>Blueprint Viewer</h1>
-      <p>Open drawing JSON files and IFC models: several at once, mixed, or drop them anywhere.</p>
-      <button id="openBtn" type="button">Open files (.json, .ifc)</button>
+      <p class="brand-eyebrow">STOA VISION TRANSLATOR</p><h1>Your building.<br>Every detail, connected.</h1>
+      <p>Open a model or drawing. Explore its floors, inspect components, and trace answers to their source.</p>
+      <button id="openBtn" type="button">Open a drawing</button>
       <input id="fileInput" type="file" accept=".json,.ifc,.dxf,.svg,.pdf,.png,.jpg,.jpeg,.webp" multiple hidden>
-      <p id="error" role="alert"></p>
+      <button id="startLibrary" class="ghost" type="button">Drawing library</button><p class="formats">IFC ? DXF ? SVG ? PDF ? images ? building JSON</p><p id="error" role="alert"></p>
     </div>
   </main>
 
-  <header id="workspaceBar"><strong id="workspaceTitle">Stoa workspace</strong><button class="ghost" data-mode="2d">2D</button><button class="ghost" data-mode="3d" aria-pressed="true">3D</button><button class="ghost" data-mode="parallel">Parallel</button><select id="floorSelect" aria-label="Floor plan"></select><button class="ghost" id="fitView">Fit</button><button class="ghost" id="resetView">Reset</button></header>
+  <header id="workspaceBar"><div class="workspace-brand">stoa<span>BUILDING WORKSPACE</span></div><button id="toggleSidebar" class="ghost" aria-label="Toggle building sidebar">&#9776;</button><strong id="workspaceTitle">Building workspace</strong><nav class="mode-switch" aria-label="View mode"><button class="ghost" data-mode="2d">2D</button><button class="ghost" data-mode="3d" aria-pressed="true">3D</button><button class="ghost" data-mode="parallel">Parallel</button></nav><select id="floorSelect" aria-label="Floor plan"></select><button class="ghost" id="fitView">Fit</button><button class="ghost" id="resetView">Reset</button><button class="ghost" id="drawingsOpen">Drawings</button><button class="ghost" id="analysisOpen">AI review</button></header>
+  <div id="viewport">
   <section id="planPane" aria-label="2D drawing"><div id="planTools"><label>Cut height <input id="planCut" type="number" min="0.1" max="10" step="0.1" value="1.2"> m</label></div><div id="planSurface"></div></section>
-  <div id="stage"></div>
+  <div id="stage"></div><div id="viewDivider" role="separator" tabindex="0" aria-label="Resize parallel views"></div></div>
   <div id="workspaceMessage" role="status">Open a drawing to begin</div>
 
   <div id="banners" aria-live="polite"></div>
 
   <div id="hud">
     <div id="bar" class="floating">
-      <strong>Blueprint Viewer</strong>
+      <strong>Building explorer</strong>
       <button id="addBtn" class="small" type="button">Add files</button>
       <button id="clearBtn" class="small ghost" type="button">Clear</button>
       <div id="status" aria-live="off"></div>
@@ -205,7 +206,7 @@
     </details>
 
     <details id="levelsPanel" class="floating" open>
-      <summary>Levels</summary><div class="row"><button id="levelsAll" class="small ghost">Show all</button><button id="levelsNone" class="small ghost">Hide all</button></div>
+      <summary>Floors &amp; plans</summary><div class="row"><button id="levelsAll" class="small ghost">Show all</button><button id="levelsNone" class="small ghost">Hide all</button></div>
       <ul id="levelList" class="list"></ul>
     </details>
 
@@ -227,7 +228,7 @@
     </details>
   </div>
 
-  <aside id="panel" class="floating" aria-live="polite">
+  <aside id="panel" class="floating" aria-live="polite"><button id="inspectorClose" class="ghost small" aria-label="Close component inspector">&#215;</button><p class="panel-kicker">COMPONENT INFORMATION</p>
     <h2 id="panelTitle"></h2>
     <div id="panelSource"></div>
     <dl id="panelRows"></dl>
@@ -243,6 +244,8 @@
     </div>
   </aside>
 
+  <section id="library" hidden aria-label="Drawing library"><header><div><p class="panel-kicker">PROJECT DOCUMENTS</p><h1>Drawing library</h1><p id="documentCount"></p></div><div><button id="libraryUpload">Add drawings</button><button id="libraryClose" class="ghost">Back to workspace</button></div></header><p id="libraryEmpty">No stored documents yet. Add your first drawing to begin.</p><div id="documentGallery"></div></section>
+  <aside id="analysisPanel" hidden><header><div><p class="panel-kicker">SOURCE-LINKED REVIEW</p><h2>Technical analysis</h2></div><button id="analysisClose" class="ghost" aria-label="Close analysis">&#215;</button></header><select id="analysisBuilding" aria-label="Building to analyse"></select><div id="analysisFacts"></div><div id="chatMessages" aria-live="polite"></div><form id="askForm"><label for="question">Ask about this building</label><textarea id="question" rows="3" required placeholder="Which walls have a fire rating?"></textarea><button id="askButton" type="submit">Ask Stoa</button><small>Answers use the existing analysis agent and the selected building's extracted data.</small></form></aside>
   <script type="module">
     import { Workspace } from './workspace.js';
     import { BlueprintViewer, FIXTURE_STYLE } from './blueprintViewer.js';
@@ -463,7 +466,7 @@
     // ---- inspector -----------------------------------------------------------------------------------------------
     function showSelection(info) {
       const panel = $('panel');
-      if (!info) { panel.classList.remove('open'); return; }
+      if (!info) { panel.classList.remove('open'); document.body.classList.remove('inspector-open'); requestAnimationFrame(()=>viewer?.resize()); return; }
       $('panelTitle').textContent = info.title;
       $('panelSource').textContent = [info.source && `file: ${info.source}`, info.geometry && `geometry: ${info.geometry}`].filter(Boolean).join(' · ');
       const dl = $('panelRows');
@@ -493,7 +496,7 @@
         $('corrScope').replaceChildren(...c.scopes.map((sc) => new Option(`${sc.label} (${sc.key})`, sc.key)));
         $('corrPending').textContent = c.pending ? `corrected in this session: ${c.pending.from} → ${c.pending.to} (${c.pending.key}); download corrections.json and re-run the pipeline to keep it` : '';
       }
-      panel.classList.add('open');
+      panel.classList.add('open'); document.body.classList.add('inspector-open'); requestAnimationFrame(()=>viewer?.resize());
     }
     const workspace = new Workspace({ ensureViewer, render, showSelection });
     window.workspace = workspace;

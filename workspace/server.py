@@ -3,6 +3,7 @@
 Run: python -m workspace.server --port 4600
 Uses the existing Python/Node pipelines; no new runtime dependencies.
 """
+import hashlib
 import argparse
 import json
 import mimetypes
@@ -66,6 +67,10 @@ def run_job(identity):
             meta.update(state="ERROR", error=(stderr or stdout)[-4000:])
         else:
             meta.update(state="READY", buildings=json.loads(stdout.strip().splitlines()[-1]))
+        meta["has_preview"] = (folder / "preview.svg").exists() or (folder / "thumbnail.png").exists()
+        docs = [json.loads(p.read_text(encoding="utf-8")) for p in (folder / "buildings").glob("*.json")]
+        meta["building_names"] = [d.get("project", {}).get("building_name") for d in docs if d.get("project", {}).get("building_name")]
+        meta["floor_names"] = [level["name"] for d in docs for level in d.get("levels", []) if level.get("name")]
         atomic(folder / "document.json", meta)
         job["process"] = None
 
@@ -73,6 +78,10 @@ def run_job(identity):
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(VIEWER), **kwargs)
+
+    def log_message(self, format, *args):
+        if len(args)>1 and str(args[1]).startswith(("4", "5")):
+            super().log_message(format, *args)
 
     def reply(self, value, status=200):
         data = json.dumps(value, ensure_ascii=False).encode()
@@ -117,8 +126,10 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.reply(docs)
             if parts[3] == "source-info":
                 return self.reply(json.loads((folder / "preview.json").read_text(encoding="utf-8")))
-            if parts[3] in ("source", "preview"):
-                file = folder / ("preview.svg" if parts[3] == "preview" else meta["stored_name"])
+            if parts[3] in ("source", "preview", "thumbnail"):
+                file = folder / (meta["stored_name"] if parts[3] == "source" else "preview.svg")
+                if parts[3] == "thumbnail" and (folder / "thumbnail.png").exists():
+                    file = folder / "thumbnail.png"
                 if not file.exists():
                     return self.reply({"error": "Preview not generated"}, 404)
                 data = file.read_bytes()
@@ -150,7 +161,7 @@ class Handler(SimpleHTTPRequestHandler):
                 folder.mkdir(parents=True)
                 stored = "source" + suffix
                 (folder / stored).write_bytes(payload)
-                meta = {"id": identity, "name": name, "stored_name": stored, "type": suffix[1:], "size": len(payload), "state": "UPLOADING", "buildings": [], "error": None}
+                meta = {"id": identity, "name": name, "stored_name": stored, "type": suffix[1:], "size": len(payload), "sha256": hashlib.sha256(payload).hexdigest(), "state": "UPLOADING", "buildings": [], "error": None}
                 with LOCK:
                     atomic(folder / "document.json", meta)
                     JOBS[identity] = {"cancelled": False, "process": None}
@@ -166,7 +177,15 @@ class Handler(SimpleHTTPRequestHandler):
                 validate(document)
                 from answering_agent.agent import answer_question
                 answer = answer_question(str(body["question"]), document)
-                return self.reply({"answer": answer, "building_id": document["building_id"]})
+                result = {"question": str(body["question"]), "answer": answer, "building_id": document["building_id"]}
+                with LOCK:
+                    if not folder.exists():
+                        return self.reply({"error": "Document was removed"}, 409)
+                    history_path = folder / "analysis.json"
+                    history = json.loads(history_path.read_text(encoding="utf-8")) if history_path.exists() else []
+                    history.append(result)
+                    atomic(history_path, history)
+                return self.reply(result)
             return self.reply({"error": "Not found"}, 404)
         except Exception as error:
             return self.reply({"error": str(error)}, 400)

@@ -39,7 +39,7 @@ export function installInspector(workspace){
     return null;
   };
   const render=(entity,collection,index,title)=>{
-    $('panel').classList.add('open');$('panelTitle').textContent=entity?.name??entity?.label??title??'Component';
+    $('panel').classList.add('open');document.body.classList.add('inspector-open');requestAnimationFrame(()=>workspace.viewer?.resize());$('panelTitle').textContent=entity?.name??entity?.label??title??'Component';
     const dl=$('panelRows');dl.replaceChildren();extra.replaceChildren();
     if(!entity){row(dl,'Component information','No validated semantic record is linked to this source element.');return;}
     const type=index.entities.get(entity.type_id)?.entity;
@@ -83,7 +83,8 @@ export function installInspector(workspace){
     const key=workspace.selectedSource;
     if(key){workspace.removedSource.add(key);workspace.filterSource();workspace.selectedSource=null;}
     else {const record=workspace.viewer?.bp.pickIndex.get(workspace.viewer.selected);if(record){workspace.viewer.bp.removedEntities.add(identityOfRecord(record));workspace.viewer.bp.applyEntityVisibility();workspace.viewer.select(null);workspace.syncPlanVisibility();}}
-    $('panel').classList.remove('open');workspace.message('Component removed from this workspace. Original source retained.');
+    $('panel').classList.remove('open');document.body.classList.remove('inspector-open');workspace.viewer?.resize();workspace.message('Component removed from this workspace. Original source retained.');
   };
   restore.onclick=()=>{workspace.removedSource.clear();workspace.filterSource();workspace.viewer?.bp.removedEntities.clear();workspace.viewer?.bp.applyEntityVisibility();workspace.syncPlanVisibility();};
+  const globalRestore=restore.cloneNode(true);globalRestore.id='restoreAllComponents';globalRestore.onclick=restore.onclick;$('controls').append(globalRestore);
 }

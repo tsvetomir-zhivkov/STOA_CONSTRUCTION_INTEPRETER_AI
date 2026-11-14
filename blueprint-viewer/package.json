@@ -3,11 +3,12 @@
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "Static three.js viewer for blueprint-ingest drawing JSON, with real IFC geometry via web-ifc",
+  "description": "Integrated Stoa BIM workspace with 2D/3D source inspection",
   "scripts": {
     "postinstall": "node scripts/vendor.mjs",
-    "start": "npx --yes serve@14.2.4 .",
-    "test": "node --test test/*.test.mjs"
+    "start": "node scripts/start.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check workspace.js && node --check blueprintViewer.js && node --check ifcGeometry.js"
   },
   "dependencies": {
     "web-ifc": "0.0.68"

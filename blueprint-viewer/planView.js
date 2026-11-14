@@ -9,10 +9,10 @@ export class PlanView {
     const shadow=host.attachShadow({mode:'open'});const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./workspace.css',import.meta.url).href;shadow.append(css,this.svg);
     this.nodes=new Map();
     this.svg.addEventListener('wheel',e=>{e.preventDefault();if(!this.box)return;const r=this.svg.getBoundingClientRect(),factor=Math.exp(Math.max(-1,Math.min(1,e.deltaY*.001)));const px=(e.clientX-r.left)/r.width,py=(e.clientY-r.top)/r.height;const [x,y,w,h]=this.box;this.setBox([x+w*px*(1-factor),y+h*py*(1-factor),w*factor,h*factor]);},{passive:false});
-    this.svg.addEventListener('pointerdown',e=>{this.drag={x:e.clientX,y:e.clientY,box:this.box?.slice(),moved:false};this.svg.setPointerCapture(e.pointerId);});
+    this.svg.addEventListener('pointerdown',e=>{this.drag={x:e.clientX,y:e.clientY,box:this.box?.slice(),moved:false,key:e.target.closest('[data-key]')?.dataset.key ?? null};this.svg.setPointerCapture(e.pointerId);});
     this.svg.addEventListener('pointermove',e=>{if(this.drag?.box){const dx=e.clientX-this.drag.x,dy=e.clientY-this.drag.y;this.drag.moved ||= Math.hypot(dx,dy)>4;if(this.drag.moved){const r=this.svg.getBoundingClientRect();const [x,y,w,h]=this.drag.box;this.setBox([x-dx*w/r.width,y-dy*h/r.height,w,h]);}}else this.onHover(e.target.closest('[data-key]')?.dataset.key ?? null);});
-    this.svg.addEventListener('pointerup',e=>{if(this.drag&&!this.drag.moved)this.onSelect(e.target.closest('[data-key]')?.dataset.key ?? null);this.drag=null;});
-    this.svg.addEventListener('keydown',e=>{if(e.key==='Home'){this.fit();e.preventDefault();}if(e.key==='Enter')this.onSelect(document.activeElement?.dataset.key ?? null);});
+    this.svg.addEventListener('pointerup',e=>{if(this.drag&&!this.drag.moved)this.onSelect(this.drag.key);this.drag=null;});
+    this.svg.addEventListener('keydown',e=>{if(e.key==='Home'){this.fit();e.preventDefault();}if(e.key==='Enter')this.onSelect(e.target.closest('[data-key]')?.dataset.key ?? null);});
   }
   setBox(box){this.box=box;this.svg.setAttribute('viewBox',box.join(' '));}
   fit(){if(!this.content)return;const b=this.content.getBBox();if(!b.width&&!b.height)return;const pad=Math.max(b.width,b.height)*.06 || 1;this.setBox([b.x-pad,b.y-pad,b.width+pad*2,b.height+pad*2]);}
