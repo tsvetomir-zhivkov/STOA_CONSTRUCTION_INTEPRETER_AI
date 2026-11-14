@@ -1,0 +1,1308 @@
+{
+  "schema_version": "0.2",
+  "drawing": {
+    "file": "data/ifc_bench/duplex_arc.ifc",
+    "source": "ifc_bench",
+    "page_index": 0,
+    "page_count": null,
+    "part": "t-fdn",
+    "image": {
+      "width_px": 1522,
+      "height_px": 2962,
+      "dpi": null
+    },
+    "route": "ifc",
+    "read_from": "duplex_arc.ifc",
+    "transforms": [
+      {
+        "kind": "affine",
+        "from": "model_units",
+        "to": "page_px",
+        "matrix": [
+          [
+            160,
+            0,
+            56.96
+          ],
+          [
+            0,
+            -160,
+            56.96
+          ]
+        ],
+        "note": "vector source rendered at 160 px per model unit (1 units per metre), y flipped"
+      }
+    ],
+    "scale": {
+      "m_per_px": 0.00625,
+      "source": "vector_units",
+      "confidence": 1
+    },
+    "translator_version": "blueprint-ingest@0.2.0",
+    "created_at": "2026-11-14T03:22:40.203Z"
+  },
+  "levels": [
+    {
+      "id": "level_T_FDN",
+      "confidence": 1,
+      "provenance": {
+        "extractor": "vector_ifc",
+        "source_ref": "1xS3BCk291UvhgP2dvNsgp"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "name": "T/FDN",
+      "elevation_m": -1.25,
+      "height_m": 1.25,
+      "bbox_px": [
+        56.96,
+        56.96,
+        1464.96,
+        2904.96
+      ]
+    }
+  ],
+  "units": [],
+  "rooms": [],
+  "walls": [
+    {
+      "id": "wall_ifc_2O2Fr_t4X7Zf8NOew3FK9N",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_ifc",
+        "source_ref": "2O2Fr$t4X7Zf8NOew3FK9N"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": "level_T_FDN",
+      "flags": [],
+      "properties": {
+        "ifc_type": "IFCWALLSTANDARDCASE",
+        "ifc_name": "Basic Wall:Foundation - Concrete (417mm):140520",
+        "psets": {
+          "Pset_WallCommon": {
+            "Reference": "Basic Wall:Foundation - Concrete (417mm)",
+            "LoadBearing": true,
+            "ExtendToStructure": false,
+            "IsExternal": true
+          },
+          "PSet_Revit_Dimensions": {
+            "Length": 17.38299999999999,
+            "Area": 21.72874999999998,
+            "Volume": 9.06088875
+          },
+          "PSet_Revit_Analytical Model": {
+            "Enable Analytical Model": true
+          },
+          "PSet_Revit_Other": {
+            "InstallationDate": "InstallationDate",
+            "SerialNumber": "SerialNumber",
+            "WarrantyStartDate": "WarrantyStartDate",
+            "BarCode": "BarCode",
+            "AssetIdentifier": "AssetIdentifier",
+            "TagNumber": "TagNumber"
+          },
+          "PSet_Revit_Structural": {
+            "Rebar Cover - Exterior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Interior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Other Faces": "Rebar Cover 1 <0.025>",
+            "Structural Usage": 1
+          },
+          "PSet_Revit_Constraints": {
+            "Location Line": 3,
+            "Base Constraint": "T/FDN",
+            "Base Offset": 0,
+            "Base is Attached": false,
+            "Base Extension Distance": 0,
+            "Top Constraint": "Up to level: Level 1",
+            "Unconnected Height": 1.25,
+            "Top Offset": 0,
+            "Top is Attached": false,
+            "Top Extension Distance": 0,
+            "Room Bounding": true,
+            "Related to Mass": false
+          },
+          "PSet_Revit_Phasing": {
+            "Phase Created": "New Construction"
+          },
+          "PSet_Revit_Type_Other": {
+            "AccessibilityPerformance": "AccessibilityPerformance",
+            "CodePerformance": "CodePerformance",
+            "Color": "Color",
+            "Constituents": "Constituents",
+            "Features": "Features",
+            "Finish": "Finish",
+            "Grade": "Grade",
+            "Material": "Material",
+            "ModelReference": "ModelReference",
+            "NominalHeight": "NominalHeight",
+            "NominalLength": "NominalLength",
+            "NominalWidth": "NominalWidth",
+            "ProductionYear": "ProductionYear",
+            "Reference": "Reference",
+            "Shape": "Shape",
+            "Size": "Size",
+            "SustainabilityPerformance": "SustainabilityPerformance",
+            "WarrantyDescription": "WarrantyDescription",
+            "WarrantyDurationLabor": "WarrantyDurationLabor",
+            "WarrantyDurationParts": "WarrantyDurationParts",
+            "WarrantyGuarantorLabor": "WarrantyGuarantorLabor",
+            "WarrantyGuarantorParts": "WarrantyGuarantorParts",
+            "ExpectedLife": "ExpectedLife",
+            "ReplacementCost": "ReplacementCost",
+            "AssetAccountingType": "FIXED",
+            "Classification Description": "Concrete Structural Walls",
+            "Classification Code": "23-25 30 24 11",
+            "ModelLabel": "ModelLabel"
+          },
+          "PSet_Revit_Type_Graphics": {
+            "Coarse Scale Fill Pattern": "Concrete",
+            "Coarse Scale Fill Color": 0
+          },
+          "PSet_Revit_Type_Construction": {
+            "Wrapping at Inserts": 0,
+            "Wrapping at Ends": 0,
+            "Width": 0.417,
+            "Function": 2
+          },
+          "PSet_Revit_Type_Identity Data": {
+            "Manufacturer": "Manufacturer",
+            "Assembly Description": "",
+            "Assembly Code": ""
+          }
+        },
+        "thickness_px": 66.72
+      },
+      "polyline_px": [
+        [
+          1431.6,
+          123.68
+        ],
+        [
+          1431.6,
+          2904.96
+        ]
+      ],
+      "polygon_px": [
+        [
+          1464.96,
+          2904.96
+        ],
+        [
+          1464.96,
+          123.68
+        ],
+        [
+          1398.24,
+          123.68
+        ],
+        [
+          1398.24,
+          2904.96
+        ]
+      ],
+      "polygon_m": [
+        [
+          9.156,
+          18.156
+        ],
+        [
+          9.156,
+          0.773
+        ],
+        [
+          8.739,
+          0.773
+        ],
+        [
+          8.739,
+          18.156
+        ]
+      ],
+      "length_m": 17.383,
+      "thickness_m": 0.417,
+      "height_m": 1.25,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": true,
+      "is_load_bearing": true,
+      "room_ids": []
+    },
+    {
+      "id": "wall_ifc_2O2Fr_t4X7Zf8NOew3FKE5",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_ifc",
+        "source_ref": "2O2Fr$t4X7Zf8NOew3FKE5"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": "level_T_FDN",
+      "flags": [],
+      "properties": {
+        "ifc_type": "IFCWALLSTANDARDCASE",
+        "ifc_name": "Basic Wall:Foundation - Concrete (417mm):140602",
+        "psets": {
+          "PSet_Revit_Dimensions": {
+            "Length": 17.38299999999999,
+            "Area": 21.20749999999998,
+            "Volume": 8.84352749999999
+          },
+          "Pset_WallCommon": {
+            "Reference": "Basic Wall:Foundation - Concrete (417mm)",
+            "LoadBearing": true,
+            "ExtendToStructure": false,
+            "IsExternal": true
+          },
+          "PSet_Revit_Analytical Model": {
+            "Enable Analytical Model": true
+          },
+          "PSet_Revit_Other": {
+            "InstallationDate": "InstallationDate",
+            "SerialNumber": "SerialNumber",
+            "WarrantyStartDate": "WarrantyStartDate",
+            "BarCode": "BarCode",
+            "AssetIdentifier": "AssetIdentifier",
+            "TagNumber": "TagNumber"
+          },
+          "PSet_Revit_Structural": {
+            "Rebar Cover - Exterior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Interior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Other Faces": "Rebar Cover 1 <0.025>",
+            "Structural Usage": 1
+          },
+          "PSet_Revit_Constraints": {
+            "Location Line": 3,
+            "Base Constraint": "T/FDN",
+            "Base Offset": 0,
+            "Base is Attached": false,
+            "Base Extension Distance": 0,
+            "Top Constraint": "Up to level: Level 1",
+            "Unconnected Height": 1.25,
+            "Top Offset": 0,
+            "Top is Attached": false,
+            "Top Extension Distance": 0,
+            "Room Bounding": true,
+            "Related to Mass": false
+          },
+          "PSet_Revit_Phasing": {
+            "Phase Created": "New Construction"
+          },
+          "PSet_Revit_Type_Other": {
+            "AccessibilityPerformance": "AccessibilityPerformance",
+            "CodePerformance": "CodePerformance",
+            "Color": "Color",
+            "Constituents": "Constituents",
+            "Features": "Features",
+            "Finish": "Finish",
+            "Grade": "Grade",
+            "Material": "Material",
+            "ModelReference": "ModelReference",
+            "NominalHeight": "NominalHeight",
+            "NominalLength": "NominalLength",
+            "NominalWidth": "NominalWidth",
+            "ProductionYear": "ProductionYear",
+            "Reference": "Reference",
+            "Shape": "Shape",
+            "Size": "Size",
+            "SustainabilityPerformance": "SustainabilityPerformance",
+            "WarrantyDescription": "WarrantyDescription",
+            "WarrantyDurationLabor": "WarrantyDurationLabor",
+            "WarrantyDurationParts": "WarrantyDurationParts",
+            "WarrantyGuarantorLabor": "WarrantyGuarantorLabor",
+            "WarrantyGuarantorParts": "WarrantyGuarantorParts",
+            "ExpectedLife": "ExpectedLife",
+            "ReplacementCost": "ReplacementCost",
+            "AssetAccountingType": "FIXED",
+            "Classification Description": "Concrete Structural Walls",
+            "Classification Code": "23-25 30 24 11",
+            "ModelLabel": "ModelLabel"
+          },
+          "PSet_Revit_Type_Graphics": {
+            "Coarse Scale Fill Pattern": "Concrete",
+            "Coarse Scale Fill Color": 0
+          },
+          "PSet_Revit_Type_Construction": {
+            "Wrapping at Inserts": 0,
+            "Wrapping at Ends": 0,
+            "Width": 0.417,
+            "Function": 2
+          },
+          "PSet_Revit_Type_Identity Data": {
+            "Manufacturer": "Manufacturer",
+            "Assembly Description": "",
+            "Assembly Code": ""
+          }
+        },
+        "thickness_px": 66.72
+      },
+      "polyline_px": [
+        [
+          90.32,
+          2838.24
+        ],
+        [
+          90.32,
+          123.68
+        ]
+      ],
+      "polygon_px": [
+        [
+          56.96,
+          123.68
+        ],
+        [
+          56.96,
+          2838.24
+        ],
+        [
+          123.68,
+          2838.24
+        ],
+        [
+          123.68,
+          123.68
+        ]
+      ],
+      "polygon_m": [
+        [
+          0.356,
+          0.773
+        ],
+        [
+          0.356,
+          17.739
+        ],
+        [
+          0.773,
+          17.739
+        ],
+        [
+          0.773,
+          0.773
+        ]
+      ],
+      "length_m": 16.966,
+      "thickness_m": 0.417,
+      "height_m": 1.25,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": true,
+      "is_load_bearing": true,
+      "room_ids": []
+    },
+    {
+      "id": "wall_ifc_2O2Fr_t4X7Zf8NOew3FK1b",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_ifc",
+        "source_ref": "2O2Fr$t4X7Zf8NOew3FK1b"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": "level_T_FDN",
+      "flags": [],
+      "properties": {
+        "ifc_type": "IFCWALLSTANDARDCASE",
+        "ifc_name": "Basic Wall:Foundation - Concrete (435mm):141018",
+        "psets": {
+          "PSet_Revit_Structural": {
+            "Rebar Cover - Exterior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Interior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Other Faces": "Rebar Cover 1 <0.025>",
+            "Structural Usage": 1
+          },
+          "PSet_Revit_Dimensions": {
+            "Length": 2.200000000000026,
+            "Area": 1.982095000000031,
+            "Volume": 0.8622113250000139
+          },
+          "PSet_Revit_Constraints": {
+            "Location Line": 0,
+            "Base Constraint": "T/FDN",
+            "Base Offset": 0,
+            "Base is Attached": false,
+            "Base Extension Distance": 0,
+            "Top Constraint": "Up to level: Level 1",
+            "Unconnected Height": 1.123,
+            "Top Offset": -0.127,
+            "Top is Attached": false,
+            "Top Extension Distance": 0,
+            "Room Bounding": true,
+            "Related to Mass": false
+          },
+          "PSet_Revit_Other": {
+            "InstallationDate": "InstallationDate",
+            "SerialNumber": "SerialNumber",
+            "WarrantyStartDate": "WarrantyStartDate",
+            "BarCode": "BarCode",
+            "AssetIdentifier": "AssetIdentifier",
+            "TagNumber": "TagNumber"
+          },
+          "PSet_Revit_Phasing": {
+            "Phase Created": "New Construction"
+          },
+          "PSet_Revit_Analytical Model": {
+            "Enable Analytical Model": true
+          },
+          "Pset_WallCommon": {
+            "Reference": "Basic Wall:Foundation - Concrete (435mm)",
+            "LoadBearing": true,
+            "ExtendToStructure": false,
+            "IsExternal": true
+          },
+          "PSet_Revit_Type_Construction": {
+            "Wrapping at Inserts": 0,
+            "Wrapping at Ends": 0,
+            "Width": 0.435,
+            "Function": 2
+          },
+          "PSet_Revit_Type_Other": {
+            "AccessibilityPerformance": "AccessibilityPerformance",
+            "CodePerformance": "CodePerformance",
+            "Color": "Color",
+            "Constituents": "Constituents",
+            "Features": "Features",
+            "Finish": "Finish",
+            "Grade": "Grade",
+            "Material": "Material",
+            "ModelReference": "ModelReference",
+            "NominalHeight": "NominalHeight",
+            "NominalLength": "NominalLength",
+            "NominalWidth": "NominalWidth",
+            "ProductionYear": "ProductionYear",
+            "Reference": "Reference",
+            "Shape": "Shape",
+            "Size": "Size",
+            "SustainabilityPerformance": "SustainabilityPerformance",
+            "WarrantyDescription": "WarrantyDescription",
+            "WarrantyDurationLabor": "WarrantyDurationLabor",
+            "WarrantyDurationParts": "WarrantyDurationParts",
+            "WarrantyGuarantorLabor": "WarrantyGuarantorLabor",
+            "WarrantyGuarantorParts": "WarrantyGuarantorParts",
+            "ExpectedLife": "ExpectedLife",
+            "ReplacementCost": "ReplacementCost",
+            "AssetAccountingType": "FIXED",
+            "Classification Description": "Concrete Structural Walls",
+            "Classification Code": "23-25 30 24 11",
+            "ModelLabel": "ModelLabel"
+          },
+          "PSet_Revit_Type_Identity Data": {
+            "Manufacturer": "Manufacturer",
+            "Assembly Description": "",
+            "Assembly Code": ""
+          },
+          "PSet_Revit_Type_Graphics": {
+            "Coarse Scale Fill Pattern": "Concrete",
+            "Coarse Scale Fill Color": 0
+          }
+        },
+        "thickness_px": 69.6
+      },
+      "polyline_px": [
+        [
+          760.96,
+          1622.16
+        ],
+        [
+          760.96,
+          1339.76
+        ]
+      ],
+      "polygon_px": [
+        [
+          726.16,
+          1339.76
+        ],
+        [
+          726.16,
+          1622.16
+        ],
+        [
+          795.76,
+          1622.16
+        ],
+        [
+          795.76,
+          1339.76
+        ]
+      ],
+      "polygon_m": [
+        [
+          4.539,
+          8.374
+        ],
+        [
+          4.539,
+          10.139
+        ],
+        [
+          4.974,
+          10.139
+        ],
+        [
+          4.974,
+          8.374
+        ]
+      ],
+      "length_m": 1.765,
+      "thickness_m": 0.435,
+      "height_m": 1.123,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": true,
+      "is_load_bearing": true,
+      "room_ids": []
+    },
+    {
+      "id": "wall_ifc_2O2Fr_t4X7Zf8NOew3FK3E",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_ifc",
+        "source_ref": "2O2Fr$t4X7Zf8NOew3FK3E"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": "level_T_FDN",
+      "flags": [],
+      "properties": {
+        "ifc_type": "IFCWALLSTANDARDCASE",
+        "ifc_name": "Basic Wall:Foundation - Concrete (435mm):140913",
+        "psets": {
+          "Pset_WallCommon": {
+            "Reference": "Basic Wall:Foundation - Concrete (435mm)",
+            "LoadBearing": true,
+            "ExtendToStructure": false,
+            "IsExternal": true
+          },
+          "PSet_Revit_Constraints": {
+            "Location Line": 0,
+            "Base Constraint": "T/FDN",
+            "Base Offset": 0,
+            "Base is Attached": false,
+            "Base Extension Distance": 0,
+            "Top Constraint": "Up to level: Level 1",
+            "Unconnected Height": 1.25,
+            "Top Offset": 0,
+            "Top is Attached": false,
+            "Top Extension Distance": 0,
+            "Room Bounding": true,
+            "Related to Mass": false
+          },
+          "PSet_Revit_Structural": {
+            "Rebar Cover - Exterior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Interior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Other Faces": "Rebar Cover 1 <0.025>",
+            "Structural Usage": 1
+          },
+          "PSet_Revit_Other": {
+            "InstallationDate": "InstallationDate",
+            "SerialNumber": "SerialNumber",
+            "WarrantyStartDate": "WarrantyStartDate",
+            "BarCode": "BarCode",
+            "AssetIdentifier": "AssetIdentifier",
+            "TagNumber": "TagNumber"
+          },
+          "PSet_Revit_Dimensions": {
+            "Length": 4.191499999999992,
+            "Area": 5.250624999999992,
+            "Volume": 2.284021874999995
+          },
+          "PSet_Revit_Analytical Model": {
+            "Enable Analytical Model": true
+          },
+          "PSet_Revit_Phasing": {
+            "Phase Created": "New Construction"
+          },
+          "PSet_Revit_Type_Construction": {
+            "Wrapping at Inserts": 0,
+            "Wrapping at Ends": 0,
+            "Width": 0.435,
+            "Function": 2
+          },
+          "PSet_Revit_Type_Other": {
+            "AccessibilityPerformance": "AccessibilityPerformance",
+            "CodePerformance": "CodePerformance",
+            "Color": "Color",
+            "Constituents": "Constituents",
+            "Features": "Features",
+            "Finish": "Finish",
+            "Grade": "Grade",
+            "Material": "Material",
+            "ModelReference": "ModelReference",
+            "NominalHeight": "NominalHeight",
+            "NominalLength": "NominalLength",
+            "NominalWidth": "NominalWidth",
+            "ProductionYear": "ProductionYear",
+            "Reference": "Reference",
+            "Shape": "Shape",
+            "Size": "Size",
+            "SustainabilityPerformance": "SustainabilityPerformance",
+            "WarrantyDescription": "WarrantyDescription",
+            "WarrantyDurationLabor": "WarrantyDurationLabor",
+            "WarrantyDurationParts": "WarrantyDurationParts",
+            "WarrantyGuarantorLabor": "WarrantyGuarantorLabor",
+            "WarrantyGuarantorParts": "WarrantyGuarantorParts",
+            "ExpectedLife": "ExpectedLife",
+            "ReplacementCost": "ReplacementCost",
+            "AssetAccountingType": "FIXED",
+            "Classification Description": "Concrete Structural Walls",
+            "Classification Code": "23-25 30 24 11",
+            "ModelLabel": "ModelLabel"
+          },
+          "PSet_Revit_Type_Identity Data": {
+            "Manufacturer": "Manufacturer",
+            "Assembly Description": "",
+            "Assembly Code": ""
+          },
+          "PSet_Revit_Type_Graphics": {
+            "Coarse Scale Fill Pattern": "Concrete",
+            "Coarse Scale Fill Color": 0
+          }
+        },
+        "thickness_px": 69.6
+      },
+      "polyline_px": [
+        [
+          1398.24,
+          1304.96
+        ],
+        [
+          726.16,
+          1304.96
+        ]
+      ],
+      "polygon_px": [
+        [
+          726.16,
+          1339.76
+        ],
+        [
+          1398.24,
+          1339.76
+        ],
+        [
+          1398.24,
+          1270.16
+        ],
+        [
+          726.16,
+          1270.16
+        ]
+      ],
+      "polygon_m": [
+        [
+          4.539,
+          8.374
+        ],
+        [
+          8.739,
+          8.374
+        ],
+        [
+          8.739,
+          7.939
+        ],
+        [
+          4.539,
+          7.939
+        ]
+      ],
+      "length_m": 4.201,
+      "thickness_m": 0.435,
+      "height_m": 1.25,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": true,
+      "is_load_bearing": true,
+      "room_ids": []
+    },
+    {
+      "id": "wall_ifc_2O2Fr_t4X7Zf8NOew3FK80",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_ifc",
+        "source_ref": "2O2Fr$t4X7Zf8NOew3FK80"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": "level_T_FDN",
+      "flags": [],
+      "properties": {
+        "ifc_type": "IFCWALLSTANDARDCASE",
+        "ifc_name": "Basic Wall:Foundation - Concrete (417mm):140479",
+        "psets": {
+          "Pset_WallCommon": {
+            "Reference": "Basic Wall:Foundation - Concrete (417mm)",
+            "LoadBearing": true,
+            "ExtendToStructure": false,
+            "IsExternal": true
+          },
+          "PSet_Revit_Phasing": {
+            "Phase Created": "New Construction"
+          },
+          "PSet_Revit_Constraints": {
+            "Location Line": 3,
+            "Base Constraint": "T/FDN",
+            "Base Offset": 0,
+            "Base is Attached": false,
+            "Base Extension Distance": 0,
+            "Top Constraint": "Up to level: Level 1",
+            "Unconnected Height": 1.25,
+            "Top Offset": 0,
+            "Top is Attached": false,
+            "Top Extension Distance": 0,
+            "Room Bounding": true,
+            "Related to Mass": false
+          },
+          "PSet_Revit_Structural": {
+            "Rebar Cover - Exterior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Interior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Other Faces": "Rebar Cover 1 <0.025>",
+            "Structural Usage": 1
+          },
+          "PSet_Revit_Other": {
+            "InstallationDate": "InstallationDate",
+            "SerialNumber": "SerialNumber",
+            "WarrantyStartDate": "WarrantyStartDate",
+            "BarCode": "BarCode",
+            "AssetIdentifier": "AssetIdentifier",
+            "TagNumber": "TagNumber"
+          },
+          "PSet_Revit_Analytical Model": {
+            "Enable Analytical Model": true
+          },
+          "PSet_Revit_Dimensions": {
+            "Length": 8.383000000000003,
+            "Area": 11,
+            "Volume": 4.587000000000002
+          },
+          "PSet_Revit_Type_Other": {
+            "AccessibilityPerformance": "AccessibilityPerformance",
+            "CodePerformance": "CodePerformance",
+            "Color": "Color",
+            "Constituents": "Constituents",
+            "Features": "Features",
+            "Finish": "Finish",
+            "Grade": "Grade",
+            "Material": "Material",
+            "ModelReference": "ModelReference",
+            "NominalHeight": "NominalHeight",
+            "NominalLength": "NominalLength",
+            "NominalWidth": "NominalWidth",
+            "ProductionYear": "ProductionYear",
+            "Reference": "Reference",
+            "Shape": "Shape",
+            "Size": "Size",
+            "SustainabilityPerformance": "SustainabilityPerformance",
+            "WarrantyDescription": "WarrantyDescription",
+            "WarrantyDurationLabor": "WarrantyDurationLabor",
+            "WarrantyDurationParts": "WarrantyDurationParts",
+            "WarrantyGuarantorLabor": "WarrantyGuarantorLabor",
+            "WarrantyGuarantorParts": "WarrantyGuarantorParts",
+            "ExpectedLife": "ExpectedLife",
+            "ReplacementCost": "ReplacementCost",
+            "AssetAccountingType": "FIXED",
+            "Classification Description": "Concrete Structural Walls",
+            "Classification Code": "23-25 30 24 11",
+            "ModelLabel": "ModelLabel"
+          },
+          "PSet_Revit_Type_Graphics": {
+            "Coarse Scale Fill Pattern": "Concrete",
+            "Coarse Scale Fill Color": 0
+          },
+          "PSet_Revit_Type_Construction": {
+            "Wrapping at Inserts": 0,
+            "Wrapping at Ends": 0,
+            "Width": 0.417,
+            "Function": 2
+          },
+          "PSet_Revit_Type_Identity Data": {
+            "Manufacturer": "Manufacturer",
+            "Assembly Description": "",
+            "Assembly Code": ""
+          }
+        },
+        "thickness_px": 66.72
+      },
+      "polyline_px": [
+        [
+          56.96,
+          90.32
+        ],
+        [
+          1464.96,
+          90.32
+        ]
+      ],
+      "polygon_px": [
+        [
+          1464.96,
+          56.96
+        ],
+        [
+          56.96,
+          56.96
+        ],
+        [
+          56.96,
+          123.68
+        ],
+        [
+          1464.96,
+          123.68
+        ]
+      ],
+      "polygon_m": [
+        [
+          9.156,
+          0.356
+        ],
+        [
+          0.356,
+          0.356
+        ],
+        [
+          0.356,
+          0.773
+        ],
+        [
+          9.156,
+          0.773
+        ]
+      ],
+      "length_m": 8.8,
+      "thickness_m": 0.417,
+      "height_m": 1.25,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": true,
+      "is_load_bearing": true,
+      "room_ids": []
+    },
+    {
+      "id": "wall_ifc_2O2Fr_t4X7Zf8NOew3FKEr",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_ifc",
+        "source_ref": "2O2Fr$t4X7Zf8NOew3FKEr"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": "level_T_FDN",
+      "flags": [],
+      "properties": {
+        "ifc_type": "IFCWALLSTANDARDCASE",
+        "ifc_name": "Basic Wall:Foundation - Concrete (417mm):140554",
+        "psets": {
+          "PSet_Revit_Analytical Model": {
+            "Enable Analytical Model": true
+          },
+          "PSet_Revit_Phasing": {
+            "Phase Created": "New Construction"
+          },
+          "PSet_Revit_Constraints": {
+            "Location Line": 3,
+            "Base Constraint": "T/FDN",
+            "Base Offset": 0,
+            "Base is Attached": false,
+            "Base Extension Distance": 0,
+            "Top Constraint": "Up to level: Level 1",
+            "Unconnected Height": 1.25,
+            "Top Offset": 0,
+            "Top is Attached": false,
+            "Top Extension Distance": 0,
+            "Room Bounding": true,
+            "Related to Mass": false
+          },
+          "PSet_Revit_Dimensions": {
+            "Length": 8.382999999999976,
+            "Area": 10.47874999999997,
+            "Volume": 4.36963874999999
+          },
+          "PSet_Revit_Other": {
+            "InstallationDate": "InstallationDate",
+            "SerialNumber": "SerialNumber",
+            "WarrantyStartDate": "WarrantyStartDate",
+            "BarCode": "BarCode",
+            "AssetIdentifier": "AssetIdentifier",
+            "TagNumber": "TagNumber"
+          },
+          "Pset_WallCommon": {
+            "Reference": "Basic Wall:Foundation - Concrete (417mm)",
+            "LoadBearing": true,
+            "ExtendToStructure": false,
+            "IsExternal": true
+          },
+          "PSet_Revit_Structural": {
+            "Rebar Cover - Exterior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Interior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Other Faces": "Rebar Cover 1 <0.025>",
+            "Structural Usage": 1
+          },
+          "PSet_Revit_Type_Other": {
+            "AccessibilityPerformance": "AccessibilityPerformance",
+            "CodePerformance": "CodePerformance",
+            "Color": "Color",
+            "Constituents": "Constituents",
+            "Features": "Features",
+            "Finish": "Finish",
+            "Grade": "Grade",
+            "Material": "Material",
+            "ModelReference": "ModelReference",
+            "NominalHeight": "NominalHeight",
+            "NominalLength": "NominalLength",
+            "NominalWidth": "NominalWidth",
+            "ProductionYear": "ProductionYear",
+            "Reference": "Reference",
+            "Shape": "Shape",
+            "Size": "Size",
+            "SustainabilityPerformance": "SustainabilityPerformance",
+            "WarrantyDescription": "WarrantyDescription",
+            "WarrantyDurationLabor": "WarrantyDurationLabor",
+            "WarrantyDurationParts": "WarrantyDurationParts",
+            "WarrantyGuarantorLabor": "WarrantyGuarantorLabor",
+            "WarrantyGuarantorParts": "WarrantyGuarantorParts",
+            "ExpectedLife": "ExpectedLife",
+            "ReplacementCost": "ReplacementCost",
+            "AssetAccountingType": "FIXED",
+            "Classification Description": "Concrete Structural Walls",
+            "Classification Code": "23-25 30 24 11",
+            "ModelLabel": "ModelLabel"
+          },
+          "PSet_Revit_Type_Graphics": {
+            "Coarse Scale Fill Pattern": "Concrete",
+            "Coarse Scale Fill Color": 0
+          },
+          "PSet_Revit_Type_Construction": {
+            "Wrapping at Inserts": 0,
+            "Wrapping at Ends": 0,
+            "Width": 0.417,
+            "Function": 2
+          },
+          "PSet_Revit_Type_Identity Data": {
+            "Manufacturer": "Manufacturer",
+            "Assembly Description": "",
+            "Assembly Code": ""
+          }
+        },
+        "thickness_px": 66.72
+      },
+      "polyline_px": [
+        [
+          1398.24,
+          2871.6
+        ],
+        [
+          56.96,
+          2871.6
+        ]
+      ],
+      "polygon_px": [
+        [
+          56.96,
+          2904.96
+        ],
+        [
+          1398.24,
+          2904.96
+        ],
+        [
+          1398.24,
+          2838.24
+        ],
+        [
+          56.96,
+          2838.24
+        ]
+      ],
+      "polygon_m": [
+        [
+          0.356,
+          18.156
+        ],
+        [
+          8.739,
+          18.156
+        ],
+        [
+          8.739,
+          17.739
+        ],
+        [
+          0.356,
+          17.739
+        ]
+      ],
+      "length_m": 8.383,
+      "thickness_m": 0.417,
+      "height_m": 1.25,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": true,
+      "is_load_bearing": true,
+      "room_ids": []
+    },
+    {
+      "id": "wall_ifc_2O2Fr_t4X7Zf8NOew3FK04",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_ifc",
+        "source_ref": "2O2Fr$t4X7Zf8NOew3FK04"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": "level_T_FDN",
+      "flags": [],
+      "properties": {
+        "ifc_type": "IFCWALLSTANDARDCASE",
+        "ifc_name": "Basic Wall:Foundation - Concrete (435mm):140987",
+        "psets": {
+          "Pset_WallCommon": {
+            "Reference": "Basic Wall:Foundation - Concrete (435mm)",
+            "LoadBearing": true,
+            "ExtendToStructure": false,
+            "IsExternal": true
+          },
+          "PSet_Revit_Dimensions": {
+            "Length": 4.191499999999992,
+            "Area": 5.25062499999999,
+            "Volume": 2.284021875
+          },
+          "PSet_Revit_Constraints": {
+            "Location Line": 0,
+            "Base Constraint": "T/FDN",
+            "Base Offset": 0,
+            "Base is Attached": false,
+            "Base Extension Distance": 0,
+            "Top Constraint": "Up to level: Level 1",
+            "Unconnected Height": 1.25,
+            "Top Offset": 0,
+            "Top is Attached": false,
+            "Top Extension Distance": 0,
+            "Room Bounding": true,
+            "Related to Mass": false
+          },
+          "PSet_Revit_Structural": {
+            "Rebar Cover - Exterior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Interior Face": "Rebar Cover 1 <0.025>",
+            "Rebar Cover - Other Faces": "Rebar Cover 1 <0.025>",
+            "Structural Usage": 1
+          },
+          "PSet_Revit_Analytical Model": {
+            "Enable Analytical Model": true
+          },
+          "PSet_Revit_Other": {
+            "InstallationDate": "InstallationDate",
+            "SerialNumber": "SerialNumber",
+            "WarrantyStartDate": "WarrantyStartDate",
+            "BarCode": "BarCode",
+            "AssetIdentifier": "AssetIdentifier",
+            "TagNumber": "TagNumber"
+          },
+          "PSet_Revit_Phasing": {
+            "Phase Created": "New Construction"
+          },
+          "PSet_Revit_Type_Construction": {
+            "Wrapping at Inserts": 0,
+            "Wrapping at Ends": 0,
+            "Width": 0.435,
+            "Function": 2
+          },
+          "PSet_Revit_Type_Other": {
+            "AccessibilityPerformance": "AccessibilityPerformance",
+            "CodePerformance": "CodePerformance",
+            "Color": "Color",
+            "Constituents": "Constituents",
+            "Features": "Features",
+            "Finish": "Finish",
+            "Grade": "Grade",
+            "Material": "Material",
+            "ModelReference": "ModelReference",
+            "NominalHeight": "NominalHeight",
+            "NominalLength": "NominalLength",
+            "NominalWidth": "NominalWidth",
+            "ProductionYear": "ProductionYear",
+            "Reference": "Reference",
+            "Shape": "Shape",
+            "Size": "Size",
+            "SustainabilityPerformance": "SustainabilityPerformance",
+            "WarrantyDescription": "WarrantyDescription",
+            "WarrantyDurationLabor": "WarrantyDurationLabor",
+            "WarrantyDurationParts": "WarrantyDurationParts",
+            "WarrantyGuarantorLabor": "WarrantyGuarantorLabor",
+            "WarrantyGuarantorParts": "WarrantyGuarantorParts",
+            "ExpectedLife": "ExpectedLife",
+            "ReplacementCost": "ReplacementCost",
+            "AssetAccountingType": "FIXED",
+            "Classification Description": "Concrete Structural Walls",
+            "Classification Code": "23-25 30 24 11",
+            "ModelLabel": "ModelLabel"
+          },
+          "PSet_Revit_Type_Identity Data": {
+            "Manufacturer": "Manufacturer",
+            "Assembly Description": "",
+            "Assembly Code": ""
+          },
+          "PSet_Revit_Type_Graphics": {
+            "Coarse Scale Fill Pattern": "Concrete",
+            "Coarse Scale Fill Color": 0
+          }
+        },
+        "thickness_px": 69.6
+      },
+      "polyline_px": [
+        [
+          123.68,
+          1656.96
+        ],
+        [
+          795.76,
+          1656.96
+        ]
+      ],
+      "polygon_px": [
+        [
+          795.76,
+          1622.16
+        ],
+        [
+          123.68,
+          1622.16
+        ],
+        [
+          123.68,
+          1691.76
+        ],
+        [
+          795.76,
+          1691.76
+        ]
+      ],
+      "polygon_m": [
+        [
+          4.974,
+          10.139
+        ],
+        [
+          0.773,
+          10.139
+        ],
+        [
+          0.773,
+          10.574
+        ],
+        [
+          4.974,
+          10.574
+        ]
+      ],
+      "length_m": 4.201,
+      "thickness_m": 0.435,
+      "height_m": 1.25,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": true,
+      "is_load_bearing": true,
+      "room_ids": []
+    }
+  ],
+  "openings": [],
+  "objects": [],
+  "texts": [],
+  "edges": [],
+  "coverage": [
+    {
+      "category": "rooms",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_ifc",
+      "confidence": 0.95,
+      "note": "IFC contains no IfcSpace elements for this storey"
+    },
+    {
+      "category": "walls",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_ifc",
+      "confidence": 0.95
+    },
+    {
+      "category": "doors",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_ifc",
+      "confidence": 0.95
+    },
+    {
+      "category": "windows",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_ifc",
+      "confidence": 0.95
+    },
+    {
+      "category": "stairs",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_ifc",
+      "confidence": 0.9
+    },
+    {
+      "category": "fixtures",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_ifc",
+      "confidence": 0.8
+    },
+    {
+      "category": "scale",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_ifc",
+      "confidence": 1,
+      "note": "exact: from IFC length units"
+    },
+    {
+      "category": "text",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_ifc",
+      "confidence": 0.5,
+      "note": "IFC carries no drawing text"
+    },
+    {
+      "category": "dimensions",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_ifc",
+      "confidence": 0.5,
+      "note": "IFC carries no dimension annotations"
+    },
+    {
+      "category": "symbols",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_ifc",
+      "confidence": 0.5
+    },
+    {
+      "category": "legend",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_ifc",
+      "confidence": 0.5
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-11-14T03:22:40.203Z",
+      "extractor": "vector_ifc",
+      "action": "extract",
+      "note": "IFC STEP extractor (streaming) IFC2X3: 0 rooms, 7 walls, 0 openings, 0 objects, 0 texts, 0 units, 1 levels; 0 room name(s) via glossary/geometry",
+      "cost_usd": 0
+    }
+  ]
+}

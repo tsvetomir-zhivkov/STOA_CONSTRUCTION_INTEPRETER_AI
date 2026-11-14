@@ -1,0 +1,29 @@
+{
+  "name": "stoa_construction_intepreter_ai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tsvetomir-zhivkov/STOA_CONSTRUCTION_INTEPRETER_AI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tsvetomir-zhivkov/STOA_CONSTRUCTION_INTEPRETER_AI/issues"
+  },
+  "homepage": "https://github.com/tsvetomir-zhivkov/STOA_CONSTRUCTION_INTEPRETER_AI#readme",
+  "type": "module",
+  "dependencies": {
+    "@google/genai": "^3.3.0",
+    "dotenv": "^18.0.10",
+    "dxf-parser": "^1.1.2",
+    "pdfjs-dist": "^6.5.438",
+    "sharp": "^0.35.5",
+    "web-ifc": "^0.0.79"
+  }
+}

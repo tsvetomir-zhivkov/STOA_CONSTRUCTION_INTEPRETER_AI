@@ -1,5 +1,7 @@
 # dataset lives outside the repo (set STOA_DATA); ignore it if copied in
 data/
+.env
+node_modules
 questions.jsonl
 # generated outputs: regenerate with python -m translator --source <name>
 index/
