@@ -66,6 +66,9 @@ export function liftToV03(doc02, ctx) {
   const systemsByKey = new Map((bim?.systems ?? []).map((s) => [s.key, s]));
   const systemMembers = new Map();
   let unresolvedRefs = 0;
+  const unresolvedByClass = new Map(); // ifc class -> boundary references recorded in rooms[].properties.unresolved_references
+  const bundleByKey = new Map();
+  for (const k of ['rooms', 'walls', 'openings', 'objects']) for (const el of bundle[k] ?? []) bundleByKey.set(el.key, el);
 
   const elementsOf = (coll) => (coll === 'rooms' ? bundle.rooms : coll === 'walls' ? bundle.walls : coll === 'openings' ? bundle.openings : bundle.objects);
   for (const coll of ['rooms', 'walls', 'openings', 'objects']) {
@@ -94,10 +97,21 @@ export function liftToV03(doc02, ctx) {
         unresolvedRefs += x.roomKeys.length - rids.length;
         e.room_ids = [...new Set([...(e.room_ids ?? []), ...rids])];
       }
-      if (coll === 'rooms' && x.boundaryKeys?.length) {
-        const bids = x.boundaryKeys.map((k) => keyToId.get(k)).filter(Boolean);
-        unresolvedRefs += x.boundaryKeys.length - bids.length;
+      if (coll === 'rooms' && (x.boundaryKeys?.length || x.unresolvedBoundaries?.length)) {
+        const bids = [];
+        const unresolved = (x.unresolvedBoundaries ?? []).map((u) => unresolvedReference('boundary_element_ids', u));
+        for (const k of x.boundaryKeys ?? []) {
+          const id = keyToId.get(k);
+          if (id) { bids.push(id); continue; }
+          // emitted by the extractor but not in this document (e.g. a v0.2-only filter): recorded, not dropped
+          const t = bundleByKey.get(k)?.v03;
+          unresolved.push(unresolvedReference('boundary_element_ids', { globalId: t?.globalId ?? null, ifcClass: t?.ifcClass ?? null, reason: 'not_in_document' }));
+        }
         e.boundary_element_ids = [...new Set(bids)];
+        if (unresolved.length) {
+          (e.properties ??= {}).unresolved_references = unresolved;
+          for (const u of unresolved) unresolvedByClass.set(u.ifc_class ?? 'unknown', (unresolvedByClass.get(u.ifc_class ?? 'unknown') ?? 0) + 1);
+        }
       }
       if (coll === 'rooms' && x.finishes) {
         e.finishes = {};
@@ -196,8 +210,13 @@ export function liftToV03(doc02, ctx) {
 
   // ---- coverage of the v0.3 categories -----------------------------------------------------------------------------------------
   for (const c of bim?.coverage ?? bundle.coverageV03 ?? []) {
-    const note = c.category === 'relationships' && (dropped || unresolvedRefs)
-      ? [c.note, `${dropped} relationship(s) and ${unresolvedRefs} reference(s) point outside this document (other building, or an element that is not emitted)`].filter(Boolean).join('; ')
+    const nBoundary = [...unresolvedByClass.values()].reduce((a, b) => a + b, 0);
+    const note = c.category === 'relationships' && (dropped || unresolvedRefs || nBoundary)
+      ? [
+        c.note,
+        dropped || unresolvedRefs ? `${dropped} relationship(s) and ${unresolvedRefs} reference(s) point outside this document (other building, or an element that is not emitted)` : null,
+        nBoundary ? `${nBoundary} space-boundary reference(s) to elements not emitted, listed in rooms[].properties.unresolved_references (${[...unresolvedByClass].sort().map(([k, n]) => `${k} ${n}`).join(', ')})` : null,
+      ].filter(Boolean).join('; ')
       : c.note;
     const entry = { category: c.category, region: 'page', status: c.status, extractor: bundle.extractor.id, confidence: c.confidence, ...(note ? { note } : {}) };
     const i = d.coverage.findIndex((x) => x.category === c.category);
@@ -209,6 +228,20 @@ export function liftToV03(doc02, ctx) {
   d.schedules = buildSchedules(d);
   d.statistics = buildStatistics(d);
   return d;
+}
+
+/**
+ * One structured record of a reference that is not in the document: the referencing field, the target's GlobalId and
+ * IFC class, and why it is not there. It is stored in the referencing entity's properties.unresolved_references, so the
+ * id list stays strictly valid and nothing is silently lost.
+ * @param {string} field e.g. 'boundary_element_ids'
+ * @param {{ globalId?: string|null, ifcClass?: string|null, expressId?: number, reason: string, detail?: string }} ref
+ */
+export function unresolvedReference(field, ref) {
+  return {
+    field, global_id: ref.globalId ?? null, ifc_class: ref.ifcClass ?? null,
+    ...(ref.expressId != null ? { express_id: ref.expressId } : {}), reason: ref.reason, ...(ref.detail ? { detail: ref.detail } : {}),
+  };
 }
 
 export { unknownUnit };

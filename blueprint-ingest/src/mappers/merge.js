@@ -3,7 +3,9 @@
  *
  * Rules
  *  - nothing is ever deleted: a better duplicate SUPERSEDES the old entity (status 'superseded', superseded_by) so history stays visible
- *  - same entity (bbox IoU >= duplicateIou, same kind/category) and not clearly better -> existing wins, only its EMPTY fields are filled
+ *  - identity: same GlobalId = same entity; different GlobalIds are never the same entity; otherwise bbox IoU >= duplicateIou,
+ *    same kind/category and same level. Twins are existing entities only (never another entity of the incoming document)
+ *  - same entity and not clearly better -> existing wins, only its EMPTY fields are filled
  *  - clearly better = confidence higher by at least `supersedeMargin`
  *  - texts: identical text at the same place is the same text; a role upgrades a text that has none
  *  - levels: same name = same level; units: same label = same unit
@@ -77,111 +79,127 @@ export function mergeDocuments(existing, incoming, cfg, opts = {}) {
     usedIds.add(nid);
     return nid;
   };
-  const addNew = (key, el) => {
-    const nid = freshId(el.id);
-    idMap.set(el.id, nid);
-    doc[key].push({ ...el, id: nid });
-    report.added.push(nid);
-    return nid;
-  };
+  // Three phases, so that every id reference copied out of the incoming document is remapped exactly once and only after
+  // EVERY identity is known: (1) decide, per incoming entity, add / fill its twin / supersede its twin, and fix the final id;
+  // (2) remap all references inside the incoming entities; (3) apply. Copying a reference before (2) (as fillEmpty did)
+  // leaves an incoming id that no longer exists; remapping twice can chain one id into another.
+  /** @type {Array<{ key: string, el: any, op: 'add'|'fill'|'supersede', twin?: any, nid?: string }>} */
+  const plan = [];
+  const planAdd = (key, el) => { const nid = freshId(el.id); idMap.set(el.id, nid); plan.push({ key, el, op: 'add', nid }); };
+  const planFill = (key, el, twin) => { idMap.set(el.id, twin.id); plan.push({ key, el, op: 'fill', twin }); };
 
-  // ---- levels / units: identity by name / label -------------------------------------------------------------------------------
+  // ---- (1a) levels / units: identity by name / label ---------------------------------------------------------------------------
   for (const [key, field] of [['levels', 'name'], ['units', 'label']]) {
     for (const el of inc[key]) {
       const twin = doc[key].find((x) => active(x) && norm(x[field]) === norm(el[field]));
-      if (!twin) { addNew(key, el); continue; }
-      idMap.set(el.id, twin.id);
-      if (fillEmpty(twin, el)) report.enriched.push(twin.id); else report.skipped.push(el.id);
+      if (twin) planFill(key, el, twin); else planAdd(key, el);
     }
   }
 
-  // ---- texts (other entities reference them) ------------------------------------------------------------------------------------
+  // ---- (1b) texts ----------------------------------------------------------------------------------------------------------------
   for (const t of inc.texts) {
     const twin = doc.texts.find((x) => x.text === t.text && x.bbox_px && t.bbox_px && bboxIou(x.bbox_px, t.bbox_px) >= cfg.merge.duplicateIou);
-    if (!twin) { addNew('texts', t); continue; }
-    idMap.set(t.id, twin.id);
-    if (!twin.role && t.role) { twin.role = t.role; if (t.properties?.value && !twin.properties?.value) twin.properties = { ...(twin.properties ?? {}), value: t.properties.value }; report.enriched.push(twin.id); }
-    else if (fillEmpty(twin, t)) report.enriched.push(twin.id);
-    else report.skipped.push(t.id);
+    if (twin) planFill('texts', t, twin); else planAdd('texts', t);
   }
 
-  // ---- geometric entities -------------------------------------------------------------------------------------------------------
-  // a human correction changes kind/category on purpose: it must still find (and supersede) its uncorrected twin
+  // ---- (1c) geometric entities ---------------------------------------------------------------------------------------------------
+  // Identity: the same GlobalId is the same element; two DIFFERENT GlobalIds are never the same element, however well their
+  // boxes overlap (an IFC building shares one pixel frame across storeys, so stacked slabs / walls have IoU 1). Without a
+  // GlobalId on both sides, the box decides, but only on the same level. Twins are searched among the EXISTING entities
+  // only: the incoming document is one extraction whose entities are distinct by construction.
+  // A human correction changes kind/category on purpose: it must still find (and supersede) its uncorrected twin.
   const sameKind = (key, a, b) => (b.provenance?.extractor === 'human' ? true : key === 'openings' ? a.kind === b.kind : key === 'objects' ? a.category === b.category : true);
+  const claimed = new Set(); // existing entities an incoming one supersedes (no longer active for matching)
+  const live = (ex) => active(ex) && !claimed.has(ex);
   for (const key of GEOMETRIC) {
+    const byGuid = new Map();
+    for (const ex of doc[key]) if (ex.global_id && !byGuid.has(ex.global_id)) byGuid.set(ex.global_id, ex);
     for (const el of inc[key]) {
+      let twin = el.global_id ? byGuid.get(el.global_id) ?? null : null;
+      if (twin && !live(twin)) twin = null;
       const box = bboxFor(el);
-      let twin = null, best = 0;
-      if (box) {
+      if (!twin && box) {
+        const lvl = el.level_id != null ? remapId(idMap, el.level_id) : null;
+        let best = 0;
         for (const ex of doc[key]) {
-          if (!active(ex) || !sameKind(key, ex, el)) continue;
+          if (!live(ex) || !sameKind(key, ex, el)) continue;
+          if (el.global_id && ex.global_id && el.global_id !== ex.global_id) continue;
+          if (lvl != null && ex.level_id != null && ex.level_id !== lvl) continue;
           const exBox = bboxFor(ex);
           if (!exBox) continue;
           const iou = bboxIou(exBox, box);
           if (iou >= cfg.merge.duplicateIou && iou > best) { best = iou; twin = ex; }
         }
       }
-      if (!twin) { addNew(key, el); continue; }
+      if (!twin) { planAdd(key, el); continue; }
       const better = (el.confidence ?? 0) >= (twin.confidence ?? 0) + cfg.merge.supersedeMargin;
-      if (!better) {
-        idMap.set(el.id, twin.id);
-        if (fillEmpty(twin, el)) report.enriched.push(twin.id); else report.skipped.push(el.id);
-        continue;
-      }
-      const merged = clone(el);
-      if (key === 'rooms') {
-        if (merged.type === 'unknown' && twin.type !== 'unknown') { // never lose a resolved name
-          merged.type = twin.type; merged.is_outdoor = twin.is_outdoor; merged.subtype ??= twin.subtype;
-          if (twin.properties?.name_resolution) merged.properties = { ...(merged.properties ?? {}), name_resolution: clone(twin.properties.name_resolution) };
-        }
-        for (const f of ['name', 'number', 'label', 'area_written_m2', 'unit_id', 'parent_room_id', 'height_m']) merged[f] ??= twin[f] ?? null;
-        merged.text_ids = [...new Set([...(twin.text_ids ?? []), ...(merged.text_ids ?? [])])];
-      }
-      const nid = addNew(key, merged);
-      twin.status = 'superseded';
-      twin.superseded_by = nid;
-      report.superseded.push(twin.id);
+      if (!better) { planFill(key, el, twin); continue; }
+      const nid = freshId(el.id);
+      idMap.set(el.id, nid);
+      claimed.add(twin);
+      plan.push({ key, el, op: 'supersede', twin, nid });
     }
   }
 
-  // ---- edges --------------------------------------------------------------------------------------------------------------------
-  for (const e of inc.edges) {
-    const from = idMap.get(e.from_id) ?? e.from_id, to = e.to != null ? (idMap.get(e.to) ?? e.to) : null;
-    if (doc.edges.some((x) => active(x) && x.kind === e.kind && x.from_id === from && (x.to ?? null) === to)) { report.skipped.push(e.id); continue; }
-    addNew('edges', e);
-  }
-
-  // ---- v0.3: types, materials, layer sets, systems (identity = id or GlobalId) ---------------------------------------------------
-  const unions = []; // [twin, field, incoming ids] applied after remapping
+  // ---- (1d) v0.3: types, materials, layer sets, systems (identity = id or GlobalId) ------------------------------------------------
   if (v03) {
     for (const key of V03_BY_ID) {
       for (const el of inc[key]) {
         const twin = doc[key].find((x) => x.id === el.id || (el.global_id && x.global_id === el.global_id));
-        if (!twin) { addNew(key, el); continue; }
-        idMap.set(el.id, twin.id);
-        for (const f of ['instance_ids', 'member_ids']) if (Array.isArray(el[f])) unions.push([twin, f, el[f]]);
-        if (fillEmpty(twin, el)) report.enriched.push(twin.id); else report.skipped.push(el.id);
+        if (twin) planFill(key, el, twin); else planAdd(key, el);
       }
     }
   }
 
-  // ---- remap references inside the entities we added ----------------------------------------------------------------------------------
-  const remap = (id) => (id != null && idMap.has(id) ? idMap.get(id) : id);
-  const addedSet = new Set(report.added);
-  for (const key of ALL) {
-    for (const el of doc[key]) {
-      if (!addedSet.has(el.id)) continue;
-      for (const f of ['level_id', 'unit_id', 'parent_room_id', 'room_id', 'wall_id', 'superseded_by', 'from_id', 'to', 'type_id', 'material_layer_set_id', 'host_id']) if (el[f] != null) el[f] = remap(el[f]);
-      for (const f of ['text_ids', 'room_ids', 'system_ids', 'material_ids', 'boundary_element_ids', 'instance_ids', 'member_ids']) if (Array.isArray(el[f])) el[f] = [...new Set(el[f].map(remap))];
-      for (const fin of Object.values(el.finishes ?? {})) if (fin) { fin.covering_ids = [...new Set((fin.covering_ids ?? []).map(remap))]; fin.material_ids = [...new Set((fin.material_ids ?? []).map(remap))]; }
-      for (const l of el.layers ?? []) if (l.material_id) l.material_id = remap(l.material_id);
-      if (el.properties?.area_written_text_id) el.properties.area_written_text_id = remap(el.properties.area_written_text_id);
+  // ---- (2) remap every reference inside the incoming entities, once ------------------------------------------------------------------
+  const remap = (id) => remapId(idMap, id);
+  for (const key of ALL) for (const el of inc[key]) remapRefs(el, remap);
+
+  // ---- (3) apply -------------------------------------------------------------------------------------------------------------------
+  const push = (key, el, nid) => { doc[key].push({ ...el, id: nid }); report.added.push(nid); };
+  for (const { key, el, op, twin, nid } of plan) {
+    if (op === 'add') { push(key, el, nid); continue; }
+    if (op === 'fill') {
+      if (key === 'texts' && !twin.role && el.role) {
+        twin.role = el.role;
+        if (el.properties?.value && !twin.properties?.value) twin.properties = { ...(twin.properties ?? {}), value: el.properties.value };
+        report.enriched.push(twin.id);
+        continue;
+      }
+      let changed = false;
+      if (V03_BY_ID.includes(key)) {
+        for (const f of ['instance_ids', 'member_ids']) {
+          if (!Array.isArray(el[f])) continue;
+          const before = twin[f]?.length ?? 0;
+          twin[f] = [...new Set([...(twin[f] ?? []), ...el[f]])];
+          if (twin[f].length !== before) changed = true;
+        }
+      }
+      if (fillEmpty(twin, el) || changed) report.enriched.push(twin.id); else report.skipped.push(el.id);
+      continue;
     }
+    // supersede
+    const merged = clone(el);
+    if (key === 'rooms') {
+      if (merged.type === 'unknown' && twin.type !== 'unknown') { // never lose a resolved name
+        merged.type = twin.type; merged.is_outdoor = twin.is_outdoor; merged.subtype ??= twin.subtype;
+        if (twin.properties?.name_resolution) merged.properties = { ...(merged.properties ?? {}), name_resolution: clone(twin.properties.name_resolution) };
+      }
+      for (const f of ['name', 'number', 'label', 'area_written_m2', 'unit_id', 'parent_room_id', 'height_m']) merged[f] ??= twin[f] ?? null;
+      merged.text_ids = [...new Set([...(twin.text_ids ?? []), ...(merged.text_ids ?? [])])];
+    }
+    push(key, merged, nid);
+    twin.status = 'superseded';
+    twin.superseded_by = nid;
+    report.superseded.push(twin.id);
   }
-  for (const [twin, f, list] of unions) {
-    const before = twin[f]?.length ?? 0;
-    twin[f] = [...new Set([...(twin[f] ?? []), ...list.map(remap)])];
-    if (twin[f].length !== before) report.enriched.push(twin.id);
+
+  // ---- edges (from / to already remapped) --------------------------------------------------------------------------------------------
+  for (const e of inc.edges) {
+    if (doc.edges.some((x) => active(x) && x.kind === e.kind && x.from_id === e.from_id && (x.to ?? null) === (e.to ?? null))) { report.skipped.push(e.id); continue; }
+    const nid = freshId(e.id);
+    idMap.set(e.id, nid);
+    push('edges', e, nid);
   }
 
   // ---- v0.3: relationships, project / site / building / sources --------------------------------------------------------------------
@@ -256,6 +274,21 @@ export function mergeDocuments(existing, incoming, cfg, opts = {}) {
     doc.statistics = buildStatistics(doc);
   }
   return { document: doc, report };
+}
+
+const remapId = (idMap, id) => (id != null && idMap.has(id) ? idMap.get(id) : id);
+
+/** id fields of an entity (the same set validateRelationships checks) */
+const REF_FIELDS = ['level_id', 'unit_id', 'parent_room_id', 'room_id', 'wall_id', 'superseded_by', 'from_id', 'to', 'type_id', 'material_layer_set_id', 'host_id'];
+const REF_LISTS = ['text_ids', 'room_ids', 'system_ids', 'material_ids', 'boundary_element_ids', 'instance_ids', 'member_ids'];
+
+/** Rewrite every id reference inside one entity (in place). */
+function remapRefs(el, remap) {
+  for (const f of REF_FIELDS) if (el[f] != null) el[f] = remap(el[f]);
+  for (const f of REF_LISTS) if (Array.isArray(el[f])) el[f] = [...new Set(el[f].map(remap))];
+  for (const fin of Object.values(el.finishes ?? {})) if (fin) { fin.covering_ids = [...new Set((fin.covering_ids ?? []).map(remap))]; fin.material_ids = [...new Set((fin.material_ids ?? []).map(remap))]; }
+  for (const l of el.layers ?? []) if (l.material_id) l.material_id = remap(l.material_id);
+  if (el.properties?.area_written_text_id) el.properties.area_written_text_id = remap(el.properties.area_written_text_id);
 }
 
 /** Fill only EMPTY fields of `target` from `src`. Returns true when something changed. */
