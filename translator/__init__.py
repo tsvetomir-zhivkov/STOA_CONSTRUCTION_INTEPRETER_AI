@@ -70,8 +70,14 @@ def translate(path: str, data: str | None = None, part: str | None = None) -> di
     return docs[0]
 
 
-def translate_all(path: str, data: str | None = None, cubicasa_params: dict | None = None) -> list[dict]:
-    """Every document for one file: one per page, or one per storey for an IFC model. Validated."""
+def translate_all(
+    path: str, data: str | None = None, cubicasa_params: dict | None = None, ocr_params: dict | None = None
+) -> list[dict]:
+    """Every document for one file: one per page, or one per storey for an IFC model. Validated.
+
+    cubicasa_params go to translator.extract.cubicasa.to_parts, ocr_params to translator.extract.ocr.fuse
+    (raster CubiCasa plans only).
+    """
     from translator import router
     from translator.config import data_root
     from translator.store import validate
@@ -118,7 +124,7 @@ def translate_all(path: str, data: str | None = None, cubicasa_params: dict | No
         ],
         "history": [{"extractor": "router", "action": "route", "note": note}],
     }
-    docs = _run_extractor(doc, r, root, file_path, cubicasa_params)
+    docs = _run_extractor(doc, r, root, file_path, cubicasa_params, ocr_params)
     for d in docs:
         validate(d, where=f"{r['file']} {d['drawing'].get('part') or ''}".strip())
     return docs
@@ -129,7 +135,12 @@ def _abs(root: Path, p: str) -> Path:
 
 
 def _run_extractor(
-    doc: dict, r: dict, root: Path, file_path: Path, cubicasa_params: dict | None = None
+    doc: dict,
+    r: dict,
+    root: Path,
+    file_path: Path,
+    cubicasa_params: dict | None = None,
+    ocr_params: dict | None = None,
 ) -> list[dict]:
     """Fill the document(s) from the extractor for this route, if one exists yet."""
     if r["route"] == "dxf":
@@ -177,8 +188,8 @@ def _run_extractor(
             return [doc]
         return out
     if r["route"] == "raster" and r.get("source") == "cubicasa5k":
-        # CubiCasa5K segmentation from its raw GPU result (translator/modal_app.py); never calls the GPU
-        from translator.extract import cubicasa
+        # CubiCasa5K segmentation + OCR from their raw GPU results (modal_app.py); never calls the GPU
+        from translator.extract import cubicasa, ocr
 
         raw = cubicasa.load_raw(file_path.stem)
         if raw is None:
@@ -196,6 +207,13 @@ def _run_extractor(
         doc["history"].extend(parts.pop("history"))
         for key, value in parts.items():
             doc[key] = value
+        ocr_raw = ocr.load_raw(file_path.stem)
+        if ocr_raw is not None and (ocr_raw["width_px"], ocr_raw["height_px"]) != (
+            raw["width_px"],
+            raw["height_px"],
+        ):
+            raise ValueError(f"{r['file']}: raw OCR size differs from the image")
+        ocr.fuse(doc, raw, ocr_raw, r["read_from"], **(ocr_params or {}))
         return [doc]
     return [doc]
 
