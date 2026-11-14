@@ -4,9 +4,9 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { mapToSchema } from '../src/mappers/schemaMapper.js';
+import { createVersionedValidator } from '../src/schema/versions.js';
 import { extractDxf } from '../src/extractors/cadExtractor.js';
 import { loadConfig } from '../src/config.js';
-import { createValidator } from '../src/storage/jsonStore.js';
 import { SchemaValidationError, PipelineError } from '../src/util/errors.js';
 import { silentLogger } from '../src/util/logger.js';
 import { writeFixtures } from './helpers/fixtures.js';
@@ -23,7 +23,8 @@ async function setup() {
 
 test('create, then merge into the same file', async () => {
   const { fx, bundles, out } = await setup();
-  const { validate } = await createValidator(config.schemaPath);
+  const versioned = await createVersionedValidator();
+  const validate = (d) => { const r = versioned.validate(d); if (!r.valid) console.error(versioned.describe(r).slice(0, 10)); return r; };
 
   const first = await mapToSchema({ inputFilePath: fx.dxf, outputJsonPath: out, mode: 'auto', bundles, config, logger: silentLogger });
   assert.equal(first.outputs.length, 1);
@@ -32,7 +33,7 @@ test('create, then merge into the same file', async () => {
   assert.deepEqual(Object.keys(first.outputs[0]).sort(), ['action', 'drawingId', 'outputJsonPath', 'report']);
   const created = JSON.parse(await fs.readFile(out, 'utf8'));
   assert.ok(validate(created).valid);
-  assert.equal(created.schema_version, '0.2');
+  assert.equal(created.schema_version, '0.3');
   assert.equal(created.drawing.file, 'data/demo_set/plan.dxf');
   assert.equal(created.drawing.route, 'dxf');
 

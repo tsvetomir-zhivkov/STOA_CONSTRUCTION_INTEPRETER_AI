@@ -11,17 +11,22 @@
  *  - coverage: the stronger claim wins per (category, region)
  *  - every id referenced inside incoming entities is remapped when its target was renamed or deduplicated
  *  - incoming history is appended, plus one 'merge' entry; metres are recomputed afterwards by code
+ *  - schema v0.3 (both documents 0.3): element types, materials, layer sets and systems are the same when their id or
+ *    GlobalId is; their instance / member lists are united. Relationships are the same when kind, from and to are.
+ *    Project, site, building and sources only fill what is missing. Quantity records, schedules and statistics are rebuilt.
  */
 
 import { bboxIou, round } from '../geometry/geom.js';
 import { FrameMismatchError } from '../util/errors.js';
 import { recomputeMetres } from '../storage/metres.js';
-import { mergeCompatible } from '../storage/building.js';
+import { syncQuantities, buildSchedules, buildStatistics } from '../schema/v03.js';
 
 const SCALE_RANK = { vector_units: 5, scale_note: 4, dimension_lines: 3, door_width: 2, none: 0 };
 const COV_RANK = { analysed: 3, partial: 2, not_analysed: 1 };
 const COLLECTIONS = ['levels', 'units', 'rooms', 'walls', 'openings', 'objects', 'texts', 'edges'];
 const GEOMETRIC = ['walls', 'rooms', 'openings', 'objects'];
+/** v0.3 collections whose identity is the id (built from GlobalId / express id) */
+const V03_BY_ID = ['element_types', 'materials', 'material_layer_sets', 'systems'];
 
 /** metre fields recomputeMetres() derives from pixels: never copied between documents */
 const CODE_OWNED = new Set(['polygon_m', 'holes_m', 'area_m2', 'area_computed_m2', 'volume_m3', 'length_m', 'thickness_m', 'width_m']);
@@ -56,7 +61,10 @@ function mergePageDocuments(existing, incoming, cfg, opts = {}) {
   const now = opts.now ?? new Date().toISOString();
   const doc = clone(existing);
   const inc = clone(incoming);
-  for (const k of COLLECTIONS) { doc[k] ??= []; inc[k] ??= []; }
+  const v03 = doc.schema_version === '0.3';
+  if (v03 !== (inc.schema_version === '0.3')) throw new Error(`mergeDocuments: schema ${doc.schema_version} and ${inc.schema_version} cannot be merged (migrate first)`);
+  const ALL = v03 ? [...COLLECTIONS, ...V03_BY_ID] : COLLECTIONS;
+  for (const k of ALL) { doc[k] ??= []; inc[k] ??= []; }
   doc.coverage ??= []; doc.history ??= []; inc.coverage ??= []; inc.history ??= [];
   /** @type {MergeReport} */
   const report = { added: [], superseded: [], enriched: [], skipped: [], coverageUpdated: [], scaleChanged: false, notes: [] };
@@ -65,7 +73,8 @@ function mergePageDocuments(existing, incoming, cfg, opts = {}) {
 
   const idMap = new Map(); // incoming id -> final id
   const usedIds = new Set();
-  for (const k of COLLECTIONS) for (const e of doc[k]) usedIds.add(e.id);
+  for (const k of ALL) for (const e of doc[k]) usedIds.add(e.id);
+  if (v03) for (const k of ['relationships', 'schedules', 'statistics', 'sources']) for (const e of doc[k] ?? []) usedIds.add(e.id);
   const freshId = (id) => {
     let nid = id;
     for (let n = 2; usedIds.has(nid); n++) nid = `${id}_${n}`;
@@ -146,15 +155,60 @@ function mergePageDocuments(existing, incoming, cfg, opts = {}) {
     addNew('edges', e);
   }
 
+  // ---- v0.3: types, materials, layer sets, systems (identity = id or GlobalId) ---------------------------------------------------
+  const unions = []; // [twin, field, incoming ids] applied after remapping
+  if (v03) {
+    for (const key of V03_BY_ID) {
+      for (const el of inc[key]) {
+        const twin = doc[key].find((x) => x.id === el.id || (el.global_id && x.global_id === el.global_id));
+        if (!twin) { addNew(key, el); continue; }
+        idMap.set(el.id, twin.id);
+        for (const f of ['instance_ids', 'member_ids']) if (Array.isArray(el[f])) unions.push([twin, f, el[f]]);
+        if (fillEmpty(twin, el)) report.enriched.push(twin.id); else report.skipped.push(el.id);
+      }
+    }
+  }
+
   // ---- remap references inside the entities we added ----------------------------------------------------------------------------------
   const remap = (id) => (id != null && idMap.has(id) ? idMap.get(id) : id);
   const addedSet = new Set(report.added);
-  for (const key of COLLECTIONS) {
+  for (const key of ALL) {
     for (const el of doc[key]) {
       if (!addedSet.has(el.id)) continue;
-      for (const f of ['level_id', 'unit_id', 'parent_room_id', 'room_id', 'wall_id', 'superseded_by', 'from_id', 'to']) if (el[f] != null) el[f] = remap(el[f]);
-      for (const f of ['text_ids', 'room_ids']) if (Array.isArray(el[f])) el[f] = [...new Set(el[f].map(remap))];
+      for (const f of ['level_id', 'unit_id', 'parent_room_id', 'room_id', 'wall_id', 'superseded_by', 'from_id', 'to', 'type_id', 'material_layer_set_id', 'host_id']) if (el[f] != null) el[f] = remap(el[f]);
+      for (const f of ['text_ids', 'room_ids', 'system_ids', 'material_ids', 'boundary_element_ids', 'instance_ids', 'member_ids']) if (Array.isArray(el[f])) el[f] = [...new Set(el[f].map(remap))];
+      for (const fin of Object.values(el.finishes ?? {})) if (fin) { fin.covering_ids = [...new Set((fin.covering_ids ?? []).map(remap))]; fin.material_ids = [...new Set((fin.material_ids ?? []).map(remap))]; }
+      for (const l of el.layers ?? []) if (l.material_id) l.material_id = remap(l.material_id);
       if (el.properties?.area_written_text_id) el.properties.area_written_text_id = remap(el.properties.area_written_text_id);
+    }
+  }
+  for (const [twin, f, list] of unions) {
+    const before = twin[f]?.length ?? 0;
+    twin[f] = [...new Set([...(twin[f] ?? []), ...list.map(remap)])];
+    if (twin[f].length !== before) report.enriched.push(twin.id);
+  }
+
+  // ---- v0.3: relationships, project / site / building / sources --------------------------------------------------------------------
+  if (v03) {
+    const relKey = (r) => `${r.kind}|${r.from_id}|${r.to_id}`;
+    const have = new Set(doc.relationships.map(relKey));
+    for (const r of inc.relationships ?? []) {
+      const nr = { ...clone(r), from_id: remap(r.from_id), to_id: remap(r.to_id) };
+      if (have.has(relKey(nr))) continue;
+      have.add(relKey(nr));
+      nr.id = freshId(r.id);
+      doc.relationships.push(nr);
+      report.added.push(nr.id);
+    }
+    const fillObj = (a, b) => { for (const [k, v] of Object.entries(b ?? {})) if (a[k] == null && v != null) a[k] = clone(v); };
+    fillObj(doc.project, inc.project);
+    for (const [k, u] of Object.entries(inc.project?.units ?? {})) if (doc.project.units[k]?.status === 'not_available' && u.status !== 'not_available') doc.project.units[k] = clone(u);
+    if (!doc.site && inc.site) doc.site = clone(inc.site); else if (doc.site && inc.site) fillObj(doc.site, inc.site);
+    if (!doc.building && inc.building) doc.building = clone(inc.building); else if (doc.building && inc.building) fillObj(doc.building, inc.building);
+    for (const src of inc.sources ?? []) {
+      const twin = doc.sources.find((x) => x.file === src.file && (x.sha256 ?? null) === (src.sha256 ?? null));
+      if (twin) { fillObj(twin, src); continue; }
+      doc.sources.push({ ...clone(src), id: freshId(src.id), role: 'merged' });
     }
   }
 
@@ -200,13 +254,18 @@ function mergePageDocuments(existing, incoming, cfg, opts = {}) {
   }
 
   recomputeMetres(doc);
+  if (v03) {
+    syncQuantities(doc, { origin: 'extracted' });
+    doc.schedules = buildSchedules(doc);
+    doc.statistics = buildStatistics(doc);
+  }
   return { document: doc, report };
 }
 
 /** Fill only EMPTY fields of `target` from `src`. Returns true when something changed. */
 function fillEmpty(target, src) {
   let changed = false;
-  const skip = new Set(['id', 'status', 'superseded_by', 'provenance', 'confidence', 'flags', 'properties', 'text_ids', 'room_ids']);
+  const skip = new Set(['id', 'status', 'superseded_by', 'provenance', 'confidence', 'flags', 'properties', 'text_ids', 'room_ids', 'instance_ids', 'member_ids', 'quantities']);
   for (const [f, v] of Object.entries(src)) {
     if (skip.has(f) || CODE_OWNED.has(f)) continue;
     const empty = target[f] == null || (Array.isArray(target[f]) && target[f].length === 0 && f !== 'holes_px');
@@ -222,6 +281,12 @@ function fillEmpty(target, src) {
     const before = target[f]?.length ?? 0;
     target[f] = [...new Set([...(target[f] ?? []), ...src[f]])];
     if (target[f].length !== before) changed = true;
+  }
+  if (src.quantities) {
+    for (const [k, q] of Object.entries(src.quantities)) {
+      // a quantity record describes its field: copy it only together with a value the target did not have
+      if (target.quantities?.[k] == null && (!(k in target) || target[k] === q.value)) { (target.quantities ??= {})[k] = clone(q); changed = true; }
+    }
   }
   if (src.properties) {
     for (const [k, v] of Object.entries(src.properties)) {

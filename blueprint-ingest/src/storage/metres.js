@@ -8,6 +8,9 @@
  * Room area flags: when a written and a computed area differ by more than 10 % the room gets the flags
  * `area_mismatch` + `check_this` (and `properties.area_difference_pct`). Code removes them again when the mismatch is gone,
  * but leaves a `check_this` set by someone else alone.
+ *
+ * Schema v0.3: a field whose quantity record is `explicit` (read from the source, e.g. an IFC quantity or OverallWidth) is
+ * never overwritten here; code-derived values only fill fields the source did not state.
  */
 
 import { bboxOfPoints, polygonArea, polylineLength, round } from '../geometry/geom.js';
@@ -23,6 +26,8 @@ export const AREA_MISMATCH_PCT = 10;
  * @returns {any} the same document
  */
 export function recomputeMetres(doc) {
+  const explicit = (e, f) => e.quantities?.[f]?.status === 'explicit';
+  const set = (e, f, v) => { if (!explicit(e, f)) e[f] = v; };
   const k = doc.drawing?.scale?.m_per_px ?? null;
   const has = typeof k === 'number' && k > 0;
   const mpt = (p) => (p.length > 2 ? [r3(p[0] * k), r3(p[1] * k), p[2]] : [r3(p[0] * k), r3(p[1] * k)]);
@@ -35,25 +40,25 @@ export function recomputeMetres(doc) {
     r.holes_m = has ? (r.holes_px ?? []).map((h) => h.map(mpt)) : [];
     const net = areaPx(r.polygon_px) - (r.holes_px ?? []).reduce((s, h) => s + areaPx(h), 0);
     r.area_computed_m2 = has && r.polygon_px ? round(net * k * k, 2) : null;
-    r.area_m2 = r.area_written_m2 ?? r.area_computed_m2 ?? null;
-    r.volume_m3 = r.area_m2 != null && r.height_m != null ? round(r.area_m2 * r.height_m, 2) : (r.volume_m3 ?? null);
+    set(r, 'area_m2', r.area_written_m2 ?? r.area_computed_m2 ?? null);
+    set(r, 'volume_m3', r.area_m2 != null && r.height_m != null ? round(r.area_m2 * r.height_m, 2) : (r.volume_m3 ?? null));
     areaFlags(r, ratios);
   }
   for (const w of doc.walls ?? []) {
     w.polygon_m = mpoly(w.polygon_px);
     // a length given by the source (no axis line) is kept
-    w.length_m = has && w.polyline_px?.length >= 2 ? r3(polylineLength(w.polyline_px) * k) : (w.length_m ?? null);
+    set(w, 'length_m', has && w.polyline_px?.length >= 2 ? r3(polylineLength(w.polyline_px) * k) : (w.length_m ?? null));
     const tpx = w.properties?.thickness_px;
-    if (tpx != null) w.thickness_m = has ? r3(tpx * k) : null;
+    if (tpx != null) set(w, 'thickness_m', has ? r3(tpx * k) : null);
   }
   for (const o of doc.openings ?? []) {
     o.polygon_m = mpoly(o.polygon_px);
     const wpx = o.properties?.width_px;
-    if (wpx != null) o.width_m = has ? r3(wpx * k) : null;
+    if (wpx != null) set(o, 'width_m', has ? r3(wpx * k) : null);
   }
   for (const o of doc.objects ?? []) {
     o.polygon_m = mpoly(o.polygon_px);
-    o.area_m2 = has && o.polygon_px ? round(areaPx(o.polygon_px) * k * k, 3) : null;
+    set(o, 'area_m2', has && o.polygon_px ? round(areaPx(o.polygon_px) * k * k, 3) : null);
     // stair flights / landings keep pixels as the source too (properties.flights[].*_px, properties.landings[].polygon_px)
     for (const f of Array.isArray(o.properties?.flights) ? o.properties.flights : []) {
       if (f.start_px) f.start_m = has ? mpt(f.start_px) : null;

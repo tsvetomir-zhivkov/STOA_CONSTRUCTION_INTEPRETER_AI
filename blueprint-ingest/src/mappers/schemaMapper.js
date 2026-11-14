@@ -8,11 +8,15 @@
  */
 
 import path from 'node:path';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
 import { buildDocument } from './documentBuilder.js';
 import { mergeDocuments } from './merge.js';
 import { applyCorrections } from './corrections.js';
 import { normalizeVocabulary } from './vocabulary.js';
-import { createValidator, readJsonIfExists, writeJsonAtomic, describeErrors } from '../storage/jsonStore.js';
+import { readJsonIfExists, writeJsonAtomic } from '../storage/jsonStore.js';
+import { createVersionedValidator, detectVersion, migrateV02toV03, DEFAULT_OUTPUT_VERSION } from '../schema/versions.js';
+import { liftToV03 } from '../schema/lift.js';
 import { PipelineError, SchemaValidationError, FrameMismatchError } from '../util/errors.js';
 import { silentLogger } from '../util/logger.js';
 
@@ -28,6 +32,7 @@ import { silentLogger } from '../util/logger.js';
  * @property {string} [file] drawing.file override (dataset-relative path)
  * @property {string} [source] drawing.source override (dataset folder)
  * @property {import('./corrections.js').Corrections} [corrections] human corrections lookup
+ * @property {'0.2'|'0.3'} [schemaVersion] output schema (default config.schemaVersion, else 0.3)
  */
 
 /**
@@ -37,12 +42,17 @@ import { silentLogger } from '../util/logger.js';
 export async function mapToSchema(opts) {
   const { inputFilePath, outputJsonPath, mode = 'auto', bundles, config } = opts;
   const logger = opts.logger ?? silentLogger;
-  const validator = await createValidator(config.schemaPath);
+  const version = opts.schemaVersion ?? config.schemaVersion ?? DEFAULT_OUTPUT_VERSION;
+  if (version !== '0.2' && version !== '0.3') throw new PipelineError(`unsupported output schema ${version} (0.2 or 0.3)`, 'BAD_ARGS');
+  const validator = await createVersionedValidator({ schemaPaths: config.schemaPath ? { '0.2': config.schemaPath } : {} });
   if (!bundles.length) throw new PipelineError('No bundles to map', 'NO_BUNDLES');
+  const fileInfo = version === '0.3' ? await fileFacts(inputFilePath) : null;
 
   const outputs = [];
   for (const bundle of bundles) {
-    const { document, pending } = buildDocument(bundle, { inputFilePath, now: opts.now, file: opts.file, source: opts.source, datasetRoot: config.datasetRoot, multiPage: bundles.length > 1 && bundle.format === 'pdf' });
+    const built = buildDocument(bundle, { inputFilePath, now: opts.now, file: opts.file, source: opts.source, datasetRoot: config.datasetRoot, multiPage: bundles.length > 1 && bundle.format === 'pdf', schemaVersion: version });
+    let document = built.document;
+    const { pending, ids } = built;
     const fired = applyCorrections(document, opts.corrections, { now: opts.now });
     if (fired.length) logger.info(`corrections: ${fired.map((f) => `${f.rule} (${f.ids.length})`).join(', ')}`);
     // one vocabulary for every route: aliases mapped, anything unmapped reported (and flagged), never passed through silently
@@ -53,9 +63,10 @@ export async function mapToSchema(opts) {
       document.history.push({ at: opts.now ?? new Date().toISOString(), extractor: 'vocabulary', action: 'map', entity_ids: voc.unmapped.map((u) => u.id).slice(0, 500), note: `unmapped values: ${[...new Set(voc.unmapped.map((u) => `${u.field}=${u.value}`))].slice(0, 20).join(', ')}` });
     }
     if (pending.roomNames.length) logger.info(`${pending.roomNames.length} room name(s) not in the glossary; they stay type "unknown"`);
+    if (version === '0.3') document = liftToV03(document, { bundle, ids, inputFilePath, file: fileInfo, now: opts.now });
 
     const target = outputPathFor(outputJsonPath, document, bundles.length, inputFilePath);
-    await finalizeOne({ document, target, mode, validator, config, logger, now: opts.now, outputs });
+    await finalizeOne({ document, target, mode, validator, config, logger, now: opts.now, outputs, version });
   }
   return { outputs };
 }
@@ -76,7 +87,7 @@ export const drawingKey = (d) => `${d.file}${d.part ? `#${d.part}` : ''}`;
 // persistence
 // =====================================================================================================
 
-async function finalizeOne({ document, target, mode, validator, config, logger, now, outputs }) {
+async function finalizeOne({ document, target, mode, validator, config, logger, now, outputs, version }) {
   let existing = await readJsonIfExists(target);
   if (mode === 'create' && existing) throw new PipelineError(`Refusing to overwrite existing ${target} in mode "create" (use "auto" or "merge")`, 'OUTPUT_EXISTS');
   if (mode === 'merge' && !existing) throw new PipelineError(`mode "merge" needs an existing ${target}`, 'OUTPUT_MISSING');
@@ -88,6 +99,15 @@ async function finalizeOne({ document, target, mode, validator, config, logger, 
 
   if (existing) {
     existing = validateOrThrow(existing, { validator, label: `existing ${path.basename(target)}`, existingFile: true });
+    const exV = detectVersion(existing);
+    if (exV !== version) {
+      if (exV === '0.2' && version === '0.3') {
+        existing = migrateV02toV03(existing, { now, note: `existing ${path.basename(target)} migrated from v0.2 before merging a v0.3 extraction` });
+        logger.info(`existing ${path.basename(target)} is schema 0.2: migrated to 0.3 in memory before the merge`);
+      } else {
+        throw new PipelineError(`existing ${target} is schema ${exV}; refusing to merge a schema ${version} extraction into it (use --schema ${exV} or a new output path)`, 'SCHEMA_MISMATCH');
+      }
+    }
     try {
       const m = mergeDocuments(existing, doc, config, { now });
       doc = m.document; report = m.report; action = 'merged';
@@ -115,5 +135,18 @@ async function finalizeOne({ document, target, mode, validator, config, logger, 
 function validateOrThrow(doc, { validator, label, existingFile = false }) {
   const r = validator.validate(doc);
   if (r.valid) return doc;
-  throw new SchemaValidationError(r.errors, `${label} does not conform to the schema${existingFile ? ' (the existing file was left untouched)' : ''}: ${describeErrors(r.errors).slice(0, 3).join('; ')}`);
+  const msgs = validator.describe(r);
+  throw new SchemaValidationError(r.errors, `${label} does not conform to schema ${r.version ?? '?'}${existingFile ? ' (the existing file was left untouched)' : ''}: ${msgs.slice(0, 3).join('; ')}${msgs.length > 3 ? ` (+${msgs.length - 3} more)` : ''}`);
+}
+
+/** size and sha256 of the input file (sources[0]); null values when it cannot be read */
+async function fileFacts(p) {
+  try {
+    const size = (await fs.promises.stat(p)).size;
+    const h = crypto.createHash('sha256');
+    await new Promise((res, rej) => fs.createReadStream(p).on('data', (c) => h.update(c)).on('end', res).on('error', rej));
+    return { size, sha256: h.digest('hex') };
+  } catch {
+    return { size: null, sha256: null };
+  }
 }

@@ -78,15 +78,24 @@ export function datasetPath(inputFilePath, o = {}) {
  * @property {string|null} [datasetRoot]
  * @property {string} [now] ISO timestamp
  * @property {boolean} [multiPage] set drawing.part to p{n}
+ * @property {'0.2'|'0.3'} [schemaVersion] target schema. Elements marked `v03Only` (classes / footprint-less elements v0.2
+ *   never emitted) are kept only for 0.3, so a v0.2 run reproduces the v0.2 output exactly.
  */
 
 /**
  * @param {import('../extractors/bundle.js').Bundle} bundle
  * @param {BuildOptions} opts
- * @returns {{ document: any, pending: { roomNames: Array<{id:string, raw:string}> } }}  roomNames: labels not in the glossary (type stays "unknown")
+ * @returns {{ document: any, pending: { roomNames: Array<{id:string, raw:string}> }, ids: Record<string, Map<string,string>> }}
+ *   roomNames: labels not in the glossary (type stays "unknown"); ids: bundle key -> document id, per collection
  */
 export function buildDocument(bundle, opts) {
   const now = opts.now ?? new Date().toISOString();
+  if (opts.schemaVersion !== '0.3') {
+    const keep = (el) => !el.v03Only;
+    bundle = { ...bundle, rooms: bundle.rooms.filter(keep), walls: bundle.walls.filter(keep), openings: bundle.openings.filter(keep), objects: bundle.objects.filter(keep) };
+  }
+  const hasPoly = (p) => Array.isArray(p) && p.length >= 3;
+  const ids = { levels: new Map(), rooms: new Map(), walls: new Map(), openings: new Map(), objects: new Map(), texts: new Map() };
   const extId = bundle.extractor.id;
   const mk = idMaker();
   const ds = datasetPath(opts.inputFilePath, { datasetRoot: opts.datasetRoot });
@@ -108,7 +117,7 @@ export function buildDocument(bundle, opts) {
     return id;
   };
   if (Array.isArray(bundle.levels) && bundle.levels.length) {
-    for (const lv of bundle.levels) if (lv?.name) levelIdByKey.set(lv.key ?? lv.name, addLevel(lv, lv.longName));
+    for (const lv of bundle.levels) if (lv?.name) { const lid = addLevel(lv, lv.longName); levelIdByKey.set(lv.key ?? lv.name, lid); ids.levels.set(lv.key ?? lv.name, lid); }
   } else if (bundle.level?.name) {
     levelId = addLevel(bundle.level, bundle.page.title);
   }
@@ -137,6 +146,7 @@ export function buildDocument(bundle, opts) {
     const role = TEXT_ROLE[t.roleHint ?? cls.role ?? ''];
     const value = t.value ?? cls.value ?? null;
     const id = mk('text_', t.key);
+    ids.texts.set(t.key, id);
     fontOf.set(id, t.fontSizePx ?? 0);
     if (role === 'unit_label') unitLabels.set(id, cls.unitLabel ?? parseUnitLabel(t.raw)?.label ?? t.raw);
     const bb = t.bboxPx.map((v) => round(v, 2));
@@ -152,13 +162,14 @@ export function buildDocument(bundle, opts) {
   const walls = bundle.walls.map((w) => {
     const id = mk('wall_', w.key);
     wallIds.set(w.key, id);
+    ids.walls.set(w.key, id);
     // outline-only walls: axis + thickness from the minimum-area rectangle (gives length_m / thickness_m)
-    const cl = !w.centerlinePx || w.thicknessPx == null ? polygonCenterline(w.polygonPx) : null;
+    const cl = (!w.centerlinePx || w.thicknessPx == null) && hasPoly(w.polygonPx) ? polygonCenterline(w.polygonPx) : null;
     const axis = w.centerlinePx ?? (cl ? [cl.a, cl.b].map((p) => p.map((v) => round(v, 2))) : null);
     const tpx = w.thicknessPx ?? (cl ? round(cl.thickness, 2) : null);
     return {
       ...base(id, w, 0.6, tpx != null ? { thickness_px: tpx } : {}),
-      polyline_px: axis, polygon_px: w.polygonPx, polygon_m: null, length_m: null, thickness_m: null,
+      polyline_px: axis, polygon_px: w.polygonPx ?? null, polygon_m: null, length_m: null, thickness_m: null,
       height_m: w.heightM ?? null, net_side_area_m2: w.netSideAreaM2 ?? null, net_volume_m3: w.netVolumeM3 ?? null,
       is_external: w.isExterior ?? null, is_load_bearing: w.isLoadBearing ?? null, room_ids: [],
     };
@@ -168,11 +179,12 @@ export function buildDocument(bundle, opts) {
   const internal = new Map(); // room id -> { rawName, poly, area }
   const rooms = bundle.rooms.map((r) => {
     const id = mk('room_', r.key);
-    internal.set(id, { rawName: r.rawName ?? null, poly: r.polygonPx, area: polygonArea(r.polygonPx) });
+    ids.rooms.set(r.key, id);
+    internal.set(id, { rawName: r.rawName ?? null, poly: r.polygonPx, area: hasPoly(r.polygonPx) ? polygonArea(r.polygonPx) : 0 });
     return {
       ...base(id, r, 0.6, r.floorElevationM != null ? { floor_elevation_m: r.floorElevationM } : {}),
       name: null, number: r.rawNumber ?? null, label: null, type: 'unknown', subtype: null, unit_id: null, parent_room_id: null, is_outdoor: false,
-      polygon_px: r.polygonPx, polygon_m: null, holes_px: [], holes_m: [],
+      polygon_px: r.polygonPx ?? null, polygon_m: null, holes_px: [], holes_m: [],
       area_m2: null, area_written_m2: r.writtenAreaM2 ?? null, area_computed_m2: null, height_m: r.heightM ?? null, volume_m3: null, text_ids: [],
     };
   });
@@ -181,7 +193,7 @@ export function buildDocument(bundle, opts) {
   // lid: only rooms of that level (a multi-level document stacks floors in one plan frame)
   const roomAt = (pt, lid = null) => {
     let best = null;
-    for (const r of rooms) { if (lid != null && r.level_id !== lid) continue; const x = internal.get(r.id); if (pointInPolygon(pt, x.poly) && (!best || x.area < internal.get(best.id).area)) best = r; }
+    for (const r of rooms) { if (lid != null && r.level_id !== lid) continue; const x = internal.get(r.id); if (!pt || !hasPoly(x.poly)) continue; if (pointInPolygon(pt, x.poly) && (!best || x.area < internal.get(best.id).area)) best = r; }
     return best;
   };
   const byRoom = new Map(rooms.map((r) => [r.id, { names: [], numbers: [], areas: [] }]));
@@ -199,8 +211,8 @@ export function buildDocument(bundle, opts) {
   for (const r of rooms) {
     const { names, numbers, areas } = byRoom.get(r.id);
     let raw = internal.get(r.id).rawName;
-    const rc = center(bboxOf(r.polygon_px));
-    const dist = (t) => Math.hypot(...center(t.bbox_px).map((v, i) => v - rc[i]));
+    const rc = hasPoly(r.polygon_px) ? center(bboxOf(r.polygon_px)) : null;
+    const dist = (t) => (rc ? Math.hypot(...center(t.bbox_px).map((v, i) => v - rc[i])) : 0);
     if (names.length) {
       // prefer a glossary hit, then the largest print, then the text nearest the room's centre
       const score = (t) => (lookupRoomName(t.text) ? 1e6 : 0) + (fontOf.get(t.id) ?? 0) * 10 - dist(t) * 0.01;
@@ -238,25 +250,27 @@ export function buildDocument(bundle, opts) {
   const openings = bundle.openings.map((o) => {
     const kind = o.kind === 'door' || o.kind === 'window' ? o.kind : 'doorway';
     const id = mk(`${kind}_`, o.key);
+    ids.openings.set(o.key, id);
     const h = o.heightM ?? (o.headHeightM != null && o.sillHeightM != null ? round(o.headHeightM - o.sillHeightM, 3) : null);
     const extra = {};
     if (o.subtype) extra.subtype = o.subtype;
-    const wpx = o.widthPx ?? (minAreaRect(o.polygonPx)?.length ?? null); // outline-only openings: long side of the outline
+    const wpx = o.widthPx ?? (hasPoly(o.polygonPx) ? (minAreaRect(o.polygonPx)?.length ?? null) : null); // outline-only openings: long side of the outline
     if (wpx != null) extra.width_px = round(wpx, 2);
     if (o.sillHeightM != null) extra.sill_height_m = o.sillHeightM;
     if (o.headHeightM != null) extra.head_height_m = o.headHeightM;
     return {
-      ...base(id, o, 0.6, extra), kind, bbox_px: bboxOf(o.polygonPx), polygon_px: o.polygonPx, polygon_m: null,
+      ...base(id, o, 0.6, extra), kind, bbox_px: hasPoly(o.polygonPx) ? bboxOf(o.polygonPx) : null, polygon_px: o.polygonPx ?? null, polygon_m: null,
       width_m: null, height_m: h, is_entrance: o.isEntrance ?? null, wall_id: o.wallKey ? (wallIds.get(o.wallKey) ?? null) : null, room_ids: [],
     };
   });
   const objects = bundle.objects.map((o) => {
     const id = mk('obj_', o.key);
-    const bb = bboxOf(o.polygonPx);
+    ids.objects.set(o.key, id);
+    const bb = hasPoly(o.polygonPx) ? bboxOf(o.polygonPx) : null;
     const category = bundle.format === 'dxf' && OBJECT_CATEGORIES.has(o.category) ? o.category : mapObjectCategory(o.category, o.name);
     return {
       ...base(id, o, 0.5, o.name ? { name: o.name } : {}), category, subtype: o.subtype !== undefined ? o.subtype : (o.category && o.category !== category ? o.category : null),
-      bbox_px: bb, polygon_px: o.polygonPx, polygon_m: null, room_id: roomAt(center(bb), levelOf(o))?.id ?? null, net_volume_m3: o.netVolumeM3 ?? null, area_m2: null,
+      bbox_px: bb, polygon_px: o.polygonPx ?? null, polygon_m: null, room_id: bb ? (roomAt(center(bb), levelOf(o))?.id ?? null) : null, net_volume_m3: o.netVolumeM3 ?? null, area_m2: null,
     };
   });
 
@@ -295,7 +309,7 @@ export function buildDocument(bundle, opts) {
 
   // ---- level extent ----------------------------------------------------------------------------------------------------------------
   for (const lv of levels) {
-    const geom = [...rooms, ...walls].filter((e) => e.level_id === lv.id || (levels.length === 1 && e.level_id == null)).flatMap((e) => e.polygon_px);
+    const geom = [...rooms, ...walls].filter((e) => e.level_id === lv.id || (levels.length === 1 && e.level_id == null)).flatMap((e) => e.polygon_px ?? []);
     if (geom.length) lv.bbox_px = bboxOf(geom);
   }
 
@@ -331,6 +345,7 @@ export function buildDocument(bundle, opts) {
   return {
     document,
     pending: { roomNames: pendingNames },
+    ids,
   };
 }
 

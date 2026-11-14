@@ -21,6 +21,8 @@ export const SCHEMA_PATH = path.resolve(HERE, '..', '..', 'translator', 'schema'
 export function loadConfig(env = process.env) {
   return {
     schemaPath: SCHEMA_PATH,
+    /** output schema: '0.3' (default, one building model) or '0.2' (the previous drawing schema, for comparison) */
+    schemaVersion: env.SCHEMA_VERSION || '0.3',
     /** drawing.file is made relative to this folder unless the input path contains data/<source>/ (default: cwd) */
     datasetRoot: env.DATASET_ROOT || null,
     /** human corrections lookup (see src/mappers/corrections.js); default: corrections.json at the repo root. Missing = none. */
