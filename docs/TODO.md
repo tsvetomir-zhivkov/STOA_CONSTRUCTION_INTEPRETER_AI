@@ -145,3 +145,26 @@ Open issues (for steps 7-10):
   - **Floors:** titles never fix a wrong building count on dev. All 7 regressions have fewer distinct titles
     than buildings (a missed title, or the same title read twice). Rule 'max' (take whichever
     counts more storeys) scores 96.9 vs 93.3. It is an option only (`floors_rule="max"`), waiting for k.
+- **Decisions applied (2026-11-14, agreed with k, dev only):**
+
+  | step | kitchens | bedrooms | bathrooms | WC rooms | saunas | balconies | floors |
+  |---|---|---|---|---|---|---|---|
+  | before | 72.3 | 54.8 | 66.0 | 76.6 | 60.2 | 84.2 | 93.3 |
+  | 1. floors rule 'max' default | 72.3 | 54.8 | 66.0 | 76.6 | 60.2 | 84.2 | 96.9 |
+  | 2. TK = entry (tuulikaappi); TUPAK/TPK = kitchen | 83.1 | 54.8 | 66.0 | 76.6 | 60.2 | 84.2 | 96.9 |
+  | 3. apartment summaries are unit_label | 86.9 | 55.6 | 66.0 | 76.6 | 59.4 | 84.2 | 96.9 |
+  | 4. stray single-letter K outside rooms (2 images) | 87.7 | 55.6 | 66.0 | 76.6 | 59.4 | 84.2 | 96.9 |
+  | 5. bedrooms: labels + uncovered Bedroom regions | 87.7 | 58.1 | 66.0 | 76.6 | 59.4 | 84.2 | 96.9 |
+  | 6. + rotated pass (NOT kept) | 86.9 | 54.8 | 69.1 | 78.7 | 59.4 | 86.0 | 96.9 |
+
+  - **Summary rule:** a '+'-joined text whose first part is a room count (H, 1H, 2 H, 1-2H) is an apartment
+    description (role unit_label). A misread "JH+KK" is not caught. Saunas lose 0.8 because a summary's "S" was
+    sometimes the only sauna evidence read.
+  - **Rotated pass stays off:** bedrooms and kitchens drop.
+  - **Result:** CubiCasa 60.2, TOTAL 78.0.
+  - **16 kitchen failures left:**
+    - 7 images: no kitchen evidence read at all (no Kitchen region and no K label).
+    - 3 images: two real kitchens, but the fallback keeps one.
+    - 3 images: a second kitchen label inside a room (`Kök` + `kk`, `k/pH`, a 2nd `K` on the entry region).
+    - 2 images: a false segmentation Kitchen region.
+    - 1 image: the misread summary "JH+KK".
