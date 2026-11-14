@@ -265,3 +265,33 @@ def test_scale_none_and_vector_units_kept():
     doc = _doc()
     doc["drawing"]["scale"] = {"m_per_px": 0.01, "source": "vector_units", "confidence": 1.0}
     assert scale.estimate(doc) is doc["drawing"]["scale"]
+
+
+# ------------------------------------------------------------------ sauna fallback (Step 10, principled)
+
+
+def _bench(conf=0.9):
+    return {"id": "object-sauna_bench-0", "category": "sauna_bench", "bbox_px": [110.0, 10.0, 140.0, 40.0],
+            "polygon_px": _box(110, 10, 140, 40), "confidence": conf, "status": "active",
+            "provenance": {"extractor": "cubicasa5k", "source_ref": "icon:sauna_bench:0"}}  # fmt: skip
+
+
+def test_sauna_bench_without_sauna_room_gives_one_inferred_sauna():
+    doc = _doc(
+        rooms=[_room("w", "bathroom", (100, 0, 200, 100), "PH")],
+        objects=[_bench(), {**_bench(0.5), "id": "b2"}],
+    )
+    assert fuse.sauna_fallback(doc)["fired"]
+    (s,) = [r for r in doc["rooms"] if r["type"] == "sauna"]  # max one per page
+    assert s["flags"] == ["inferred_from_icon"] and s["provenance"]["extractor"] == "cubicasa5k"
+    assert s["parent_room_id"] == "w" and s["provenance"]["details"]["icon_id"] == "object-sauna_bench-0"
+    cov = _cov(doc, "saunas")
+    assert cov["status"] == "partial" and cov["note"].startswith("inferred from sauna bench icon")
+    validate(doc)
+
+
+def test_sauna_fallback_does_not_fire_with_a_sauna_room_or_without_a_bench():
+    doc = _doc(rooms=[_room("s", "sauna", (100, 0, 200, 100), "S")], objects=[_bench()])
+    assert not fuse.sauna_fallback(doc)["fired"] and len(doc["rooms"]) == 1
+    doc2 = _doc(rooms=[_room("w", "bathroom", (100, 0, 200, 100), "PH")])
+    assert not fuse.sauna_fallback(doc2)["fired"]

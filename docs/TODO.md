@@ -406,3 +406,18 @@ index copy. Each image has an EN and an FI question, so 2 questions = 1 image. D
   - Every run so far: $1.351 logged + $0.025 estimated = **$1.376** of the $1.50 total cap (k's final raise).
 - **Deferred:** prior-fired kitchen/bathroom VLM tasks (82); e1 on the remaining shower pages; gate 5
   (windows/doors confidence).
+
+## Step 10 (eval round and fixes), 2026-11-14, dev only, no API spend (VLM cache only, STOA_VLM=fake)
+- **Diagnosis:**
+  - No scored template is below its always-majority baseline. Kitchens (93.8) and bathrooms (87.2) only
+    equal it.
+  - Points still available: windows 248, doors 134, sinks 124, saunas 108, bedrooms 104, toilets 86 questions.
+  - opening_design (19 questions) has no template; ifc_bench (201 free-text questions) is not scored.
+- **Fix 1 — sauna fallback (principled; k approved).**
+  - Rule: no sauna room read and a sauna bench icon (kept at the existing MIN_ICON_PX 46; threshold
+    unchanged) → one sauna per page, the bench's shape, extractor cubicasa5k, flag `inferred_from_icon`.
+    Coverage 'saunas' is partial, "inferred from sauna bench icon".
+  - It mirrors the kitchen fallback. Cause from the diagnosis: 44 of the 54 sauna failures had a bench but
+    no S label read.
+  - Dev: saunas 59.4 → **89.5** (+80 q; 43 images fixed, 3 broken). Every other template unchanged.
+    CubiCasa 71.3 → 73.6, TOTAL 84.0 → 85.3. No drops.

@@ -148,8 +148,11 @@ def test_translate_all_writes_a_schema_valid_document(plan_with_raw):
     (doc,) = translate_all(str(path), str(root))  # validated inside translate_all
     assert doc["drawing"]["route"] == "raster"
     assert doc["drawing"]["image"]["width_px"] == 300
-    seg_rooms = [r for r in doc["rooms"] if r["provenance"]["extractor"] != "prior"]
+    seg_rooms = [r for r in doc["rooms"] if r["provenance"]["extractor"] != "prior"
+                 and "inferred_from_icon" not in r.get("flags", [])]  # fmt: skip
     assert len(doc["openings"]) == 3 and len(seg_rooms) == 3
+    # the synthetic plan has a sauna bench and no sauna label: the sauna fallback infers one sauna
+    assert [r["type"] for r in doc["rooms"] if "inferred_from_icon" in r.get("flags", [])] == ["sauna"]
     # no kitchen detected: the kitchen prior assumes one (no geometry); the Bath region equals the prior
     (assumed,) = [r for r in doc["rooms"] if r["provenance"]["extractor"] == "prior"]
     assert assumed["type"] == "kitchen" and assumed["polygon_px"] is None

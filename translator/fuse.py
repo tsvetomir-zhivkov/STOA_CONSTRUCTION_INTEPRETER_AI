@@ -1,7 +1,8 @@
 """Step 8: merge extractor outputs into one schema document; mark duplicates superseded; count priors.
 
 fuse_raster() is the raster-plan pipeline after the extractors' raw results are loaded:
-  1. translator.extract.ocr.fuse: OCR texts, room naming, levels (its settings are the defaults here)
+  1. translator.extract.ocr.fuse: OCR texts, room naming, levels (its settings are the defaults here);
+     then sauna_fallback(): a sauna bench icon and no sauna room -> one inferred sauna
   2. dedupe(): two active elements of the same category with IoU > DUP_IOU are one element; the higher-
      confidence one stays, the other gets status "superseded" and superseded_by. Nothing is deleted.
      Segmentation components of one class never overlap, so today this mostly matters once vlm_check adds
@@ -244,6 +245,55 @@ def apply_priors(doc: dict, templates=tuple(PRIORS)) -> dict:
     return {t: apply_prior(doc, t) for t in templates}
 
 
+# ------------------------------------------------------------------ sauna fallback
+
+
+def sauna_fallback(doc: dict) -> dict:
+    """No sauna room read, but the segmentation found a sauna bench icon -> one sauna (max one per page).
+
+    Principled (k, Step 10): a sauna bench implies a sauna; same idea as the kitchen fallback in
+    translator.extract.ocr. Uses the icon as kept by cubicasa.MIN_ICON_PX (no new threshold). The room is the
+    bench's shape, inside the region that holds it (parent_room_id), extractor cubicasa5k, flag
+    inferred_from_icon; coverage 'saunas' partial "inferred from sauna bench icon".
+    """
+    from shapely.geometry import Point, Polygon
+
+    if any(r["type"] == "sauna" for r in _active(doc["rooms"])):
+        return {"fired": False}
+    benches = [o for o in _active(doc["objects"]) if o["category"] == "sauna_bench" and o.get("bbox_px")]
+    if not benches:
+        return {"fired": False}
+    bench = max(benches, key=lambda o: o["confidence"])
+    b = bench["bbox_px"]
+    pt = Point((b[0] + b[2]) / 2, (b[1] + b[3]) / 2)
+    hosts = [
+        r for r in _active(doc["rooms"])
+        if r.get("polygon_px") and len(r["polygon_px"]) >= 3 and "label_only" not in r.get("flags", [])
+        and Polygon(r["polygon_px"]).buffer(0).contains(pt)
+    ]  # fmt: skip
+    parent = min(hosts, key=lambda r: Polygon(r["polygon_px"]).buffer(0).area)["id"] if hosts else None
+    room = {
+        "id": "room-sauna-bench-0", "name": None, "number": None, "label": None, "type": "sauna",
+        "subtype": "inferred from sauna bench icon", "is_outdoor": False, "parent_room_id": parent,
+        "polygon_px": bench.get("polygon_px") or [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]],
+        "polygon_m": None, "area_m2": None, "confidence": round(0.5 * bench["confidence"], 4),
+        "provenance": {"extractor": "cubicasa5k", "source_ref": bench["provenance"]["source_ref"],
+                       "details": {"from": "sauna bench icon", "icon_id": bench["id"], "region": parent}},
+        "status": "active", "flags": ["inferred_from_icon"],
+    }  # fmt: skip
+    doc["rooms"].append(room)
+    note = f"inferred from sauna bench icon ({bench['id']}); no sauna label read"
+    doc["coverage"] = [
+        c for c in doc["coverage"] if not (c["category"] == "saunas" and c["region"] == "page")
+    ]
+    cov = {"category": "saunas", "region": "page", "status": "partial", "extractor": "cubicasa5k",
+           "confidence": room["confidence"], "note": note}  # fmt: skip
+    doc["coverage"].append(cov)
+    doc["history"].append({"extractor": "cubicasa5k", "action": "sauna_fallback", "entity_ids": [room["id"]],
+                           "note": note})  # fmt: skip
+    return {"fired": True, "room": room["id"]}
+
+
 # ------------------------------------------------------------------ raster pipeline
 
 
@@ -272,6 +322,7 @@ def fuse_raster(
         doc, seg_raw, ocr_raw, read_from, merge=merge, label_priority=label_priority,
         kitchen_fallback=kitchen_fallback, rotation=rotation, floors_rule=floors_rule,
     )  # fmt: skip
+    summary["sauna_fallback"] = sauna_fallback(doc)
     summary["duplicates"] = len(dedupe_document(doc))
     if priors:
         summary["priors"] = apply_priors(doc)
