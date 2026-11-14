@@ -1,0 +1,370 @@
+"""Step 7: OCR fusion from synthetic OCR output (no GPU, no network)."""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+import cv2
+import numpy as np
+import pytest
+
+REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO))
+sys.path.insert(0, str(REPO / "eval"))
+
+import probe  # noqa: E402
+
+from translator import glossary, translate_all  # noqa: E402
+from translator.extract import cubicasa as cc  # noqa: E402
+from translator.extract import ocr  # noqa: E402
+
+# ------------------------------------------------------------------ glossary
+
+
+@pytest.mark.parametrize(
+    "text, types",
+    [
+        ("MH", ["bedroom"]),
+        ("OH", ["living"]),
+        ("TUPA", ["living"]),
+        ("KEITTIÖ", ["kitchen"]),
+        ("KK", ["kitchen"]),
+        ("AVOK", ["kitchen"]),
+        ("TK", ["kitchen"]),
+        ("KH", ["bathroom"]),
+        ("KPH", ["bathroom"]),
+        ("PESUH.", ["bathroom"]),
+        ("SH", ["bathroom"]),
+        ("WC", ["wc"]),
+        ("SAUNA", ["sauna"]),
+        ("ET", ["entry"]),
+        ("ETEINEN", ["entry"]),
+        ("VH", ["closet"]),
+        ("VAR", ["storage"]),
+        ("PARVEKE", ["balcony"]),
+        ("PARV", ["balcony"]),
+        ("LASIT. PARV", ["balcony"]),
+        ("TERASSI", ["terrace"]),
+        ("RT", ["dining"]),
+        ("SOV", ["bedroom"]),
+        ("KÖK", ["kitchen"]),
+        ("BAD", ["bathroom"]),
+        ("BALK", ["balcony"]),
+        ("MH 8,0 m2", ["bedroom"]),
+        ("OH+K", ["living", "kitchen"]),
+        ("K/RT", ["kitchen", "dining"]),
+        ("K", ["kitchen"]),
+        ("S 4,5 m²", ["sauna"]),
+        ("1200", []),
+        ("IS*5", []),
+        ("kaide h=1100", []),
+    ],
+)
+def test_glossary_maps_labels_to_schema_types(text, types):
+    assert glossary.ocr_room_types(text) == types
+
+
+def test_glossary_types_are_in_the_schema_enum():
+    schema = json.loads((REPO / "translator/schema/drawing.schema.json").read_text(encoding="utf-8"))
+    enum = set(schema["$defs"]["room"]["properties"]["type"]["enum"])
+    assert set(glossary._FI_SV) <= enum
+
+
+@pytest.mark.parametrize(
+    "text, types",
+    [
+        ("0H", ["living"]),  # 0 read for O
+        ("MH1", ["bedroom"]),  # numbered rooms
+        ("MH 2", ["bedroom"]),
+        ("mh", ["bedroom"]),  # case
+        ("KEITTIO", ["kitchen"]),  # missing dots
+        ("Kylpyhuone", ["bathroom"]),
+        ("W.C.", ["wc"]),
+        ("VVC", ["wc"]),
+        ("K ABC", []),  # a single letter next to an unknown word is not trusted
+        ("S-1200 KAAPPI", []),
+    ],
+)
+def test_ocr_noise_is_normalised(text, types):
+    assert glossary.ocr_room_types(text) == types
+
+
+def test_outdoor_types():
+    for label in ("PARVEKE", "TERASSI", "LASIT. PARV", "loggia"):
+        (t,) = glossary.ocr_room_types(label)
+        assert t in glossary.OUTDOOR_TYPES
+
+
+@pytest.mark.parametrize(
+    "text, title",
+    [
+        ("1. KRS", "1 krs"),
+        ("1.KRS", "1 krs"),
+        ("2. KERROS", "2 krs"),
+        ("KELLARI", "kellari"),
+        ("ULLAKKO", "ullakko"),
+        ("1st floor", "1st floor"),
+        ("MH", None),
+        ("KRS", None),
+    ],
+)
+def test_level_titles(text, title):
+    assert glossary.level_title(text) == title
+
+
+@pytest.mark.parametrize(
+    "text, role",
+    [
+        ("MH 8,0 m2", "room_label"),
+        ("7,0 m2", "area"),
+        ("1200", "dimension"),
+        ("2. KERROS", "level_title"),
+        ("IS*5", "other"),
+    ],
+)
+def test_text_roles(text, role):
+    assert ocr.text_role(text) == role
+
+
+# ------------------------------------------------------------------ boxes back to original pixels
+
+
+def test_boxes_map_back_through_upscale_and_flip():
+    poly = [[10, 4], [30, 4], [30, 14], [10, 14]]
+    assert ocr.to_original(poly, 2, False, 200) == [[5, 2], [15, 2], [15, 7], [5, 7]]
+    # flipped copy of a 200 px wide (upscaled) image: x -> 200 - x, then / 2
+    assert ocr.to_original(poly, 2, True, 200) == [[95, 2], [85, 2], [85, 7], [95, 7]]
+
+
+def _item(text, score=0.9, box=(0, 0, 10, 10)):
+    x0, y0, x1, y1 = box
+    return {"text": text, "score": score, "poly": [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]}
+
+
+def test_mirrored_plan_reads_the_flipped_copy():
+    raw = {
+        "orientations": {
+            "original": [_item("HM", 0.6), _item("HK", 0.5), _item("1200", 0.9)],
+            "flipped": [_item("MH", 0.95), _item("KH", 0.9), _item("0021", 0.6)],
+        }
+    }
+    side, items, stats = ocr.choose_orientation(raw)
+    assert side == "flipped" and items[0]["text"] == "MH"
+    assert stats["flipped"]["hits"] == 2 and stats["original"]["hits"] == 0
+
+
+def test_normal_plan_reads_as_drawn():
+    raw = {
+        "orientations": {
+            "original": [_item("MH", 0.95), _item("OH", 0.9)],
+            "flipped": [_item("HM", 0.5), _item("HO", 0.6)],
+        }
+    }
+    assert ocr.choose_orientation(raw)[0] == "original"
+    # no hits either way: read as drawn, even if the flipped copy scores higher
+    raw = {"orientations": {"original": [_item("1200", 0.5)], "flipped": [_item("0021", 0.9)]}}
+    assert ocr.choose_orientation(raw)[0] == "original"
+    # equal hits: flipped only when clearly more confident
+    raw = {"orientations": {"original": [_item("WC", 0.6)], "flipped": [_item("WC", 0.62)]}}
+    assert ocr.choose_orientation(raw)[0] == "original"
+    raw = {"orientations": {"original": [_item("WC", 0.6)], "flipped": [_item("WC", 0.9)]}}
+    assert ocr.choose_orientation(raw)[0] == "flipped"
+
+
+# ------------------------------------------------------------------ rooms
+
+
+def _room(rid, cls, rtype, box, conf=0.8):
+    x0, y0, x1, y1 = box
+    return {
+        "id": rid,
+        "name": None,
+        "number": None,
+        "label": None,
+        "type": rtype,
+        "subtype": cls,
+        "is_outdoor": rtype == "outdoor",
+        "polygon_px": [[x0, y0], [x1, y0], [x1, y1], [x0, y1]],
+        "polygon_m": None,
+        "area_m2": None,
+        "confidence": conf,
+        "provenance": {"extractor": "cubicasa5k", "source_ref": f"room:{rid}", "file": "x.png"},
+        "status": "active",
+        "flags": [],
+    }
+
+
+def _texts(*items):
+    return ocr.texts_from_items(list(items), "original", "x.png", "test")
+
+
+def test_label_names_the_room_that_holds_its_centre():
+    rooms = [
+        _room("a", "Bedroom", "bedroom", (0, 0, 100, 100)),
+        _room("b", "Undefined", "unknown", (110, 0, 200, 100)),
+    ]
+    texts = _texts(_item("SAUNA", 0.95, (140, 40, 170, 50)))
+    out, stats = ocr.name_rooms(rooms, texts, "x.png")
+    b = next(r for r in out if r["id"] == "b")
+    assert b["type"] == "sauna" and b["name"] == "SAUNA" and b["confidence"] == pytest.approx(0.95)
+    assert b["provenance"]["details"]["seg_type"] == "unknown" and texts[0]["room_id"] == "b"
+    a = next(r for r in out if r["id"] == "a")
+    assert a["type"] == "bedroom" and a["name"] is None  # unlabelled: keeps the segmentation class
+    assert stats["named_regions"] == 1 and stats["label_only"] == 0
+
+
+def test_label_in_no_region_becomes_a_low_confidence_room():
+    rooms = [_room("a", "Bedroom", "bedroom", (0, 0, 100, 100))]
+    texts = _texts(_item("PARVEKE", 0.9, (300, 300, 340, 310)))
+    out, stats = ocr.name_rooms(rooms, texts, "x.png")
+    (r,) = [r for r in out if r["id"] != "a"]
+    assert r["type"] == "balcony" and r["is_outdoor"] and r["name"] == "PARVEKE"
+    assert "label_only" in r["flags"] and r["confidence"] == pytest.approx(0.27)
+    assert r["polygon_px"] == texts[0]["polygon_px"] and r["provenance"]["extractor"] == "ocr"
+    assert texts[0]["room_id"] == r["id"] and stats["label_only"] == 1
+
+
+def test_two_labels_in_one_region_make_two_rooms():
+    rooms = [_room("a", "Bath", "bathroom", (0, 0, 100, 100))]
+    texts = _texts(_item("KH", 0.9, (40, 40, 50, 50)), _item("SAUNA", 0.8, (80, 80, 95, 90)))
+    out, _ = ocr.name_rooms(rooms, texts, "x.png")
+    types = sorted(r["type"] for r in out)
+    assert types == ["bathroom", "sauna"]
+    sauna = next(r for r in out if r["type"] == "sauna")
+    assert sauna["parent_room_id"] == "a" and "shares_region" in sauna["flags"]
+
+
+def test_combined_label_names_two_rooms():
+    rooms = [_room("a", "Living room", "living", (0, 0, 100, 100))]
+    out, _ = ocr.name_rooms(rooms, _texts(_item("OH+K", 0.9, (40, 40, 60, 50))), "x.png")
+    assert sorted(r["type"] for r in out) == ["kitchen", "living"]
+
+
+def test_label_priority_steps_back_unlabelled_regions_of_a_labelled_type():
+    rooms = [
+        _room("a", "Kitchen", "kitchen", (0, 0, 50, 50)),
+        _room("b", "Kitchen", "kitchen", (200, 0, 250, 50)),
+    ]
+    texts = _texts(_item("K", 0.9, (20, 20, 25, 25)))
+    out, _ = ocr.name_rooms([dict(r) for r in rooms], texts, "x.png")
+    assert sum(r["type"] == "kitchen" for r in out) == 2
+    out, _ = ocr.name_rooms(
+        [dict(r) for r in rooms], _texts(_item("K", 0.9, (20, 20, 25, 25))), "x.png", True
+    )
+    assert sum(r["type"] == "kitchen" for r in out) == 1
+
+
+def test_touching_same_class_regions_merge():
+    rooms = [
+        _room("k0", "Kitchen", "kitchen", (0, 0, 50, 50), 0.9),
+        _room("k1", "Kitchen", "kitchen", (52, 0, 100, 50), 0.5),  # 2 px gap: same room
+        _room("k2", "Kitchen", "kitchen", (300, 0, 350, 50)),  # far away: a second kitchen
+        _room("b0", "Bedroom", "bedroom", (0, 52, 50, 100)),  # other class: never merged
+    ]
+    out, merges = ocr.merge_rooms(rooms)
+    active = [r for r in out if r["status"] == "active"]
+    assert sum(r["type"] == "kitchen" for r in active) == 2 and len(merges) == 1
+    (m,) = [r for r in active if "merged" in r["flags"]]
+    assert m["provenance"]["details"]["merged_from"] == ["k0", "k1"]
+    assert 0.5 < m["confidence"] < 0.9
+    assert {r["id"]: r.get("superseded_by") for r in out if r["status"] == "superseded"} == {
+        "k0": m["id"],
+        "k1": m["id"],
+    }
+
+
+# ------------------------------------------------------------------ storeys
+
+
+def _seg_raw(boxes, h=200, w=400):
+    cls = np.zeros((h, w), np.uint8)
+    for x0, y0, x1, y1 in boxes:
+        cls[y0:y1, x0:x1] = cc.ROOM_CLASSES.index("Wall")
+        cls[y0 + 3 : y1 - 3, x0 + 3 : x1 - 3] = cc.ROOM_CLASSES.index("Bedroom")
+    prob = np.ones((h, w), np.float32)
+    icons = np.zeros((h, w), np.uint8)
+    return cc.raw_from_maps(cls, prob, icons, prob, meta={"name": "s", "transforms": {}})
+
+
+def test_building_blobs_and_levels():
+    raw = _seg_raw([(10, 10, 150, 150), (220, 10, 380, 150)])
+    blobs = ocr.building_blobs(raw)
+    assert len(blobs) == 2
+    lv, cov = ocr.levels([], blobs, "x.png")  # no titles: one level per blob
+    assert [x["name"] for x in lv] == ["floor 1", "floor 2"] and cov["status"] == "analysed"
+    texts = _texts(_item("1. KRS", 0.9, (20, 160, 60, 170)), _item("2. KERROS", 0.9, (230, 160, 280, 170)))
+    lv, cov = ocr.levels(texts, blobs, "x.png")
+    assert [x["name"] for x in lv] == ["1. KRS", "2. KERROS"] and cov["status"] == "analysed"
+    lv, cov = ocr.levels(texts[:1], blobs, "x.png")  # 1 title, 2 blobs: disagree
+    assert len(lv) == 1 and cov["status"] == "partial" and cov["confidence"] <= 0.3
+    assert "check_this" in lv[0]["flags"]
+
+
+# ------------------------------------------------------------------ the whole raster document
+
+
+@pytest.fixture
+def plan(tmp_path, monkeypatch):
+    folder = tmp_path / "cubicasa5k"
+    folder.mkdir()
+    ok, buf = cv2.imencode(".png", np.full((200, 400, 3), 255, np.uint8))
+    buf.tofile(str(folder / "synthetic.png"))
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir()
+    monkeypatch.setattr(cc, "raw_dir", lambda: raw_dir)
+    monkeypatch.setattr(ocr, "raw_dir", lambda: raw_dir)
+    seg = _seg_raw([(10, 10, 150, 150), (150, 10, 300, 150)])  # one building, two bedroom regions
+    (raw_dir / "synthetic.seg.json").write_text(json.dumps(seg), encoding="utf-8")
+    return folder / "synthetic.png", tmp_path, raw_dir
+
+
+def _write_ocr(raw_dir, original, flipped=()):
+    raw = {"name": "synthetic", "width_px": 400, "height_px": 200, "ocr_upscale": 2,
+           "orientations": {"original": list(original), "flipped": list(flipped)},
+           "model": {"rec_model": "latin_test_rec"}, "cost_usd": 0.0001}  # fmt: skip
+    (raw_dir / "synthetic.ocr.json").write_text(json.dumps(raw), encoding="utf-8")
+
+
+def test_translate_all_names_rooms_and_writes_texts(plan):
+    path, root, raw_dir = plan
+    items = [
+        _item("MH", 0.9, (60, 60, 80, 70)),
+        _item("SAUNA", 0.9, (200, 60, 240, 70)),
+        _item("PARVEKE", 0.8, (320, 160, 380, 170)),  # outside the building: a label-only room
+        _item("10,5 m2", 0.9, (60, 75, 90, 85)),
+    ]
+    _write_ocr(raw_dir, items)
+    (doc,) = translate_all(str(path), str(root))  # schema-validated inside
+    types = sorted(r["type"] for r in doc["rooms"] if r.get("status", "active") == "active")
+    assert types == ["balcony", "bedroom", "sauna"]
+    assert {t["role"] for t in doc["texts"]} == {"room_label", "area"}
+    assert all(t["provenance"]["extractor"] == "ocr" for t in doc["texts"])
+    cov = {c["category"]: c for c in doc["coverage"]}
+    assert cov["text"]["status"] == "analysed" and cov["text"]["extractor"] == "ocr"
+    assert cov["shower"]["status"] == "not_analysed"
+    assert cov["floors"]["status"] == "analysed" and len(doc["levels"]) == 1
+    assert {"kind": "other", "note": "mirrored"} not in doc["drawing"]["transforms"]
+    ask = lambda q: probe.answer([doc], "cubicasa5k", q)[1]  # noqa: E731
+    assert ask("How many saunas are there in this apartment?") == 1
+    assert ask("How many balconies does this apartment have?") == 1
+    assert ask("How many floors (storeys) does this plan show?") == 1
+
+
+def test_translate_all_records_a_mirrored_plan(plan):
+    path, root, raw_dir = plan
+    _write_ocr(raw_dir, [_item("HM", 0.5, (60, 60, 80, 70))], [_item("MH", 0.95, (60, 60, 80, 70))])
+    (doc,) = translate_all(str(path), str(root))
+    assert {"kind": "other", "note": "mirrored"} in doc["drawing"]["transforms"]
+    assert doc["texts"][0]["text"] == "MH" and doc["texts"][0]["provenance"]["source_ref"] == "ocr:flipped:0"
+
+
+def test_ocr_size_mismatch_fails_loudly(plan):
+    path, root, raw_dir = plan
+    _write_ocr(raw_dir, [])
+    raw = json.loads((raw_dir / "synthetic.ocr.json").read_text(encoding="utf-8"))
+    raw["width_px"] = 999
+    (raw_dir / "synthetic.ocr.json").write_text(json.dumps(raw), encoding="utf-8")
+    with pytest.raises(ValueError, match="OCR size differs"):
+        translate_all(str(path), str(root))
