@@ -38,6 +38,7 @@ Never cut: eval, router, Swiss, IFC areas.
 - Fixture categories: toilet, sink, shower, bathtub, sauna_bench, stair.
 - Never delete a pipeline element when a better one is found. Mark it superseded.
 - Written areas only CROSS-CHECK. Flag check_this if >10% off (>2% for vector sources).
+- Schema v0.2 (translator/schema/drawing.schema.json) is the contract. The agent teammate reads v0.2. Do not change it without asking.
 
 ## Coordinate rules (the most common source of bugs)
 - Highlight coordinates are pixels of the ORIGINAL page image at a fixed dpi.
