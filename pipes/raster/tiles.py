@@ -12,6 +12,8 @@ from pathlib import Path
 
 from PIL import Image
 
+from pipes.ingest.augment import variants
+
 TILE = 640
 OVERLAP = 128
 KEEP_FRAC = 0.6
@@ -43,7 +45,14 @@ def read_boxes(path: Path) -> list[list[float]]:
     return [[float(v) for v in ln.split()[1:]] for ln in path.read_text().splitlines() if ln.strip()]
 
 
-def build_yolo_dataset(dev: Path, out: Path, seed: int = 0, splits=("train", "val")) -> dict:
+def build_yolo_dataset(
+    dev: Path,
+    out: Path,
+    seed: int = 0,
+    splits=("train", "val"),
+    augment: int = 0,
+    yaml_path: str = "/data/yolo_dev",
+) -> dict:
     """dev/<split>/<id>/{sheet.jpg,yolo.txt} -> out/{images,labels}/<split>/<id>_<x>_<y>.{jpg,txt} + yaml."""
     rng = random.Random(seed)
     if out.exists():
@@ -75,6 +84,20 @@ def build_yolo_dataset(dev: Path, out: Path, seed: int = 0, splits=("train", "va
                     (out / "labels" / sp / f"{stem}.txt").write_text("".join(lines))
                     n_tiles += 1
                     n_boxes += len(tb)
+                    if augment and sp == "train" and tb:
+                        crop = im.crop((x0, y0, x0 + w, y0 + h))
+                        for name, aim, abx in variants(crop, tb, augment, rng):
+                            aw, ah = aim.size
+                            aim.save(out / "images" / sp / f"{stem}_{name}.jpg", quality=95)
+                            (out / "labels" / sp / f"{stem}_{name}.txt").write_text(
+                                "".join(
+                                    f"0 {(b[0] + b[2]) / 2 / aw:.6f} {(b[1] + b[3]) / 2 / ah:.6f} "
+                                    f"{(b[2] - b[0]) / aw:.6f} {(b[3] - b[1]) / ah:.6f}\n"
+                                    for b in abx
+                                )
+                            )
+                            n_tiles += 1
+                            n_boxes += len(abx)
         stats[sp] = {"tiles": n_tiles, "boxes": n_boxes}
     (out / "pipes.yaml").write_text(
         "path: /data/yolo_dev\ntrain: images/train\nval: images/val\nnames:\n  0: symbol\n", encoding="utf-8"

@@ -69,9 +69,14 @@ def remove_small(ink: np.ndarray, w: float) -> np.ndarray:
     return keep[lab]
 
 
-def erase(ink: np.ndarray, w: float, boxes: list[list[float]], text: np.ndarray) -> np.ndarray:
-    """Ink with symbol boxes (shrunk by 1 px) and OCR text removed, then tiny components dropped."""
+def erase(
+    ink: np.ndarray, w: float, boxes: list[list[float]], text: np.ndarray, extra: np.ndarray | None = None
+) -> np.ndarray:
+    """Ink with symbol boxes (shrunk by 1 px), OCR text and `extra` (frames, legend, title block) removed,
+    then tiny components dropped."""
     out = ink & ~box_mask(ink.shape, boxes) & ~text
+    if extra is not None:
+        out &= ~extra
     return remove_small(out, w)
 
 

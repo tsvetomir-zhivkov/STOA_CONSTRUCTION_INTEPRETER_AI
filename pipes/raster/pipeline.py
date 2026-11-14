@@ -21,6 +21,7 @@ from pipes import graph as gr
 from pipes.ingest.pid_dataset import gt_document
 from pipes.raster import erase as er
 from pipes.raster import ocr_run
+from pipes.raster import regions as rg
 from pipes.raster.detect import merge
 from pipes.raster.trace_skeleton import trace
 from pipes.write import finalize
@@ -40,38 +41,43 @@ def _clip(b, W, H):
     return [round(max(b[0], 0), 1), round(max(b[1], 0), 1), round(min(b[2], W), 1), round(min(b[3], H), 1)]
 
 
-def symbol_boxes(sheet_dir: Path, mode: str, conf: float) -> list[dict]:
+def symbol_boxes(sheet_dir: Path, mode: str, conf: float, run: str = "dev") -> list[dict]:
     split, sid = sheet_dir.parent.name, sheet_dir.name
     if mode == "gt":
         doc = json.loads((sheet_dir / "gt.pipe.json").read_text(encoding="utf-8"))
         return [{"bbox_px": n["bbox_px"], "score": 1.0} for n in doc["nodes"]]
-    raw = json.loads(
-        (HERE / "index_pipes/_raw" / f"dev_{split}" / f"{sid}.det.json").read_text(encoding="utf-8")
-    )
+    raw_dir = f"dev_{split}" if run == "dev" else f"dev_{split}_{run}"
+    raw = json.loads((HERE / "index_pipes/_raw" / raw_dir / f"{sid}.det.json").read_text(encoding="utf-8"))
     return [
         {"bbox_px": [round(v, 2) for v in d["bbox_px"]], "score": d["score"]}
         for d in merge(raw["dets"], conf)
     ]
 
 
-def run_sheet(sheet_dir: Path, mode: str = "gt", conf: float = 0.5) -> dict:
+def run_sheet(sheet_dir: Path, mode: str = "gt", conf: float = 0.5, run: str = "dev") -> dict:
     split, sid = sheet_dir.parent.name, sheet_dir.name
     sheet = sheet_dir / "sheet.jpg"
     p = er.prep(sheet)
     H, W = p.shape
     w = p.w
-    syms = symbol_boxes(sheet_dir, mode, conf)
+    syms = symbol_boxes(sheet_dir, mode, conf, run)
     boxes = [s["bbox_px"] for s in syms]
     texts = [t for t in ocr_run.load(split, sid) if t["score"] >= MIN_TEXT_SCORE]
     tmask = er.text_mask((H, W), texts)
 
+    # step 5: frames, title block and legend rectangles are removed before tracing
+    frames = rg.find_frames(p.ink, w, tmask)
+    regions = rg.classify(p.ink, w, frames, boxes, texts)
+    rmask = rg.mask((H, W), regions, w) if regions else None
     # stroke width from the pipes alone: the page-wide median is inflated by text and symbol outlines
     pipes_only = p.ink & ~tmask & ~er.box_mask((H, W), boxes)
+    if rmask is not None:
+        pipes_only &= ~rmask
     if pipes_only.sum() > 200:
         w = er.stroke_width(pipes_only)
     ink_no_text = p.ink & ~tmask
     port_list = er.ports(ink_no_text, w, boxes)
-    clean = er.erase(p.ink, w, boxes, tmask)
+    clean = er.erase(p.ink, w, boxes, tmask, rmask)
 
     # junction dots: dark share in a disk on the UN-erased ink
     yy, xx = np.mgrid[0:H, 0:W] if H * W < 4e6 else (None, None)
@@ -99,10 +105,11 @@ def run_sheet(sheet_dir: Path, mode: str = "gt", conf: float = 0.5) -> dict:
     n_stitch = gr.stitch(g, w, tmask)
 
     return assemble(sheet_dir, mode, conf, syms, port_list, texts, g, w, (W, H), p.transforms,
-                    {"spurs_pruned": n_spurs, "stitched": n_stitch, **bstats})  # fmt: skip
+                    {"spurs_pruned": n_spurs, "stitched": n_stitch, "regions": len(regions), **bstats},
+                    regions)  # fmt: skip
 
 
-def assemble(sheet_dir, mode, conf, syms, port_list, texts, g, w, size, transforms, stats) -> dict:
+def assemble(sheet_dir, mode, conf, syms, port_list, texts, g, w, size, transforms, stats, regions) -> dict:
     split, sid = sheet_dir.parent.name, sheet_dir.name
     W, H = size
     r = max(8.0, 3 * w)
@@ -242,7 +249,18 @@ def assemble(sheet_dir, mode, conf, syms, port_list, texts, g, w, size, transfor
     ]  # fmt: skip
     doc["sheet"]["provenance"]["extractor_id"] = "ext_graph"
     doc["scale"]["provenance"]["extractor_id"] = "ext_graph"
-    doc["sheet"]["regions"] = []
+    doc["sheet"]["regions"] = [
+        {"kind": rgn["kind"], "bbox_px": _clip(rgn["bbox_px"], W, H),
+         "provenance": {"extractor_id": "ext_graph", "confidence": 0.7, "source_ref": None}}
+        for rgn in regions
+    ]  # fmt: skip
+    for rgn in regions:
+        if rgn["erase"] == "full":
+            doc["coverage"].append(
+                {"id": f"cov_{len(doc['coverage']) + 1}", "region": _clip(rgn["bbox_px"], W, H),
+                 "category": "pipes", "status": "not_analysed", "confidence": 0.0, "extractor_id": "ext_graph",
+                 "element_ids": [], "note": f"{rgn['kind']} region is not traced"}
+            )  # fmt: skip
     doc["history"] = []
     doc = finalize(doc)
     doc["_debug"] = {"stroke_width_px": round(w, 2), "snap_radius_px": r, **stats, "transforms": transforms}
@@ -254,15 +272,17 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("root", help="e.g. pipes/data_pipes/dev/test")
     ap.add_argument("--boxes", choices=["gt", "det"], default="gt")
     ap.add_argument("--conf", type=float, default=0.5)
+    ap.add_argument("--run", default="dev", help="Modal training run whose detections to use (dev, full)")
     ap.add_argument("--overlay", action="store_true")
     a = ap.parse_args(argv)
     from pipes.eval.overlay import draw
 
     root = Path(a.root)
-    out = HERE / "index_pipes" / f"{root.name}_trace_{a.boxes}"
+    suffix = "" if a.run == "dev" or a.boxes == "gt" else f"_{a.run}"
+    out = HERE / "index_pipes" / f"{root.name}_trace_{a.boxes}{suffix}"
     out.mkdir(parents=True, exist_ok=True)
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
-        doc = run_sheet(d, a.boxes, a.conf)
+        doc = run_sheet(d, a.boxes, a.conf, a.run)
         dbg = doc.pop("_debug")
         (out / f"{d.name}.pipe.json").write_text(
             json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8"

@@ -22,12 +22,19 @@ image = (
 )
 
 T4_USD_PER_S = 0.000164  # Modal list price for a T4, cost estimate only
-RUN = "/data/runs/dev"
 
 
 @app.function(image=image, gpu="T4", volumes={"/data": vol}, timeout=2 * 3600, scaledown_window=60)
-def train(epochs: int = 40, model: str = "yolo11s.pt", imgsz: int = 640, batch: int = 16) -> dict:
-    """Train on /data/yolo_dev (tiles + pipes.yaml). Symbols only; no pipe-box classes."""
+def train(
+    epochs: int = 40,
+    model: str = "yolo11s.pt",
+    imgsz: int = 640,
+    batch: int = 16,
+    data: str = "yolo_dev",
+    name: str = "dev",
+    patience: int = 15,
+) -> dict:
+    """Train on /data/<data> (tiles + pipes.yaml). Symbols only; no pipe-box classes. Weights: runs/<name>."""
     import time
 
     from ultralytics import YOLO
@@ -35,17 +42,17 @@ def train(epochs: int = 40, model: str = "yolo11s.pt", imgsz: int = 640, batch: 
     t0 = time.time()
     m = YOLO(model)
     m.train(
-        data="/data/yolo_dev/pipes.yaml", imgsz=imgsz, epochs=epochs, batch=batch, project="/data/runs",
-        name="dev", exist_ok=True, patience=15, flipud=0.5, fliplr=0.5, degrees=0, mosaic=1.0, hsv_v=0.4,
+        data=f"/data/{data}/pipes.yaml", imgsz=imgsz, epochs=epochs, batch=batch, project="/data/runs",
+        name=name, exist_ok=True, patience=patience, flipud=0.5, fliplr=0.5, degrees=0, mosaic=1.0, hsv_v=0.4,
         workers=2, plots=False,
     )  # fmt: skip
     vol.commit()
     secs = time.time() - t0
-    return {"seconds": secs, "cost_usd": secs * T4_USD_PER_S, "weights": f"{RUN}/weights/best.pt"}
+    return {"seconds": secs, "cost_usd": secs * T4_USD_PER_S, "weights": f"/data/runs/{name}/weights/best.pt"}
 
 
 @app.function(image=image, gpu="T4", volumes={"/data": vol}, timeout=1800, scaledown_window=60)
-def detect(sheets: dict[str, bytes], conf: float = 0.25) -> dict:
+def detect(sheets: dict[str, bytes], conf: float = 0.25, run: str = "dev") -> dict:
     """Tiled inference on whole sheets. Returns raw per-tile boxes in ORIGINAL page pixels (no merging)."""
     import io
     import time
@@ -56,7 +63,7 @@ def detect(sheets: dict[str, bytes], conf: float = 0.25) -> dict:
     from pipes.raster.tiles import TILE, origins
 
     t0 = time.time()
-    model = YOLO(f"{RUN}/weights/best.pt")
+    model = YOLO(f"/data/runs/{run}/weights/best.pt")
     out = {}
     for sid, data in sheets.items():
         im = Image.open(io.BytesIO(data)).convert("RGB")
@@ -75,14 +82,16 @@ def detect(sheets: dict[str, bytes], conf: float = 0.25) -> dict:
 
 
 @app.local_entrypoint()
-def train_main(epochs: int = 40, model: str = "yolo11s.pt"):
+def train_main(
+    epochs: int = 40, model: str = "yolo11s.pt", data: str = "yolo_dev", name: str = "dev", patience: int = 15
+):
     import json
 
-    print(json.dumps(train.remote(epochs=epochs, model=model)))
+    print(json.dumps(train.remote(epochs=epochs, model=model, data=data, name=name, patience=patience)))
 
 
 @app.local_entrypoint()
-def detect_main(split: str = "test", conf: float = 0.25):
+def detect_main(split: str = "test", conf: float = 0.05, run: str = "dev"):
     """Detect on data_pipes/dev/<split>; raw tile detections -> index_pipes/_raw/dev_<split>/<id>.det.json."""
     import json
     from pathlib import Path
@@ -93,10 +102,10 @@ def detect_main(split: str = "test", conf: float = 0.25):
         for p in sorted((here / "data_pipes/dev" / split).iterdir())
         if p.is_dir()
     }
-    res = detect.remote(sheets, conf)
-    raw = here / "index_pipes" / "_raw" / f"dev_{split}"
+    res = detect.remote(sheets, conf, run)
+    raw = here / "index_pipes" / "_raw" / (f"dev_{split}" if run == "dev" else f"dev_{split}_{run}")
     raw.mkdir(parents=True, exist_ok=True)
     for sid, d in res["sheets"].items():
-        d["model"] = "yolo11s single-class symbol, dev subset"
+        d["model"] = f"yolo11s single-class symbol, run {run}"
         (raw / f"{sid}.det.json").write_text(json.dumps(d), encoding="utf-8")
     print(f"{len(sheets)} sheets, {res['seconds']:.1f} s GPU, ${res['cost_usd']:.4f}; raw in {raw}")
