@@ -8,7 +8,7 @@ class probability. Everything here works from those raw files, so tuning never r
 
 Post-processing (to_parts):
   icons  one instance per connected component of an icon class; components smaller than min_icon_px are
-         dropped (tunable). Merged components are not split yet. Window/Door -> openings[];
+         dropped (MIN_ICON_PX, tunable). Merged components are not split yet. Window/Door -> openings[];
          Toilet/Sink/Bathtub/Sauna bench -> objects[]; Closet/Electrical appliance/Fireplace/Chimney ->
          objects[] as category "other" with the class as subtype.
   rooms  one room per connected component of a room class (not Background/Wall/Railing), polygon from
@@ -40,7 +40,9 @@ ICON_CLASSES = [
 
 MIN_RAW_PX = 4  # components kept in the raw file (the GPU side); local filters are on top of this
 RAW_EPSILON_PX = 1.0  # approxPolyDP tolerance for raw polygons
-MIN_ICON_PX = 16  # default N: icon components smaller than this are dropped (tunable)
+# icon components smaller than this are dropped. 46 = k's decision (2026-11-14) from the dev sweep in
+# docs/TODO.md: plateau 40-56 for windows, doors and sinks; 16 was never tuned.
+MIN_ICON_PX = 46
 MIN_ROOM_PX = 200  # room components smaller than this are dropped (tunable)
 
 # room class -> (schema room type, is_outdoor); Background / Wall / Railing are not rooms

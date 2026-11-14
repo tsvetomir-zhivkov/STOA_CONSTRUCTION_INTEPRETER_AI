@@ -169,7 +169,13 @@ Open issues (for steps 7-10):
     - 2 images: a false segmentation Kitchen region.
     - 1 image: the misread summary "JH+KK".
 
-## Icon size threshold (MIN_ICON_PX), 2026-11-14, branch step-7-ocr, dev only, NOT applied
+## Icon size threshold (MIN_ICON_PX), 2026-11-14, branch step-7-ocr, dev only
+- **Applied (k's decision): MIN_ICON_PX = 46.** Dev, from Step 8 with priors on: windows 31.1 → 35.8,
+  doors 47.1 → 51.4, toilets 76.0 → 77.6, sinks 60.9 → 67.7, showers+baths 9.1 → 9.1. No template drops:
+  the 47 px bathtub speck (hqa-7838) that cost 2 questions at 48 survives at 46. CubiCasa 61.7 → 63.5,
+  TOTAL 78.9 → 79.8.
+
+Sweep below (before the decision):
 Sweep on the cached raw files (`index/_raw/cubicasa`, no GPU), scored with `eval/score.py` logic from a clean
 index copy. Each image has an EN and an FI question, so 2 questions = 1 image. Default stays 16 until k decides.
 
