@@ -17,7 +17,7 @@ import numpy as np
 from pipes.glossary_pipes import LEGEND_HEADINGS
 
 MIN_AREA = 0.01  # share of the page
-COVER = 0.6  # a side must be inked over this share of its length
+COVER = 0.5  # a side must be inked over this share of its length (text may interrupt it)
 
 
 def _segments(mask: np.ndarray, horizontal: bool) -> list[list[float]]:
@@ -60,7 +60,7 @@ def _merge(segs: list[list[float]], tol: float, small_gap: float, text, horizont
             if abs(s["pos"] - pos) <= tol and joins:
                 s["pos"] = (s["pos"] * s["n"] + pos) / (s["n"] + 1)
                 s["n"] += 1
-                s["a"], s["b"], s["len"] = min(s["a"], a), max(s["b"], b), s["len"] + ln + max(g1 - g0, 0)
+                s["a"], s["b"], s["len"] = min(s["a"], a), max(s["b"], b), s["len"] + ln
                 break
         else:
             sides.append({"pos": pos, "a": a, "b": b, "len": ln, "n": 1})
@@ -132,7 +132,27 @@ def _inner_h_lines(ink: np.ndarray, rect, w: float) -> int:
     return int(1 + (np.diff(ys) > max(3, 2 * w)).sum()) if len(ys) else 0
 
 
-def classify(ink, w, frames, boxes, texts) -> list[dict]:
+def attached(ink: np.ndarray, rect, w: float) -> bool:
+    """True when ink touches a side from inside or outside (a pipe joining it): a frame has clear sides.
+
+    Looks at a 4 px band at 2w+2 px from each side, on both sides of the line, corners excluded.
+    """
+    H, W = ink.shape
+    x0, y0, x1, y1 = (int(round(v)) for v in rect)
+    d0 = int(2 * w + 2)
+    d1 = d0 + 4
+    cx = d1 + 8  # corner exclusion
+    band = np.zeros((H, W), bool)
+    ys = [(y0 - d1, y0 - d0), (y0 + d0, y0 + d1), (y1 + d0, y1 + d1), (y1 - d1, y1 - d0)]
+    xs = [(x0 - d1, x0 - d0), (x0 + d0, x0 + d1), (x1 + d0, x1 + d1), (x1 - d1, x1 - d0)]
+    for r0, r1 in ys:  # horizontal sides (top, bottom): bands above and below the line
+        band[max(r0, 0) : max(r1, 0), max(x0 + cx, 0) : max(x1 - cx, 0)] = True
+    for c0, c1 in xs:
+        band[max(y0 + cx, 0) : max(y1 - cx, 0), max(c0, 0) : max(c1, 0)] = True
+    return bool((ink & band).sum() > 18 * w)
+
+
+def classify(ink, w, frames, boxes, texts, text_mask=None) -> list[dict]:
     """-> [{kind, bbox_px, erase: 'full'|'outline'}] for frames that are not pipe loops."""
     H, W = ink.shape
     tol = max(4.0, 2 * w)
@@ -140,13 +160,16 @@ def classify(ink, w, frames, boxes, texts) -> list[dict]:
     for r in frames:
         x0, y0, x1, y1 = r
         on_border = 0
+        small = 0.5 * min(x1 - x0, y1 - y0)  # an in-line symbol is small next to its frame
         for bx0, by0, bx1, by1 in boxes:
+            if max(bx1 - bx0, by1 - by0) >= small:
+                continue  # a box as big as the frame is a detector error, not a valve on the line
             cx, cy = (bx0 + bx1) / 2, (by0 + by1) / 2
             near_h = min(abs(cy - y0), abs(cy - y1)) <= tol + (by1 - by0) / 2 and x0 - tol <= cx <= x1 + tol
             near_v = min(abs(cx - x0), abs(cx - x1)) <= tol + (bx1 - bx0) / 2 and y0 - tol <= cy <= y1 + tol
             on_border += near_h or near_v
-        if on_border:
-            continue  # symbols sit on its sides: a pipe loop, not a frame
+        if on_border or attached(ink & ~text_mask if text_mask is not None else ink, r, w):
+            continue  # symbols sit on its sides or a pipe joins it: a pipe loop, not a frame
         inside = " ".join(t["text"].upper() for t in texts if x0 <= np.mean([p[0] for p in t["poly"]]) <= x1
                           and y0 <= np.mean([p[1] for p in t["poly"]]) <= y1)  # fmt: skip
         touches = x1 >= W - 3 * tol or y1 >= H - 3 * tol

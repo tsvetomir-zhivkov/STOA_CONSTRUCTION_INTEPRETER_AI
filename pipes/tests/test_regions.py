@@ -39,3 +39,11 @@ def test_pipe_loop_with_inline_symbol_is_not_a_frame():
     assert rg.classify(img.astype(bool), 3.0, frames, [[200, 40, 220, 60]], []) == []  # valve on the top side
     out = rg.classify(img.astype(bool), 3.0, frames, [[200, 120, 220, 140]], [])  # symbol inside only
     assert [r["kind"] for r in out] == ["other"] and out[0]["erase"] == "outline"
+
+
+def test_oversized_box_on_the_border_does_not_block_a_frame():
+    img = canvas()
+    rect(img, 50, 50, 400, 250)
+    frames = rg.find_frames(img.astype(bool), 3.0, None)
+    big = [[380, 20, 520, 280]]  # as tall as the frame: a false detection straddling its side
+    assert [r["kind"] for r in rg.classify(img.astype(bool), 3.0, frames, big, [])] == ["other"]

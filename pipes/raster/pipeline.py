@@ -67,7 +67,7 @@ def run_sheet(sheet_dir: Path, mode: str = "gt", conf: float = 0.5, run: str = "
 
     # step 5: frames, title block and legend rectangles are removed before tracing
     frames = rg.find_frames(p.ink, w, tmask)
-    regions = rg.classify(p.ink, w, frames, boxes, texts)
+    regions = rg.classify(p.ink, w, frames, boxes, texts, tmask)
     rmask = rg.mask((H, W), regions, w) if regions else None
     # stroke width from the pipes alone: the page-wide median is inflated by text and symbol outlines
     pipes_only = p.ink & ~tmask & ~er.box_mask((H, W), boxes)
