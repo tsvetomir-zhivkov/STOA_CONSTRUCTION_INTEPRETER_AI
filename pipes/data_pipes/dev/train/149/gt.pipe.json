@@ -1,0 +1,443 @@
+{
+ "schema_version": "0.1",
+ "kind": "pipe_index",
+ "sheet": {
+  "id": "pid_dataset/train/149#0",
+  "source_file": "pid_dataset/0__raw_data/sheets/train/149.jpg",
+  "source_dataset": "pid_dataset",
+  "file_format": "jpg",
+  "page_index": 0,
+  "dxf_layout": null,
+  "diagram_type": "schematic",
+  "is_to_scale": false,
+  "route": "raster_pipeline",
+  "sheet_id": null,
+  "level_id": null,
+  "title": null,
+  "systems_shown": [],
+  "languages": [],
+  "regions": [],
+  "provenance": {
+   "extractor_id": "ext_human",
+   "confidence": 1.0,
+   "source_ref": null
+  }
+ },
+ "frame": {
+  "frame_key": "pid_dataset/0__raw_data/sheets/train/149.jpg#0@907x745",
+  "width_px": 907,
+  "height_px": 745,
+  "render_dpi": null,
+  "source_units": "px",
+  "source_to_px": [
+   1,
+   0,
+   0,
+   0,
+   1,
+   0
+  ]
+ },
+ "scale": {
+  "metres_per_px": null,
+  "source": "not_to_scale",
+  "confidence": 0.9,
+  "scale_text": null,
+  "evidence_ids": [],
+  "revision": 1,
+  "provenance": {
+   "extractor_id": "ext_human",
+   "confidence": 1.0,
+   "source_ref": null
+  }
+ },
+ "metres_scale_revision": null,
+ "links": [],
+ "extractors": [
+  {
+   "id": "ext_human",
+   "kind": "human",
+   "name": "PID_dataset annotation + hand-labelled edges",
+   "version": null,
+   "run_at": null,
+   "cost_usd": 0.0
+  }
+ ],
+ "nodes": [
+  {
+   "id": "node_1",
+   "type": "unknown",
+   "subtype": "unknown",
+   "tag": null,
+   "tag_text_id": null,
+   "label": null,
+   "bbox_px": [
+    218.0,
+    64.0,
+    263.0,
+    165.0
+   ],
+   "center_px": [
+    240.5,
+    114.5
+   ],
+   "rotation_deg": 0,
+   "ports_px": [],
+   "nominal_size": null,
+   "system": null,
+   "attributes": {
+    "cls_raw": "Symbol"
+   },
+   "in_room_id": null,
+   "in_room_link_id": null,
+   "provenance": {
+    "extractor_id": "ext_human",
+    "confidence": 1.0,
+    "source_ref": "149:0"
+   },
+   "center_m": null,
+   "bbox_m": null
+  },
+  {
+   "id": "node_2",
+   "type": "unknown",
+   "subtype": "unknown",
+   "tag": null,
+   "tag_text_id": null,
+   "label": null,
+   "bbox_px": [
+    459.0,
+    69.0,
+    640.0,
+    235.0
+   ],
+   "center_px": [
+    549.5,
+    152.0
+   ],
+   "rotation_deg": 0,
+   "ports_px": [],
+   "nominal_size": null,
+   "system": null,
+   "attributes": {
+    "cls_raw": "Symbol"
+   },
+   "in_room_id": null,
+   "in_room_link_id": null,
+   "provenance": {
+    "extractor_id": "ext_human",
+    "confidence": 1.0,
+    "source_ref": "149:1"
+   },
+   "center_m": null,
+   "bbox_m": null
+  },
+  {
+   "id": "node_3",
+   "type": "unknown",
+   "subtype": "unknown",
+   "tag": null,
+   "tag_text_id": null,
+   "label": null,
+   "bbox_px": [
+    667.0,
+    125.0,
+    822.0,
+    276.0
+   ],
+   "center_px": [
+    744.5,
+    200.5
+   ],
+   "rotation_deg": 0,
+   "ports_px": [],
+   "nominal_size": null,
+   "system": null,
+   "attributes": {
+    "cls_raw": "Symbol"
+   },
+   "in_room_id": null,
+   "in_room_link_id": null,
+   "provenance": {
+    "extractor_id": "ext_human",
+    "confidence": 1.0,
+    "source_ref": "149:2"
+   },
+   "center_m": null,
+   "bbox_m": null
+  },
+  {
+   "id": "node_4",
+   "type": "unknown",
+   "subtype": "unknown",
+   "tag": null,
+   "tag_text_id": null,
+   "label": null,
+   "bbox_px": [
+    471.0,
+    360.0,
+    635.0,
+    514.0
+   ],
+   "center_px": [
+    553.0,
+    437.0
+   ],
+   "rotation_deg": 0,
+   "ports_px": [],
+   "nominal_size": null,
+   "system": null,
+   "attributes": {
+    "cls_raw": "Symbol"
+   },
+   "in_room_id": null,
+   "in_room_link_id": null,
+   "provenance": {
+    "extractor_id": "ext_human",
+    "confidence": 1.0,
+    "source_ref": "149:3"
+   },
+   "center_m": null,
+   "bbox_m": null
+  },
+  {
+   "id": "node_5",
+   "type": "unknown",
+   "subtype": "unknown",
+   "tag": null,
+   "tag_text_id": null,
+   "label": null,
+   "bbox_px": [
+    521.0,
+    504.0,
+    576.0,
+    551.0
+   ],
+   "center_px": [
+    548.5,
+    527.5
+   ],
+   "rotation_deg": 0,
+   "ports_px": [],
+   "nominal_size": null,
+   "system": null,
+   "attributes": {
+    "cls_raw": "Symbol"
+   },
+   "in_room_id": null,
+   "in_room_link_id": null,
+   "provenance": {
+    "extractor_id": "ext_human",
+    "confidence": 1.0,
+    "source_ref": "149:4"
+   },
+   "center_m": null,
+   "bbox_m": null
+  },
+  {
+   "id": "node_6",
+   "type": "unknown",
+   "subtype": "unknown",
+   "tag": null,
+   "tag_text_id": null,
+   "label": null,
+   "bbox_px": [
+    218.0,
+    578.0,
+    261.0,
+    621.0
+   ],
+   "center_px": [
+    239.5,
+    599.5
+   ],
+   "rotation_deg": 0,
+   "ports_px": [],
+   "nominal_size": null,
+   "system": null,
+   "attributes": {
+    "cls_raw": "Symbol"
+   },
+   "in_room_id": null,
+   "in_room_link_id": null,
+   "provenance": {
+    "extractor_id": "ext_human",
+    "confidence": 1.0,
+    "source_ref": "149:5"
+   },
+   "center_m": null,
+   "bbox_m": null
+  },
+  {
+   "id": "node_7",
+   "type": "unknown",
+   "subtype": "unknown",
+   "tag": null,
+   "tag_text_id": null,
+   "label": null,
+   "bbox_px": [
+    158.0,
+    223.0,
+    326.0,
+    373.0
+   ],
+   "center_px": [
+    242.0,
+    298.0
+   ],
+   "rotation_deg": 0,
+   "ports_px": [],
+   "nominal_size": null,
+   "system": null,
+   "attributes": {
+    "cls_raw": "Symbol"
+   },
+   "in_room_id": null,
+   "in_room_link_id": null,
+   "provenance": {
+    "extractor_id": "ext_human",
+    "confidence": 1.0,
+    "source_ref": "149:6"
+   },
+   "center_m": null,
+   "bbox_m": null
+  },
+  {
+   "id": "node_8",
+   "type": "unknown",
+   "subtype": "unknown",
+   "tag": null,
+   "tag_text_id": null,
+   "label": null,
+   "bbox_px": [
+    529.0,
+    263.0,
+    570.0,
+    331.0
+   ],
+   "center_px": [
+    549.5,
+    297.0
+   ],
+   "rotation_deg": 0,
+   "ports_px": [],
+   "nominal_size": null,
+   "system": null,
+   "attributes": {
+    "cls_raw": "Symbol"
+   },
+   "in_room_id": null,
+   "in_room_link_id": null,
+   "provenance": {
+    "extractor_id": "ext_human",
+    "confidence": 1.0,
+    "source_ref": "149:7"
+   },
+   "center_m": null,
+   "bbox_m": null
+  },
+  {
+   "id": "node_9",
+   "type": "unknown",
+   "subtype": "unknown",
+   "tag": null,
+   "tag_text_id": null,
+   "label": null,
+   "bbox_px": [
+    94.0,
+    95.0,
+    126.0,
+    139.0
+   ],
+   "center_px": [
+    110.0,
+    117.0
+   ],
+   "rotation_deg": 0,
+   "ports_px": [],
+   "nominal_size": null,
+   "system": null,
+   "attributes": {
+    "cls_raw": "Symbol"
+   },
+   "in_room_id": null,
+   "in_room_link_id": null,
+   "provenance": {
+    "extractor_id": "ext_human",
+    "confidence": 1.0,
+    "source_ref": "149:8"
+   },
+   "center_m": null,
+   "bbox_m": null
+  },
+  {
+   "id": "node_10",
+   "type": "unknown",
+   "subtype": "unknown",
+   "tag": null,
+   "tag_text_id": null,
+   "label": null,
+   "bbox_px": [
+    855.0,
+    97.0,
+    879.0,
+    135.0
+   ],
+   "center_px": [
+    867.0,
+    116.0
+   ],
+   "rotation_deg": 0,
+   "ports_px": [],
+   "nominal_size": null,
+   "system": null,
+   "attributes": {
+    "cls_raw": "Symbol"
+   },
+   "in_room_id": null,
+   "in_room_link_id": null,
+   "provenance": {
+    "extractor_id": "ext_human",
+    "confidence": 1.0,
+    "source_ref": "149:9"
+   },
+   "center_m": null,
+   "bbox_m": null
+  }
+ ],
+ "edges": [],
+ "markers": [],
+ "texts": [],
+ "relations": [],
+ "coverage": [
+  {
+   "id": "cov_1",
+   "region": "page",
+   "category": "symbols",
+   "status": "analysed",
+   "confidence": 1.0,
+   "extractor_id": "ext_human",
+   "element_ids": [],
+   "note": "dataset annotation (single class Symbol)"
+  },
+  {
+   "id": "cov_2",
+   "region": "page",
+   "category": "pipes",
+   "status": "not_analysed",
+   "confidence": 0.0,
+   "extractor_id": "ext_human",
+   "element_ids": [],
+   "note": "the dataset annotates no pipe lines"
+  }
+ ],
+ "summary": {
+  "node_counts": {
+   "unknown": 10
+  },
+  "length_m_by_system_and_size": [],
+  "connected_components": 10,
+  "unsnapped_end_count": 0,
+  "computed_at": "2026-11-14T19:51:25Z"
+ }
+}

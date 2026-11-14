@@ -43,3 +43,7 @@ pipes/index_pipes/*
 pipes/data_pipes/raw/
 pipes/data_pipes/ds/
 pipes/data_pipes/yolo/
+
+# pipes: generated YOLO tiles and weights
+pipes/data_pipes/dev/yolo/
+*.pt
