@@ -122,6 +122,28 @@ def test_level_titles(text, title):
 
 
 @pytest.mark.parametrize(
+    "text, summary",
+    [
+        ("1H+KK+ALK+S", True),
+        ("H+KK+S", True),
+        ("H+TK+S", True),
+        ("2 H+K+S", True),
+        ("1-2H+TK+KPH", True),
+        ("3H+KK 70M", True),
+        ("OH+RT+K", False),  # one open room: living + dining + kitchen
+        ("KHH+PH", False),
+        ("ET+porras", False),
+        ("KEITTIO+RUOK", False),
+        ("MH", False),
+        ("H", False),
+    ],
+)
+def test_apartment_summaries(text, summary):
+    assert glossary.is_unit_summary(text) is summary
+    assert (ocr.text_role(text) == "unit_label") is summary
+
+
+@pytest.mark.parametrize(
     "text, role",
     [
         ("MH 8,0 m2", "room_label"),

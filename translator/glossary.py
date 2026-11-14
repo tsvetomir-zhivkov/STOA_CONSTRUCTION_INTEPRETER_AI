@@ -153,6 +153,22 @@ def ocr_room_types(text: str | None) -> list[str]:
     return [t for i, t in enumerate(types) if i == 0 or t != types[i - 1]]
 
 
+_ROOM_COUNT = re.compile(r"(\d+(-\d+)?)?h")
+
+
+def is_unit_summary(text: str | None) -> bool:
+    """An apartment description such as '1H+KK+ALK+S' or '2 H+K+S' (raster OCR only).
+
+    Rule: a '+'-joined text whose first part is a room count (H with an optional number in front: H, 1H,
+    2 H, 1-2H) describes the apartment, not one room. 'OH+RT+K' or 'KHH+PH' stay room labels.
+    """
+    s = fold(text)
+    if "+" not in s:
+        return False
+    first = re.sub(r"[\s.]", "", s.split("+", 1)[0])
+    return bool(_ROOM_COUNT.fullmatch(first))
+
+
 # storey titles: 1. KRS, 2. KERROS, KELLARI, ULLAKKO, 1st floor, 1. VÅN, KÄLLARE ...
 _LEVEL_TITLE = re.compile(
     r"^(\d{1,2}|i{1,3}|iv)\s*\.?\s*(krs|kerros|kerroksen|vaning|van|plan)\b"

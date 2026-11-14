@@ -127,6 +127,8 @@ def load_raw(name: str) -> dict | None:
 def text_role(text: str) -> str:
     if glossary.level_title(text):
         return "level_title"
+    if glossary.is_unit_summary(text):  # '1H+KK+ALK+S': the apartment, not a room
+        return "unit_label"
     if glossary.ocr_room_types(text):
         return "room_label"
     s = glossary.fold(text)
