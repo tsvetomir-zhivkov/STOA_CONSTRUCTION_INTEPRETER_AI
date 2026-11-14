@@ -48,5 +48,36 @@ Open items found while building, grouped by the plan step that should handle the
   "RUOK" drawn as "KOUR"). Not touched here (no flips in step 5). OCR must try a mirrored copy and map
   boxes back (x' = width - 1 - x), recording the flip in drawing.transforms. Not yet counted how many.
 - For step 7: no dev image has a dark background, so the invert path is only covered by synthetic tests.
-- Open: `translator/extract/raster/` (empty stub from step 1) now sits next to `translator/raster/`.
-  Decide where segmentation post-processing goes in step 6 and delete the other.
+- ~~Open: `translator/extract/raster/` stub~~ deleted in step 6 (raster code lives in `translator/raster/`).
+
+## Step 6 (CubiCasa5K segmentation on Modal)
+
+- **Done (2026-11-14).** `translator/modal_app.py` (app `stoa-translator`, class `Seg`, T4, scaledown 120 s)
+  runs hg_furukawa_original on the step 5 normalized image with CubiCasa's 4-rotation test-time averaging;
+  `translator/extract/cubicasa.py` turns the raw results into documents on the CPU.
+  Commands: `python -m modal run -m translator.modal_app [--limit N] [--names a,b]` (dev images only, skips
+  images with a raw file), then `python -m translator.extract.cubicasa [--min-icon-px N] [--min-room-px N]`.
+- **Environment:** Python **3.11** + torch **2.2.2+cu121** load the weights (Modal's 2026.10 image builder no
+  longer builds 3.10 or 3.9; agreed with k). Fallback image `STOA_CC_TORCH=2.0` = torch 2.0.1 (torch 1.13.1
+  has no 3.11 wheels). CubiCasa repo pinned at c34440266665a11f4484eb06cd2e4b7d72ad76c1.
+- **Dev run:** 193/193 images (the 48 held-out ones never read or sent), 0 failures, 123 s GPU time in
+  `run()` (about $0.02 at the T4 list price plus start-up). 15 images above 2048 px ran at a recorded scale
+  (0.51-0.88) and were mapped back. Raw files: `index/_raw/cubicasa/` (8.8 MB, git-ignored).
+- **Dev score (default N = 16 px, nothing tuned):** windows 31.1%, doors 47.1% (baseline 14% each);
+  toilets 76.0%, kitchens 74.6%, bedrooms 66.9%, wc_rooms 61.7%, sinks 60.9%, balconies 57.9%,
+  bathrooms 50.0%, saunas 42.1%, showers+baths 9.1%, floors 0.0%.
+
+Open issues (for steps 7-10):
+- **Mirrored images** (e.g. `colorful-7513`): not handled. The schema has no `flipped` field, so nothing
+  records it yet; segmentation is unaffected, OCR (step 7) is not. Proposal: OCR tries a mirrored copy and
+  maps boxes back with x' = width - 1 - x, recorded as a drawing.transforms entry (kind "other").
+- **Showers:** no model class; coverage says `shower` not_analysed. showers+baths counts bathtubs only (9.1%).
+  Step 9 (VLM) or a label rule.
+- **Floors:** no `levels[]` from segmentation, so 0%. Step 7 (storey titles) and/or building blobs.
+- **Saunas / WC rooms / bathrooms:** the model has no sauna or WC room class (Bath covers both), so those
+  templates need OCR labels (step 7: S/SAUNA, WC, KH/PH). A Sauna bench icon could also imply a sauna.
+- **Room fragmentation:** room classes split into several components (kitchens 74.6% vs 95% baseline);
+  merge per labelled room in step 7.
+- Icon components are not split when merged (as agreed). N is untuned; tune it in step 10 on the dev split.
+- Walls are kept in the raw files but not written to `walls[]` (coverage says not_analysed).
+- Base branch: step-6-cubicasa starts from step-5-raster (main does not have step 5 yet); merge order 5, 6.
