@@ -17,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
+from pipes import config as cfg
 from pipes import graph as gr
 from pipes.ingest.pid_dataset import gt_document
 from pipes.raster import equipment as eq
@@ -42,7 +43,7 @@ def _clip(b, W, H):
     return [round(max(b[0], 0), 1), round(max(b[1], 0), 1), round(min(b[2], W), 1), round(min(b[3], H), 1)]
 
 
-def symbol_boxes(sheet_dir: Path, mode: str, conf: float, run: str = "dev") -> list[dict]:
+def symbol_boxes(sheet_dir: Path, mode: str, conf: float, run: str = cfg.DETECTOR_RUN) -> list[dict]:
     split, sid = sheet_dir.parent.name, sheet_dir.name
     if mode == "gt":
         doc = json.loads((sheet_dir / "gt.pipe.json").read_text(encoding="utf-8"))
@@ -51,16 +52,16 @@ def symbol_boxes(sheet_dir: Path, mode: str, conf: float, run: str = "dev") -> l
     raw = json.loads((HERE / "index_pipes/_raw" / raw_dir / f"{sid}.det.json").read_text(encoding="utf-8"))
     return [
         {"bbox_px": [round(v, 2) for v in d["bbox_px"]], "score": d["score"]}
-        for d in merge(raw["dets"], conf)
+        for d in merge(raw["dets"], conf, passes=cfg.DETECTOR_PASSES)
     ]
 
 
 def run_sheet(
     sheet_dir: Path,
     mode: str = "gt",
-    conf: float = 0.5,
-    run: str = "dev",
-    conf_erase: float = 0.25,
+    conf: float = cfg.CONF_REPORT,
+    run: str = cfg.DETECTOR_RUN,
+    conf_erase: float = cfg.CONF_ERASE,
     equipment: bool = True,
 ) -> dict:
     """conf = reported symbols (nodes); conf_erase = boxes erased before tracing (>= recall, not reported)."""
@@ -295,17 +296,17 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m pipes.raster.pipeline", description=__doc__)
     ap.add_argument("root", help="e.g. pipes/data_pipes/dev/test")
     ap.add_argument("--boxes", choices=["gt", "det"], default="gt")
-    ap.add_argument("--conf", type=float, default=0.5, help="reported symbols")
-    ap.add_argument("--conf-erase", type=float, default=0.25, help="boxes erased before tracing")
+    ap.add_argument("--conf", type=float, default=cfg.CONF_REPORT, help="reported symbols")
+    ap.add_argument("--conf-erase", type=float, default=cfg.CONF_ERASE, help="boxes erased before tracing")
     ap.add_argument("--no-equipment", action="store_true", help="skip closed-contour equipment nodes")
     ap.add_argument("--tag", default="", help="suffix for the output folder")
-    ap.add_argument("--run", default="dev", help="Modal training run whose detections to use (dev, full)")
+    ap.add_argument("--run", default=cfg.DETECTOR_RUN, help="Modal training run whose detections to use")
     ap.add_argument("--overlay", action="store_true")
     a = ap.parse_args(argv)
     from pipes.eval.overlay import draw
 
     root = Path(a.root)
-    suffix = "" if a.run == "dev" or a.boxes == "gt" else f"_{a.run}"
+    suffix = "" if a.boxes == "gt" else f"_{a.run}"
     out = HERE / "index_pipes" / f"{root.name}_trace_{a.boxes}{suffix}{a.tag}"
     out.mkdir(parents=True, exist_ok=True)
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
