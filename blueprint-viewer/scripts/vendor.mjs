@@ -18,3 +18,6 @@ console.log('copied blueprint-ingest vocabulary.js -> vendor/vocabulary.js');
 for (const name of ['three', 'three-mesh-bvh']) {
   fs.cpSync(path.join(here, '..', 'node_modules', name), path.join(here, '..', 'vendor', name), { recursive: true });
 }
+
+const bvh = path.join(here, '..', 'vendor', 'three-mesh-bvh', 'build', 'index.module.js');
+fs.writeFileSync(bvh, fs.readFileSync(bvh, 'utf8').replaceAll("from 'three'", "from '../../three/build/three.module.js'"));

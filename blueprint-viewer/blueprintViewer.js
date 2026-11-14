@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import { renderProjection } from './buildingModel.js';
 import { FileSession } from './session.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+import { MeshBVH, computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import { loadIfcModel, ifcMeshes, explodeIfcMesh, elementGeometry, captureWebIfcLog } from './ifcGeometry.js';
 export { captureWebIfcLog };
 import { checkPsetUnits, measureFromBox, measureFromFootprint } from './psetUnits.js';
@@ -818,6 +818,11 @@ export class BlueprintScene {
   /** add an IFC file streamed with web-ifc (api initialised by the caller); returns the source record */
   addIfc(api, W, bytes, name = 'model.ifc', scope = null) {
     const model = loadIfcModel(api, W, bytes, { origin: this.origin });
+    try { return this.addIfcModel(model, name, scope, api); }
+    catch(error) { api.CloseModel(model.modelID); throw error; }
+  }
+
+  addIfcModel(model, name, scope = null, api = null) {
     if (!this.origin) this.origin = model.origin;
     const c = model.elements.reduce((b, e) => [Math.min(b[0], e.bbox.min[0]), Math.min(b[1], e.bbox.min[2]), Math.max(b[2], e.bbox.max[0]), Math.max(b[3], e.bbox.max[2])], [Infinity, Infinity, -Infinity, -Infinity]);
     const meshes = ifcMeshes(model, { lift: GROUP_LIFT, centre: { x: (c[0] + c[2]) / 2 || 0, z: (c[1] + c[3]) / 2 || 0 }, categoryColor: Object.fromEntries(Object.entries(FIXTURE_STYLE).map(([k, v]) => [k, v.color])) });
@@ -825,7 +830,9 @@ export class BlueprintScene {
     for (const m of meshes) {
       // BVH so picking stays fast on millions of triangles. `indirect`: the BVH must NOT reorder the index buffer, because every
       // element keeps its own index ranges (highlight overlays, outlines)
-      m.geometry.computeBoundsTree?.({ indirect: true });
+      const bvh=m.userData.ifc.batch.bvh;
+      if(bvh) { m.geometry.boundsTree=MeshBVH.deserialize(bvh,m.geometry); delete m.userData.ifc.batch.bvh; }
+      else m.geometry.computeBoundsTree?.({ indirect: true });
       if (heavy) m.castShadow = false; // the shadow pass would double the cost of a 3M-triangle model
     }
     for (const el of model.elements) el.pickId = this.pid();
@@ -843,7 +850,7 @@ export class BlueprintScene {
     const [s] = this.sources.splice(i, 1);
     if (s.kind === 'ifc') {
       for (const m of s.meshes) { m.parent?.remove(m); m.geometry.disposeBoundsTree?.(); m.geometry.dispose(); m.material.dispose(); }
-      s.api.CloseModel(s.model.modelID);
+      s.api?.CloseModel(s.model.modelID);
     }
     if (!this.sources.length) this.origin = null;
     this.assemble();
@@ -1268,12 +1275,19 @@ export class BlueprintViewer {
       if (!token.current() || this.disposed) break;
       try {
         if (/\.ifc$/i.test(f.name)) {
-          const { api, W } = await this.webIfc();
           const t0 = performance.now();
           const bytes = new Uint8Array(await f.arrayBuffer());
           if (!token.current()) break;
           token.processing();
-          const src = this.bp.addIfc(api, W, bytes, f.name, f.documentId ?? null);
+          let src;
+          if(typeof Worker!=='undefined') {
+            const model=await this.parseIfcWorker(bytes,token.signal);
+            if(!token.current())break;
+            src=this.bp.addIfcModel(model,f.name,f.documentId ?? null);
+          } else {
+            const {api,W}=await this.webIfc();if(!token.current())break;
+            src=this.bp.addIfc(api,W,bytes,f.name,f.documentId ?? null);
+          }
           results.push({ name: f.name, ok: true, kind: 'ifc', ms: Math.round(performance.now() - t0), stats: src.model.stats });
         } else {
           const doc = JSON.parse(await f.text());
@@ -1290,6 +1304,19 @@ export class BlueprintViewer {
     }
     if (token.current()) this.afterChange(true);
     return results;
+  }
+
+  parseIfcWorker(bytes,signal) {
+    return new Promise((resolve,reject)=>{
+      const worker=new Worker(new URL('./ifc.worker.js',import.meta.url),{type:'module'});
+      const done=()=>{worker.terminate();signal.removeEventListener('abort',cancel);};
+      const cancel=()=>{done();reject(new DOMException('Import cancelled','AbortError'));};
+      signal.addEventListener('abort',cancel,{once:true});
+      if(signal.aborted)return cancel();
+      worker.onmessage=event=>{done();event.data.error?reject(Error(event.data.error)):resolve(event.data.model);};
+      worker.onerror=event=>{done();reject(Error(event.message));};
+      worker.postMessage({bytes:bytes.buffer,origin:this.bp.origin},[bytes.buffer]);
+    });
   }
 
   remove(id) {

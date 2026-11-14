@@ -71,7 +71,7 @@ No viewer build/lint/typecheck scripts exist initially; start uses npx serve.
 - [x] 2. Lifecycle stabilization and regression tests.
 - [x] 3. Canonical data integration, API, storage and existing pipeline repairs.
 - [x] 4. IFC floor/category visibility.
-- [ ] 5. Cached per-storey 2D plans.
+- [x] 5. Cached per-storey 2D plans.
 - [ ] 6. Synchronized parallel workspace.
 - [ ] 7. Dedicated DXF/SVG environments.
 - [ ] 8. Component inspection and removal.
@@ -81,3 +81,5 @@ No viewer build/lint/typecheck scripts exist initially; start uses npx serve.
 Stage 2: generation-owned serialized imports, visibility restoration, teardown, stale-state reset and parser failure cleanup; session tests pass. Full cross-format browser matrix remains a stage 10 gate.
 
 Stage 3: canonical boundary, legacy/alternate adapter with source archive, repaired AI syntax and persistence, loopback document/extraction API. Canonical sample upload/validate/delete verified through HTTP. Runtime dependencies added: none.
+
+Stage 5: worker-based IFC parsing/BVH generation, cached storey section/projection plans, native IFC Plan/FootPrint polylines and supported circle curves. Unsupported native curves retain mesh-section fallback. Section tests verify cut height and storey elevation.

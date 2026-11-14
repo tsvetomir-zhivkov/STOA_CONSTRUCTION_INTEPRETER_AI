@@ -1,3 +1,4 @@
+import { placementMatrix, nativePlan } from './ifcPlanRepresentations.js';
 /**
  * ifcGeometry.js — real 3D geometry of an IFC file, read with web-ifc (browser or Node: the caller passes the API).
  *
@@ -12,7 +13,7 @@
  * ranges, so picking and highlighting still resolve to ONE element.
  */
 
-import * as THREE from 'three';
+import * as THREE from './vendor/three/build/three.module.js';
 
 /** viewer group of an IFC element (fixture category decides sinks/toilets among flow terminals) */
 export function ifcGroupOf(typeName, category) {
@@ -73,15 +74,7 @@ function lengthUnit(api, W, id) {
 
 /** world z of a placement (sum of the relative placement chain), in model units */
 function placementZ(api, id, ref) {
-  let z = 0;
-  for (let k = 0; ref && k < 20; k++) {
-    const p = api.GetLine(id, val(ref));
-    const rel = p?.RelativePlacement ? api.GetLine(id, val(p.RelativePlacement)) : null;
-    const loc = rel?.Location ? api.GetLine(id, val(rel.Location)) : null;
-    z += Number(val(loc?.Coordinates?.[2])) || 0;
-    ref = p?.PlacementRelTo;
-  }
-  return z;
+  return placementMatrix(api,id,ref).elements[14];
 }
 
 /**
@@ -206,6 +199,7 @@ function loadIfcModelInner(api, W, bytes, o, t0) {
     el.bbox = { min: [bb[0] - origin.x, bb[1] - zBase, bb[2] + origin.y], max: [bb[3] - origin.x, bb[4] - zBase, bb[5] + origin.y] };
     el.size = Math.max(1e-4, (bb[3] - bb[0]) * (bb[5] - bb[2]));
     el.dims = { x: bb[3] - bb[0], y: bb[4] - bb[1], z: bb[5] - bb[2] }; // metres, measured from the real geometry
+    el.nativePlan = nativePlan(api,modelID,line,lenM,origin);
     elements.push(el);
   });
 
