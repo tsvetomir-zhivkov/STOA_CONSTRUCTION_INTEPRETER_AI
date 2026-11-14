@@ -81,3 +81,52 @@ Open issues (for steps 7-10):
 - Icon components are not split when merged (as agreed). N is untuned; tune it in step 10 on the dev split.
 - Walls are kept in the raw files but not written to `walls[]` (coverage says not_analysed).
 - Base branch: step-6-cubicasa starts from step-5-raster (main does not have step 5 yet); merge order 5, 6.
+
+## Step 7 (OCR + glossary room naming), 2026-11-14, branch step-7-ocr
+
+- **Base:** step-7-ocr starts from step-6-cubicasa (agreed with k: main has neither step 5 nor 6 yet).
+  Merge order 5, 6, 7.
+- **Modal app has two entrypoints:** `python -m modal run -m translator.modal_app::main` (segmentation) and
+  `python -m modal run -m translator.modal_app::ocr_main` (OCR). Both take `--limit N`, `--names a,b`
+  and `--overwrite`, and refuse held-out images.
+- **Working OCR set (Modal T4, Python 3.11.18):**
+  - Packages: paddlepaddle-gpu 3.0.0 (CUDA 11.8, cuDNN 8.9.7), from Paddle's index (`.../stable/cu118/`; PyPI only
+    has 2.6.2 for Python 3.11), paddleocr 3.0.3 installed `--no-deps`, paddlex[ocr] 3.0.3,
+    opencv-contrib-python 4.10.0.84, numpy 2.4.1. Paddle runs on `gpu:0` (Tesla T4).
+  - Models: PP-OCRv5_server_det, latin_PP-OCRv3_mobile_rec (Latin script, keeps ä/ö/å) and
+    PP-LCNet_x1_0_textline_ori.
+  - Three install fixes: (1) paddleocr's own dependency list pulls langchain, and its current release has no
+    `langchain.docstore`, so paddleocr is installed without its dependencies; (2) PaddleOCR 3.0.3 has no `fi`
+    language entry, so the models are named directly; (3) the GPU build of Paddle cannot be imported without
+    a GPU driver, so the model download runs on a T4 at build time.
+- **Run:** 193/193 dev images, 0 failures, 259 s GPU in run() (~$0.043), both orientations per image.
+  Raw output: `index/_raw/ocr/<name>.ocr.json`. No held-out image was read or sent.
+- **Dev score (default: label priority on, merging off):**
+
+  | template | step 6 | step 7 | majority baseline |
+  |---|---|---|---|
+  | kitchens | 74.6 | **63.8** | 95 |
+  | bathrooms | 50.0 | 66.0 | 88 |
+  | saunas | 42.1 | 60.2 | 55 |
+  | WC rooms | 61.7 | 76.6 | 61 |
+  | balconies | 57.9 | 84.2 | 57 |
+  | bedrooms | 66.9 | 54.8 | 28 |
+  | floors | 0.0 | 93.3 | 80 |
+
+  CubiCasa overall 45.1 → 57.8, TOTAL 69.9 → 76.8. Swiss and IFC are unchanged.
+- **Kitchen fix (task 5):**
+  - Merging same-class regions within 4 px changed no kitchen count and cost bedrooms 2–4 points.
+  - Counting labelled rooms instead of regions (label priority) moved kitchens from 46.9 to 63.8 and bathrooms
+    from 51.1 to 66.0. So label priority is on and merging is off (it is still available: `--merge`).
+  - Without OCR, building blobs alone give floors 96.9 (vs 93.3 with storey titles).
+- **Mirrored:** 18 dev images are read flipped. 6 are clear (colorful-13685, colorful-7513,
+  high_quality-11377, high_quality-8781, high_quality-8033, high_quality_architectural-10196). The other 12
+  win by only 1–2 glossary hits, often on mirror-symmetric strings (H, OH, S), and are probably not
+  mirrored. They have not been checked by eye. Also, a mirrored "OH" reads "HO" in the flipped copy.
+- **Open, seen in the 20 worst kitchen failures (not tuned yet, waiting for k):**
+  - TK is mapped to kitchen as agreed, but on these plans it is *tuulikaappi* (vestibule): 5 of 20.
+  - Apartment-type summaries (`1H+KK+ALK+S`, `H+KK+S`, `H+TK+S`) are read as room labels: 4 of 20.
+  - Unlabelled small segmentation Kitchen fragments count when no kitchen label was read: 9 of 20.
+  - A second label of the same type in one region (`Kök` + `kk`), or a stray `K`, makes a second kitchen.
+  - The kitchen "K" is often not detected at all; rotated labels (high_quality_architectural-4517) are misread.
+  - OCR misreads like PARVERE are not fuzzy-matched.
