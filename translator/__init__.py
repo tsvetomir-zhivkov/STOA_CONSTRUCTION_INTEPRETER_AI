@@ -33,13 +33,13 @@ def _page_image(r: dict, file_path: Path) -> tuple[dict | None, int | None, int 
                 return None, 0, None
         if not pages:
             return None, 0, None
-        scale = router.PDF_DPI / 72
-        p0 = pages[0]
-        img = {
-            "width_px": round(p0["width_pt"] * scale),
-            "height_px": round(p0["height_pt"] * scale),
-            "dpi": router.PDF_DPI,
-        }
+        import pymupdf
+
+        # same outward-rounded pixel rect pymupdf renders at this dpi (get_pixmap(dpi=...))
+        k = router.PDF_DPI / 72
+        with pymupdf.open(file_path) as pdf:
+            irect = (pdf[0].rect * pymupdf.Matrix(k, k)).irect
+        img = {"width_px": irect.width, "height_px": irect.height, "dpi": router.PDF_DPI}
         return img, 0, len(pages)
     if ext in router.RASTER_EXTS:
         try:
@@ -102,12 +102,12 @@ def translate(path: str, data: str | None = None) -> dict:
         ],
         "history": [{"extractor": "router", "action": "route", "note": note}],
     }
-    _run_extractor(doc, r, root)
+    _run_extractor(doc, r, root, file_path)
     validate(doc, where=r["file"])
     return doc
 
 
-def _run_extractor(doc: dict, r: dict, root: Path) -> None:
+def _run_extractor(doc: dict, r: dict, root: Path, file_path: Path) -> None:
     """Fill the document from the extractor for this route, if one exists yet."""
     if r["route"] == "dxf":
         from translator.extract import swiss_dxf
@@ -120,3 +120,19 @@ def _run_extractor(doc: dict, r: dict, root: Path) -> None:
         doc["history"].extend(parts.pop("history"))
         for key, value in parts.items():
             doc[key] = value
+        _map_to_page(doc, file_path)
+
+
+def _map_to_page(doc: dict, file_path: Path) -> None:
+    """Model metres -> pixels of the asked PDF page (affine on room-number anchors)."""
+    if file_path.suffix.lower() != ".pdf":
+        doc["history"].append({"extractor": "align", "action": "skip", "note": "question file is not a PDF"})
+        return
+    from translator import align
+
+    try:
+        summary = align.map_document(doc, file_path, doc["drawing"].get("page_index") or 0)
+    except Exception as e:  # mapping is for highlighting only; never lose the extraction over it
+        summary = {"ok": False, "reason": f"alignment failed: {e}"}
+    note = ", ".join(f"{k}={v}" for k, v in summary.items())
+    doc["history"].append({"extractor": "align", "action": "affine_fit", "note": note})
