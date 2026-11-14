@@ -1,7 +1,7 @@
 import json
-from answering_agent.agent import answer_question
+from agent import answer_question
 
-with open("sample_drawing.json", encoding="utf-8") as file:
+with open("../sample_drawing.json", encoding="utf-8") as file:
     drawing_data = json.load(file)
 
 while True:

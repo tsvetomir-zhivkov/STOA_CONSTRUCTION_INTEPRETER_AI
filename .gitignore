@@ -1,14 +1,4 @@
-# dataset lives outside the repo (set STOA_DATA); ignore it if copied in
-data/
-.env
-node_modules
-questions.jsonl
-# generated outputs: regenerate with python -m translator --source <name>
+.end
+.modal.toml
 index/
-__pycache__/
-*.pyc
-.pytest_cache/
-.ruff_cache/
-*.tmp
-# model weights (they live in the Modal volume cubicasa-weights)
-*.pkl
+overlay_9385_crop.png*

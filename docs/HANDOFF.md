@@ -4,7 +4,7 @@ Read first: CLAUDE.md, docs/vision_translator_plan.md, docs/TODO.md (full histor
 
 ## 1. Git state
 - Branch `step-7-ocr`. The last commit before this file is `5b5d99a` ("TODO: step 7 decisions applied…").
-- Branch chain, nothing merged: `step-5-raster` (from main) → `step-6-cubicasa` (7 commits) → `step-7-ocr`
+- Branch chain: `step-5-raster` (from main) → `step-6-cubicasa` (7 commits) → `step-7-ocr`
   (24 commits before this file). Merge order: 5, then 6, then 7.
 - `schema-update` (4 commits, from origin/main) adds 5 object categories to the schema (additive, stays 0.2).
   It is not merged and not in step-7-ocr. `translator.__version__` stays 0.2.0 (k's decision).
@@ -63,20 +63,21 @@ Modal; 7 OCR + glossary room naming. Steps 8-12 are not started.
    - 3 have a second kitchen label inside a room (`Kök` + `kk`, `k/pH`, a 2nd `K` in the entry).
    - 2 have false Kitchen regions; 1 has the misread summary "JH+KK".
 2. **Bathrooms 66.0 < 88:** not analysed yet.
-3. **Bedrooms regression:** 66.9 in step 6 → 58.1 now. Cause not analysed yet. Likely contributors: H/MH
+3. **Doors and windows:** are untuned (icon size N=16).
+4. **Bedrooms regression:** 66.9 in step 6 → 58.1 now. Cause not analysed yet. Likely contributors: H/MH
    labels on non-bedroom regions, label-only rooms.
-4. **Mirrored-image margin rule:** 18 dev images are read flipped. Only 6 are clear (colorful-13685,
+5. **Mirrored-image margin rule:** 18 dev images are read flipped. Only 6 are clear (colorful-13685,
    colorful-7513, high_quality-11377, high_quality-8781, high_quality-8033,
    high_quality_architectural-10196). The other 12 win by 1-2 hits on mirror-symmetric strings (H, OH, S)
    and are probably not mirrored (unverified, not checked by eye). A mirrored "OH" reads "HO".
-5. **Rotated pass:** it may stop hurting once items 1 and 3 are fixed. Re-score with `rotation=True`.
-6. **Showers + baths 9.1 vs 73:** the model has no shower class. Coverage says shower not_analysed.
+6. **Rotated pass:** it may stop hurting once items 1 and 3 are fixed. Re-score with `rotation=True`.
+7. **Showers + baths 9.1 vs 73:** the model has no shower class. Coverage says shower not_analysed.
    Planned for the step 9 VLM check.
-7. **Smaller items:**
-   - Fuzzy OCR matching (PARVERE) is not done.
+8. **Smaller items:**
+  - Fuzzy OCR matching (PARVERE) is not done.
    - The kitchen "K" is often not detected (single letters).
    - Saunas lost 0.8 to the summary rule.
-   - Doors and windows are untuned (icon size N=16).
+   
    - Walls are not written to walls[].
 
 ## 5. Environment
@@ -121,7 +122,7 @@ Modal; 7 OCR + glossary room naming. Steps 8-12 are not started.
 - **Git:** do not merge or push unless k asks. Small commits, explicit paths, branch per step.
 - **Checks before every commit:** `pytest -q`, `ruff check translator tests`,
   `ruff format --check translator tests`. The answering_agent ruff errors are known and not ours to fix.
-- **Process:** show k failures before tuning. Report drops, and do not keep a change that lowers any template.
+- **Process:** show k failures before tuning. Report drops, report every drop, and keep a change only if the net gain is clear and each drop has an explained cause.
 - **Next steps:** do not start step 8 or 9 without k's go-ahead.
 
 ## 7. Reproduce

@@ -19,18 +19,21 @@ def _active(item: dict) -> bool:
 
 
 def _brief(item: dict, collection: str) -> dict:
-    fields = ("id", "name", "label", "number", "type", "kind", "category", "room_id", "room_ids", "unit_id", "level_id", "area_m2", "width_m", "confidence", "flags")
-    out = {k: item[k] for k in fields if k in item}
-    out["collection"] = collection
-    out["provenance"] = item.get("provenance")
-    return out
+    fields = (
+        "id", "name", "label", "number", "type", "kind",
+        "category", "room_id", "room_ids", "unit_id",
+        "level_id", "area_m2", "width_m"
+    )
+    return {k: item[k] for k in fields if k in item}
 
 
 def _coverage(data: dict, category: str) -> dict:
-    """Page-wide coverage only; partial regional coverage is not proof of absence."""
-    matches = [c for c in data.get("coverage", []) if c.get("region") == "page" and c.get("category") == category]
-    return {"records": matches, "absence_verified": bool(matches) and any(c.get("status") == "analysed" and c.get("confidence", 0) >= 0.8 for c in matches) and not any(c.get("status") != "analysed" for c in matches)}
+    result = check_coverage(data, category)
 
+    return {
+        "absence_verified": result["absence_verified"],
+        "coverage_references": result["coverage_references"],
+    }
 
 def query_entities(data: dict, collection: str, field: str = "", value: str = "", limit: int = 50) -> dict:
     """Search active entities in one v0.2 collection. Filter by an exact string field, or search all if field is empty."""
