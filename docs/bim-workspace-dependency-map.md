@@ -73,7 +73,7 @@ No viewer build/lint/typecheck scripts exist initially; start uses npx serve.
 - [x] 4. IFC floor/category visibility.
 - [x] 5. Cached per-storey 2D plans.
 - [x] 6. Synchronized parallel workspace.
-- [ ] 7. Dedicated DXF/SVG environments.
+- [x] 7. Dedicated DXF/SVG environments.
 - [ ] 8. Component inspection and removal.
 - [ ] 9. Reference-based UI, AI analysis and document library.
 - [ ] 10. Integration tests, performance/lifecycle verification and architecture docs.
@@ -85,3 +85,5 @@ Stage 3: canonical boundary, legacy/alternate adapter with source archive, repai
 Stage 5: worker-based IFC parsing/BVH generation, cached storey section/projection plans, native IFC Plan/FootPrint polylines and supported circle curves. Unsupported native curves retain mesh-section fallback. Section tests verify cut height and storey elevation.
 
 Stage 6: real Chrome verification imported the existing two-storey IFC fixture through the API and worker, rendered 2 source records, produced per-storey plans, and selected a plan element in 3D. Canonical sample shows all four floors in parallel mode.
+
+Stage 7: DXF uses installed ezdxf SVG rendering with original handles, layers, transforms and original-file retention; SVG keeps sanitized native vectors/groups. Chrome verified DXF import and layer extraction; uncertain classifications remain explicitly unclassified.

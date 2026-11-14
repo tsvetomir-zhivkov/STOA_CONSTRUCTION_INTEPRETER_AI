@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def extract(source, destination):
     destination.mkdir(parents=True, exist_ok=True)
     suffix = source.suffix.lower()
+    from workspace.source_view import make_preview
+    make_preview(source, destination.parent)
     if suffix == ".ifc":
         documents = translate_all(str(source))
         for i, document in enumerate(documents):

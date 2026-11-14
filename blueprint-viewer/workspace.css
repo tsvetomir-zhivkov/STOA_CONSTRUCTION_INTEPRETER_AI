@@ -12,3 +12,7 @@ body.viewing[data-mode="2d"] #planPane{width:calc(100vw - 306px)}
 .selected .plan-line{stroke:#0781ea;stroke-width:3}.hovered .plan-line{stroke:#e1922b}.room-label{fill:#3d5363;stroke:none;pointer-events:none}
 #workspaceMessage{position:fixed;bottom:0;left:0;right:0;min-height:30px;padding:6px 16px;background:var(--card);font-size:12px;z-index:5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:850px){#workspaceBar{flex-wrap:wrap;height:auto;min-height:58px}#workspaceTitle{max-width:45vw}body.viewing #hud{width:230px}body.viewing #stage{left:246px}#planPane{left:246px;width:calc((100vw - 246px)/2)}body.viewing[data-mode=parallel] #stage{left:calc(246px + (100vw - 246px)/2)}body.viewing[data-mode="2d"] #planPane{width:calc(100vw - 246px)}}
+
+.source-element{cursor:pointer}.source-element.selected{filter:drop-shadow(0 0 2px #1684ff)}.source-element.selected>*{stroke:#1684ff!important}.source-element.hovered>*{stroke:#dc981b!important}
+
+#componentDetails details{padding:10px 0;border-top:1px solid var(--border)}#componentDetails summary{cursor:pointer;font-weight:600}#componentDetails pre{font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere}.inspector-actions{display:flex;gap:8px;margin-top:16px}

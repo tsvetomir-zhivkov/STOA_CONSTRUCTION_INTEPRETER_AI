@@ -115,6 +115,8 @@ class Handler(SimpleHTTPRequestHandler):
                 for document in docs:
                     validate(document)
                 return self.reply(docs)
+            if parts[3] == "source-info":
+                return self.reply(json.loads((folder / "preview.json").read_text(encoding="utf-8")))
             if parts[3] in ("source", "preview"):
                 file = folder / ("preview.svg" if parts[3] == "preview" else meta["stored_name"])
                 if not file.exists():

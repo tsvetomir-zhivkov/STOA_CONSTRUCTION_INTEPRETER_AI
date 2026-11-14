@@ -1,3 +1,4 @@
+import {showSource} from './sourceView.js';
 import {PlanCache} from './plans.js';
 import {PlanView} from './planView.js';
 import {indexBuilding,renderProjection} from './buildingModel.js';
@@ -12,6 +13,7 @@ export class Workspace {
   constructor(app){
     this.app=app;this.documents=new Map();this.indexes=new Map();this.planCache=new PlanCache();
     this.epoch=0;this.planGeneration=0;this.imports=new Set();this.mode='3d';this.pickByKey=new Map();this.keyByPick=new Map();this.floor=null;this.sourceStamp='';
+    this.sourceRecords=new Map();this.layerVisibility=new Map();this.typeVisibility=new Map();
     this.planView=new PlanView($('planSurface'),{onSelect:key=>this.selectPlan(key),onHover:key=>this.viewer?.setHovered(this.pickByKey.get(key) ?? null)});
     for(const button of document.querySelectorAll('[data-mode]'))button.addEventListener('click',()=>this.setMode(button.dataset.mode));
     $('floorSelect').addEventListener('change',()=>this.setFloor($('floorSelect').value));
@@ -114,7 +116,45 @@ export class Workspace {
     if(changed&&this.floor)this.showFloor();
     else this.syncPlanVisibility();
   }
+  async openSource(meta){
+    this.sourceRecords.clear();this.layerVisibility.clear();this.typeVisibility.clear();
+    this.floor=null;this.planGeneration++;
+    const url=`/api/documents/${meta.id}/source`;
+    $('planTools').hidden=true;
+    document.querySelector('#planPane iframe')?.remove();
+    $('planSurface').hidden=false;
+    if(meta.type==='pdf'){
+      const iframe=document.createElement('iframe');iframe.title=meta.name;iframe.src=url;iframe.style.cssText='width:100%;height:100%;border:0';
+      $('planPane').append(iframe);$('planSurface').hidden=true;
+    }else if(['png','jpg','jpeg','webp'].includes(meta.type)){
+      const image=new Image();image.src=url;await image.decode();
+      const xml=`<svg xmlns="http://www.w3.org/2000/svg"><image width="${image.naturalWidth}" height="${image.naturalHeight}"/></svg>`;
+      showSource(this.planView,xml,meta.id);this.planView.svg.querySelector('image').setAttribute('href',url);this.planView.fit();
+    }else{
+      const response=await fetch(meta.type==='dxf'?`/api/documents/${meta.id}/preview`:url);
+      if(!response.ok)throw Error('Source preview unavailable; see extraction error');
+      const source=showSource(this.planView,await response.text(),meta.id,meta.type);
+      this.sourceRecords=source.records;this.layerVisibility=source.layers;
+      for(const record of this.sourceRecords.values())this.typeVisibility.set(record.type,true);
+      if(meta.type==='dxf')this.sourceInfo=await api(`/api/documents/${meta.id}/source-info`);
+      this.renderSourceFilters();
+    }
+    this.setMode('2d');
+  }
+  renderSourceFilters(){
+    const draw=(target,map)=>{
+      $(target).replaceChildren(...[...map].map(([name,on])=>{
+        const label=document.createElement('label');label.className='check';
+        const checkbox=Object.assign(document.createElement('input'),{type:'checkbox',checked:on});
+        checkbox.onchange=()=>{map.set(name,checkbox.checked);this.filterSource();};label.append(checkbox,name);return label;
+      }));
+    };
+    draw('sourceLayers',this.layerVisibility);draw('sourceTypes',this.typeVisibility);
+    $('sourcePanel').hidden=!this.sourceRecords.size;
+  }
+  filterSource(){for(const [key,record]of this.sourceRecords)this.planView.visible(key,this.layerVisibility.get(record.layer)&&this.typeVisibility.get(record.type)&&!this.removedSource?.has(key));}
   async setFloor(key){
+    $('planTools').hidden=false;
     this.floor=key;const floor=this.floors.find(f=>f.key===key);
     if(floor?.levelKey){this.viewer.isolateLevel(floor.levelKey);this.app.render(this.viewer.summary());}
     await this.showFloor();
@@ -149,7 +189,7 @@ export class Workspace {
     }catch(error){if(error.name!=='AbortError'&&generation===this.planGeneration)this.message(error.message);}
   }
   syncPlanVisibility(){for(const [key,pick]of this.pickByKey)this.planView.visible(key,this.viewer.bp.isShown(pick));}
-  selectPlan(key){const pick=this.pickByKey.get(key);if(pick)this.viewer.select(pick);else{this.planView.select(key);this.message(key?'This source element has no corresponding 3D representation.':'');}}
+  selectPlan(key){const pick=this.pickByKey.get(key);if(pick)this.viewer.select(pick);else{this.planView.select(key);this.inspectSource?.(this.sourceRecords.get(key));this.message(key?'Source geometry selected; semantic classification is not established unless a source identifier matches.':'');}}
   selectionChanged(){
     const pick=this.viewer?.selected,key=this.keyByPick.get(pick);
     const represented=this.planView.select(key);
