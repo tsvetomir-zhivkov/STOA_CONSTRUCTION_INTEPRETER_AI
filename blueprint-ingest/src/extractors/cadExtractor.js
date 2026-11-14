@@ -8,6 +8,8 @@
 
 import fs from 'node:fs/promises';
 import { parseDxf, INSUNITS_M } from './cad/dxfParser.js';
+
+const INSUNITS_NAME = { 1: 'INCH', 2: 'FOOT', 4: 'MILLIMETRE', 5: 'CENTIMETRE', 6: 'METRE', 7: 'KILOMETRE', 10: 'YARD', 13: 'MICROMETRE', 14: 'DECIMETRE', 15: 'DECAMETRE', 16: 'HECTOMETRE' };
 import { parseXml } from './cad/xml.js';
 import { emptyBundle, makeCanvas } from './bundle.js';
 import { bboxOfPoints, polygonArea, minAreaRect, cleanRing, circlePolygon, round, bboxesOverlap, matMul, matApply, IDENTITY, pointInPolygon } from '../geometry/geom.js';
@@ -214,6 +216,12 @@ export async function extractDxf(filePath, { config, logger, corrections }) {
     extractor: { id: 'vector_dxf', name: 'DXF extractor (built-in parser)', version: '1' },
     page: { widthPx: canvas.widthPx, heightPx: canvas.heightPx, renderDpi: null, pageIndex: 0, pageCount: 1, transforms: [canvas.transform] },
     scale: { metresPerPx: canvas.metresPerPx, source: 'vector_units', confidence: unitGuessed ? 0.5 : 1, scaleText: null },
+    // schema v0.3 project.units: DXF declares a length unit only ($INSUNITS); areas and volumes are derived in m2 / m3
+    declaredUnits: {
+      length: unitGuessed
+        ? { unit: mPerUnit === 0.001 ? 'MILLIMETRE' : mPerUnit === 0.01 ? 'CENTIMETRE' : 'METRE', to_si: mPerUnit, status: 'inferred', source: 'no $INSUNITS in the DXF header: guessed from the drawing extent' }
+        : { unit: INSUNITS_NAME[dxf.insUnits] ?? `INSUNITS ${dxf.insUnits}`, to_si: mPerUnit, status: 'explicit', source: `DXF header $INSUNITS=${dxf.insUnits}` },
+    },
   });
 
   let n = 0;
