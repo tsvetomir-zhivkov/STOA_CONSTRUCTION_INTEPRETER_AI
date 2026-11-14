@@ -70,7 +70,7 @@ def translate(path: str, data: str | None = None, part: str | None = None) -> di
     return docs[0]
 
 
-def translate_all(path: str, data: str | None = None) -> list[dict]:
+def translate_all(path: str, data: str | None = None, cubicasa_params: dict | None = None) -> list[dict]:
     """Every document for one file: one per page, or one per storey for an IFC model. Validated."""
     from translator import router
     from translator.config import data_root
@@ -118,7 +118,7 @@ def translate_all(path: str, data: str | None = None) -> list[dict]:
         ],
         "history": [{"extractor": "router", "action": "route", "note": note}],
     }
-    docs = _run_extractor(doc, r, root, file_path)
+    docs = _run_extractor(doc, r, root, file_path, cubicasa_params)
     for d in docs:
         validate(d, where=f"{r['file']} {d['drawing'].get('part') or ''}".strip())
     return docs
@@ -128,7 +128,9 @@ def _abs(root: Path, p: str) -> Path:
     return Path(p) if Path(p).is_absolute() else root / p
 
 
-def _run_extractor(doc: dict, r: dict, root: Path, file_path: Path) -> list[dict]:
+def _run_extractor(
+    doc: dict, r: dict, root: Path, file_path: Path, cubicasa_params: dict | None = None
+) -> list[dict]:
     """Fill the document(s) from the extractor for this route, if one exists yet."""
     if r["route"] == "dxf":
         from translator.extract import swiss_dxf
@@ -174,6 +176,27 @@ def _run_extractor(doc: dict, r: dict, root: Path, file_path: Path) -> list[dict
             )
             return [doc]
         return out
+    if r["route"] == "raster" and r.get("source") == "cubicasa5k":
+        # CubiCasa5K segmentation from its raw GPU result (translator/modal_app.py); never calls the GPU
+        from translator.extract import cubicasa
+
+        raw = cubicasa.load_raw(file_path.stem)
+        if raw is None:
+            doc["history"].append(
+                {"extractor": cubicasa.EXTRACTOR, "action": "skip", "note": "no raw segmentation file yet"}
+            )
+            return [doc]
+        if (raw["width_px"], raw["height_px"]) != (
+            doc["drawing"]["image"]["width_px"],
+            doc["drawing"]["image"]["height_px"],
+        ):
+            raise ValueError(f"{r['file']}: raw segmentation size differs from the image")
+        parts = cubicasa.to_parts(raw, r["read_from"], **(cubicasa_params or {}))
+        doc["drawing"]["transforms"].extend(parts.pop("transforms"))
+        doc["history"].extend(parts.pop("history"))
+        for key, value in parts.items():
+            doc[key] = value
+        return [doc]
     return [doc]
 
 
