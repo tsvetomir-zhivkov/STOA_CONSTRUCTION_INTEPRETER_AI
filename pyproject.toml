@@ -5,6 +5,8 @@ requires-python = ">=3.10"
 dependencies = [
     "dotenv>=0.9.9",
     "google-genai>=2.33.0",
+    "numpy",
+    "opencv-python-headless",
     "shapely>=2.1.2",
 ]
 
