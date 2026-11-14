@@ -1,0 +1,453 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "opening": {
+        "headline": "Drawings, made answerable.",
+        "lines": 1.0012174804562348,
+        "opacity": "1",
+        "headlineBottom": 141.921875,
+        "extraCopy": 0,
+        "blueprint": {
+          "left": 184.5009002685547,
+          "right": 1255.6561737060547,
+          "top": 167.3350372314453,
+          "bottom": 886.6017608642578,
+          "center": 720.0785369873047,
+          "width": 1071.1552734375
+        },
+        "broken": []
+      },
+      "families": [
+        "parallax",
+        "reveal",
+        "pin",
+        "pan",
+        "reveal",
+        "flow"
+      ],
+      "types": [
+        "pin",
+        "flow",
+        "pin",
+        "pan",
+        "pin",
+        "flow"
+      ],
+      "totalViewports": 8.45888888888889,
+      "continuity": [
+        {
+          "id": "rotation",
+          "shift": 0.04109928137389982
+        },
+        {
+          "id": "registration",
+          "shift": 0.03806824150769822
+        }
+      ],
+      "focus": [
+        {
+          "text": "Skip to the product",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "stoaVISION TRANSLATOR",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "From drawing to data ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "Read the drawing schema ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "Explore the project ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        }
+      ],
+      "minimumPaperGaps": [
+        98.41168212890625,
+        94.18499755859375,
+        95.6287841796875
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "opening": {
+        "headline": "Drawings, made answerable.",
+        "lines": 0.9912053056516724,
+        "opacity": "1",
+        "headlineBottom": 136.375,
+        "extraCopy": 0,
+        "blueprint": {
+          "left": 240.28114318847656,
+          "right": 1039.875991821289,
+          "top": 165.72845458984375,
+          "bottom": 702.6458740234375,
+          "center": 640.0785675048828,
+          "width": 799.5948486328125
+        },
+        "broken": []
+      },
+      "families": [
+        "parallax",
+        "reveal",
+        "pin",
+        "pan",
+        "reveal",
+        "flow"
+      ],
+      "types": [
+        "pin",
+        "flow",
+        "pin",
+        "pan",
+        "pin",
+        "flow"
+      ],
+      "totalViewports": 8.591666666666667,
+      "continuity": [
+        {
+          "id": "rotation",
+          "shift": 0.04146462152037901
+        },
+        {
+          "id": "registration",
+          "shift": 0.059177077899969094
+        }
+      ],
+      "focus": [
+        {
+          "text": "Skip to the product",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "stoaVISION TRANSLATOR",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "From drawing to data ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "Read the drawing schema ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "Explore the project ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        }
+      ],
+      "minimumPaperGaps": [
+        88.01019287109375,
+        84.2305908203125,
+        85.509033203125
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "opening": {
+        "headline": "Drawings, made answerable.",
+        "lines": 2.0017503677634396,
+        "opacity": "1",
+        "headlineBottom": 173.90625,
+        "extraCopy": 0,
+        "blueprint": {
+          "left": 10.488551139831543,
+          "right": 379.66851329803467,
+          "top": 333.36279296875,
+          "bottom": 702.542724609375,
+          "center": 195.0785322189331,
+          "width": 369.1799621582031
+        },
+        "broken": []
+      },
+      "families": [
+        "parallax",
+        "reveal",
+        "pin",
+        "pan",
+        "reveal",
+        "flow"
+      ],
+      "types": [
+        "pin",
+        "flow",
+        "pin",
+        "pan",
+        "pin",
+        "flow"
+      ],
+      "totalViewports": 8.590047393364928,
+      "continuity": [
+        {
+          "id": "rotation",
+          "shift": 0.023425660520595207
+        },
+        {
+          "id": "registration",
+          "shift": 0.014858151338837385
+        }
+      ],
+      "focus": [
+        {
+          "text": "Skip to the product",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "stoaVISION TRANSLATOR",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "From drawing to data ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "Read the drawing schema ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "Explore the project ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        }
+      ],
+      "minimumPaperGaps": [
+        37.34465026855469,
+        48.23976135253906,
+        37.39324951171875
+      ]
+    },
+    {
+      "viewport": {
+        "width": 360,
+        "height": 640
+      },
+      "opening": {
+        "headline": "Drawings, made answerable.",
+        "lines": 1.987281399046105,
+        "opacity": "1",
+        "headlineBottom": 155.46875,
+        "extraCopy": 0,
+        "blueprint": {
+          "left": 10.618877410888672,
+          "right": 349.5382194519043,
+          "top": 235.2743682861328,
+          "bottom": 574.1937408447266,
+          "center": 180.07854843139648,
+          "width": 338.9193420410156
+        },
+        "broken": []
+      },
+      "families": [
+        "parallax",
+        "reveal",
+        "pin",
+        "pan",
+        "reveal",
+        "flow"
+      ],
+      "types": [
+        "pin",
+        "flow",
+        "pin",
+        "pan",
+        "pin",
+        "flow"
+      ],
+      "totalViewports": 8.7703125,
+      "continuity": [
+        {
+          "id": "rotation",
+          "shift": 0.033337979257593076
+        },
+        {
+          "id": "registration",
+          "shift": 0.013912152289474731
+        }
+      ],
+      "focus": [
+        {
+          "text": "Skip to the product",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "stoaVISION TRANSLATOR",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "From drawing to data ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "Read the drawing schema ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "Explore the project ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        }
+      ],
+      "minimumPaperGaps": [
+        23.666152954101562,
+        31.657150268554688,
+        23.686309814453125
+      ]
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "opening": {
+        "headline": "Drawings, made answerable.",
+        "lines": 1.0076252723311547,
+        "opacity": "1",
+        "headlineBottom": 128.71875,
+        "extraCopy": 0,
+        "blueprint": {
+          "left": 13.307336807250977,
+          "right": 754.8497562408447,
+          "top": 333.40142822265625,
+          "bottom": 831.332275390625,
+          "center": 384.07854652404785,
+          "width": 741.5424194335938
+        },
+        "broken": []
+      },
+      "families": [
+        "parallax",
+        "reveal",
+        "pin",
+        "pan",
+        "reveal",
+        "flow"
+      ],
+      "types": [
+        "pin",
+        "flow",
+        "pin",
+        "pan",
+        "pin",
+        "flow"
+      ],
+      "totalViewports": 8.4658203125,
+      "continuity": [
+        {
+          "id": "rotation",
+          "shift": 0.029286144198712116
+        },
+        {
+          "id": "registration",
+          "shift": 0.05670019010315585
+        }
+      ],
+      "focus": [
+        {
+          "text": "Skip to the product",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "stoaVISION TRANSLATOR",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "From drawing to data ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "Read the drawing schema ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        },
+        {
+          "text": "Explore the project ↗",
+          "tag": "A",
+          "visible": true,
+          "outline": "solid"
+        }
+      ],
+      "minimumPaperGaps": [
+        53.80670166015625,
+        51.380157470703125,
+        51.8758544921875
+      ]
+    },
+    {
+      "fallback": "reduced-motion",
+      "height": 4366,
+      "width": 390,
+      "close": "1"
+    },
+    {
+      "fallback": "no-JS",
+      "height": 4366,
+      "width": 390,
+      "close": "1"
+    }
+  ],
+  "engineHashes": {
+    "scrollcraft.js": "91a8e57cec07b7b977584885741f07d93fd1cd08fdbea623d5432fcede66fd38",
+    "scrollcraft.css": "519e254c1877a50eb724153d483ccff5b3b434fbaf3baf9c5bc1179ec28b075a"
+  },
+  "browserErrors": [],
+  "externalRequests": []
+}

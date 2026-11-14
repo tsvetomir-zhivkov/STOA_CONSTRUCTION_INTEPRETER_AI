@@ -1,0 +1,1864 @@
+{
+  "doc": {
+    "height": 10733,
+    "vh": 900,
+    "acts": [
+      "pin",
+      "flow",
+      "pin",
+      "pan",
+      "pin",
+      "scrub",
+      "flow"
+    ],
+    "world": null
+  },
+  "report": [
+    {
+      "i": 0,
+      "y": 11,
+      "pct": 0,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "none"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        2145,
+        3360,
+        4980,
+        6150
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 1,
+      "y": 114,
+      "pct": 1,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "none"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        2042,
+        3257,
+        4877,
+        6047
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 2,
+      "y": 218,
+      "pct": 2,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "none"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1938,
+        3153,
+        4773,
+        5943
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 3,
+      "y": 322,
+      "pct": 3,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 100% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1834,
+        3049,
+        4669,
+        5839
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 4,
+      "y": 426,
+      "pct": 4,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 100% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1730,
+        2945,
+        4565,
+        5735
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 5,
+      "y": 529,
+      "pct": 5,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 100% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1627,
+        2842,
+        4462,
+        5632
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 6,
+      "y": 572,
+      "pct": 6,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 100% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -32,
+        1584,
+        2799,
+        4419,
+        5589
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 7,
+      "y": 883,
+      "pct": 9,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 89.54% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -343,
+        1273,
+        2488,
+        4108,
+        5278
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 8,
+      "y": 1193,
+      "pct": 12,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 32.68% 0px 0px)"
+      ],
+      "act": "flow",
+      "stages": [
+        -653,
+        963,
+        2178,
+        3798,
+        4968
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 9,
+      "y": 1503,
+      "pct": 15,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "flow",
+      "stages": [
+        -963,
+        653,
+        1868,
+        3488,
+        4658
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 10,
+      "y": 1813,
+      "pct": 18,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1273,
+        343,
+        1558,
+        3178,
+        4348
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 11,
+      "y": 2124,
+      "pct": 22,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1584,
+        32,
+        1247,
+        2867,
+        4037
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 12,
+      "y": 2162,
+      "pct": 22,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1622,
+        0,
+        1209,
+        2829,
+        3999
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 13,
+      "y": 2223,
+      "pct": 23,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1683,
+        0,
+        1148,
+        2768,
+        3938
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(230,234,230)"
+    },
+    {
+      "i": 14,
+      "y": 2283,
+      "pct": 23,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1743,
+        0,
+        1088,
+        2708,
+        3878
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 15,
+      "y": 2344,
+      "pct": 24,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1804,
+        0,
+        1027,
+        2647,
+        3817
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 16,
+      "y": 2404,
+      "pct": 24,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1864,
+        0,
+        967,
+        2587,
+        3757
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 17,
+      "y": 2465,
+      "pct": 25,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        0
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1925,
+        0,
+        906,
+        2526,
+        3696
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 18,
+      "y": 3385,
+      "pct": 34,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": false,
+          "t": 0,
+          "dur": 0,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -36
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2845,
+        -914,
+        0,
+        1606,
+        2776
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 19,
+      "y": 3523,
+      "pct": 36,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0.05,
+          "dur": 5.04,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -390
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2983,
+        -1052,
+        0,
+        1468,
+        2638
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(232,235,231)"
+    },
+    {
+      "i": 20,
+      "y": 3662,
+      "pct": 37,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0.05,
+          "dur": 5.04,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -746
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pan",
+      "stages": [
+        -3122,
+        -1191,
+        0,
+        1329,
+        2499
+      ],
+      "segs": [],
+      "custom": [
+        "50"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 21,
+      "y": 3800,
+      "pct": 39,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0.05,
+          "dur": 5.04,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -1102
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pan",
+      "stages": [
+        -3260,
+        -1329,
+        0,
+        1191,
+        2361
+      ],
+      "segs": [],
+      "custom": [
+        "50"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 22,
+      "y": 3938,
+      "pct": 40,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0.05,
+          "dur": 5.04,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -1454
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pan",
+      "stages": [
+        -3398,
+        -1467,
+        0,
+        1053,
+        2223
+      ],
+      "segs": [],
+      "custom": [
+        "50"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 23,
+      "y": 4076,
+      "pct": 41,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0.05,
+          "dur": 5.04,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -1798
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pan",
+      "stages": [
+        -3536,
+        -1605,
+        0,
+        915,
+        2085
+      ],
+      "segs": [],
+      "custom": [
+        "50"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 24,
+      "y": 4996,
+      "pct": 51,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0.05,
+          "dur": 5.04,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -4456,
+        -2525,
+        -905,
+        0,
+        1165
+      ],
+      "segs": [],
+      "custom": [
+        "50"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 25,
+      "y": 5048,
+      "pct": 51,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0,
+          "dur": 5.04,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -4508,
+        -2577,
+        -957,
+        0,
+        1113
+      ],
+      "segs": [],
+      "custom": [
+        "50"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(230,234,230)"
+    },
+    {
+      "i": 26,
+      "y": 5100,
+      "pct": 52,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0,
+          "dur": 5.04,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -4560,
+        -2629,
+        -1009,
+        0,
+        1061
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 27,
+      "y": 5152,
+      "pct": 52,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0,
+          "dur": 5.04,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -4612,
+        -2681,
+        -1061,
+        0,
+        1009
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 28,
+      "y": 5204,
+      "pct": 53,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0,
+          "dur": 5.04,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -4664,
+        -2733,
+        -1113,
+        0,
+        957
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 29,
+      "y": 5255,
+      "pct": 53,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0,
+          "dur": 5.04,
+          "vis": 0
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "pin",
+      "stages": [
+        -4715,
+        -2784,
+        -1164,
+        0,
+        906
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 30,
+      "y": 5801,
+      "pct": 59,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a pa",
+          "dir": "dark-on-light",
+          "worst": 12.18,
+          "mean": 12.3
+        }
+      ],
+      "cues": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a page to ",
+          "o": 1
+        }
+      ],
+      "clips": [
+        {
+          "painted": true,
+          "t": 0.83,
+          "dur": 5.04,
+          "vis": 0.6
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -5261,
+        -3330,
+        -1710,
+        -540,
+        360
+      ],
+      "segs": [],
+      "custom": [
+        "0"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 31,
+      "y": 5936,
+      "pct": 60,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a pa",
+          "dir": "dark-on-light",
+          "worst": 11.96,
+          "mean": 12.29
+        }
+      ],
+      "cues": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a page to ",
+          "o": 1
+        }
+      ],
+      "clips": [
+        {
+          "painted": true,
+          "t": 1,
+          "dur": 5.04,
+          "vis": 0.75
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -5396,
+        -3465,
+        -1845,
+        -675,
+        225
+      ],
+      "segs": [],
+      "custom": [
+        "834"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 32,
+      "y": 6071,
+      "pct": 62,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a pa",
+          "dir": "dark-on-light",
+          "worst": 11.38,
+          "mean": 12.25
+        }
+      ],
+      "cues": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a page to ",
+          "o": 1
+        }
+      ],
+      "clips": [
+        {
+          "painted": true,
+          "t": 1.17,
+          "dur": 5.04,
+          "vis": 0.9
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -5531,
+        -3600,
+        -1980,
+        -810,
+        90
+      ],
+      "segs": [],
+      "custom": [
+        "1010"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 33,
+      "y": 6218,
+      "pct": 63,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a pa",
+          "dir": "dark-on-light",
+          "worst": 11.28,
+          "mean": 12.26
+        }
+      ],
+      "cues": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a page to ",
+          "o": 1
+        }
+      ],
+      "clips": [
+        {
+          "painted": true,
+          "t": 1.34,
+          "dur": 5.04,
+          "vis": 1
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -5678,
+        -3747,
+        -2127,
+        -957,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "1176"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(229,233,229)"
+    },
+    {
+      "i": 34,
+      "y": 6771,
+      "pct": 69,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a pa",
+          "dir": "dark-on-light",
+          "worst": 11.94,
+          "mean": 12.26
+        }
+      ],
+      "cues": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a page to ",
+          "o": 1
+        }
+      ],
+      "clips": [
+        {
+          "painted": true,
+          "t": 1.88,
+          "dur": 5.04,
+          "vis": 1
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -6231,
+        -4300,
+        -2680,
+        -1510,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "1344"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(232,235,231)"
+    },
+    {
+      "i": 35,
+      "y": 7324,
+      "pct": 74,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a pa",
+          "dir": "dark-on-light",
+          "worst": 11.86,
+          "mean": 12.26
+        }
+      ],
+      "cues": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a page to ",
+          "o": 1
+        }
+      ],
+      "clips": [
+        {
+          "painted": true,
+          "t": 2.34,
+          "dur": 5.04,
+          "vis": 1
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -6784,
+        -4853,
+        -3233,
+        -2063,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "1890"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 36,
+      "y": 7877,
+      "pct": 80,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a pa",
+          "dir": "dark-on-light",
+          "worst": 11.8,
+          "mean": 12.26
+        }
+      ],
+      "cues": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a page to ",
+          "o": 1
+        }
+      ],
+      "clips": [
+        {
+          "painted": true,
+          "t": 2.77,
+          "dur": 5.04,
+          "vis": 1
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -7337,
+        -5406,
+        -3786,
+        -2616,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "2346"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 37,
+      "y": 8430,
+      "pct": 86,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a pa",
+          "dir": "dark-on-light",
+          "worst": 11.97,
+          "mean": 12.26
+        }
+      ],
+      "cues": [
+        {
+          "t": "THE DRAWING, IN DEPTH From lines on a page to ",
+          "o": 1
+        }
+      ],
+      "clips": [
+        {
+          "painted": true,
+          "t": 3.24,
+          "dur": 5.04,
+          "vis": 1
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -7890,
+        -5959,
+        -4339,
+        -3169,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "2776"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 38,
+      "y": 8983,
+      "pct": 91,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 3.81,
+          "dur": 5.04,
+          "vis": 1
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -8443,
+        -6512,
+        -4892,
+        -3722,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "3243"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 39,
+      "y": 9075,
+      "pct": 92,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 3.92,
+          "dur": 5.04,
+          "vis": 0.962
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -8535,
+        -6604,
+        -4984,
+        -3814,
+        -34
+      ],
+      "segs": [],
+      "custom": [
+        "3814"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 40,
+      "y": 9131,
+      "pct": 93,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 3.99,
+          "dur": 5.04,
+          "vis": 0.9
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -8591,
+        -6660,
+        -5040,
+        -3870,
+        -90
+      ],
+      "segs": [],
+      "custom": [
+        "3924"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 41,
+      "y": 9266,
+      "pct": 94,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 4.16,
+          "dur": 5.04,
+          "vis": 0.75
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -8726,
+        -6795,
+        -5175,
+        -4005,
+        -225
+      ],
+      "segs": [],
+      "custom": [
+        "3987"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 42,
+      "y": 9400,
+      "pct": 96,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 4.35,
+          "dur": 5.04,
+          "vis": 0.601
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -8860,
+        -6929,
+        -5309,
+        -4139,
+        -359
+      ],
+      "segs": [],
+      "custom": [
+        "4167"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 43,
+      "y": 9401,
+      "pct": 96,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 4.35,
+          "dur": 5.04,
+          "vis": 0.6
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "scrub",
+      "stages": [
+        -8861,
+        -6930,
+        -5310,
+        -4140,
+        -360
+      ],
+      "segs": [],
+      "custom": [
+        "4346"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 44,
+      "y": 9724,
+      "pct": 99,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 4.85,
+          "dur": 5.04,
+          "vis": 0.241
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "flow",
+      "stages": [
+        -9184,
+        -7253,
+        -5633,
+        -4463,
+        -683
+      ],
+      "segs": [],
+      "custom": [
+        "4354"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    },
+    {
+      "i": 45,
+      "y": 9833,
+      "pct": 100,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [
+        {
+          "painted": true,
+          "t": 5.03,
+          "dur": 5.04,
+          "vis": 0.12
+        }
+      ],
+      "rails": [
+        -1834
+      ],
+      "wipes": [
+        "inset(0px 0% 0px 0px)"
+      ],
+      "act": "flow",
+      "stages": [
+        -9293,
+        -7362,
+        -5742,
+        -4572,
+        -792
+      ],
+      "segs": [],
+      "custom": [
+        "4847"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "rgb(233,236,232)"
+    }
+  ],
+  "consoleErrors": [],
+  "failed": []
+}
