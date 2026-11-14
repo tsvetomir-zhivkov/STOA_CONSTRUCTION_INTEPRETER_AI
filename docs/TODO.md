@@ -277,3 +277,23 @@ index copy. Each image has an EN and an FI question, so 2 questions = 1 image. D
     - 3 images change count: hqa-12617 and hqa-6001 kitchens 2 → 1, and colorful-11400 bathrooms 2 → 1.
       The last has no bathroom question on dev, but it is a side effect: `KHH+PH` is a real combined label
       (utility + washroom), and the '+' rule no longer counts it as strong.
+
+## Priors (read this before quoting kitchen or bathroom numbers)
+- For kitchens and bathrooms, the CubiCasa output is **mostly a prior, not a reading**. On dev the prior
+  decides the count on 13/130 kitchen images and 32/94 bathroom images; elsewhere the detected count already
+  equals the prior (1). Both majorities are 1, so the honest baseline is "always answer 1": 93.8% kitchens,
+  87.2% bathrooms. Our dev scores (93.8 and 87.2) equal it: the pipeline adds no measurable accuracy on
+  these two templates yet.
+- It is flagged in the JSON. An assumed room has `flags: ["assumed_prior"]`, `polygon_px: null`,
+  confidence 0.2, provenance `prior` / `prior:<template>`. A room the prior overrode becomes type
+  `unknown` with flag `prior_stepped_back` (details.prior_type). The coverage record `kitchens` or
+  `bathrooms` is `partial`, with a note starting "prior: assumed N, not read from the drawing". The agent
+  must never highlight an assumed room as evidence. Checked on all 193 dev documents (82 fired records).
+- **Expect lower hold-out accuracy than dev:** the majorities and the strong-signal rule (found on 2 dev
+  images) were chosen on dev, and the hold-out answer distribution may differ.
+- Report with the priors off and on side by side: `python eval/priors_report.py` (dev only, no GPU).
+
+  | template | priors off | priors on | prior fired |
+  |---|---|---|---|
+  | kitchens | 87.7 | 93.8 | 13/130 images |
+  | bathrooms | 66.0 | 87.2 | 32/94 images |
