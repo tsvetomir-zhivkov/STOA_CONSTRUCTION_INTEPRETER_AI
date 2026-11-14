@@ -357,10 +357,22 @@ def name_rooms(
     out = list(rooms)
     stats = {"labels": 0, "named_regions": 0, "shared": 0, "label_only": 0}
     rid_shape = {r["id"]: s for r, s in zip(active, shapes, strict=True)}
+    stats["generic_named"] = 0
     for room in active:
         found = by_room.get(room["id"])
         if not found:
             continue
+        typed = [(t, [x for x in types if x != glossary.GENERIC]) for t, types in found]
+        typed = [(t, types) for t, types in typed if types]
+        if not typed:  # only generic labels (H, huone): name the region, keep its segmentation type and count
+            anchor = rid_shape[room["id"]].representative_point()
+            t0 = min((t for t, _ in found), key=lambda t: anchor.distance(Point(*_centre(t["polygon_px"]))))
+            room.update(name=t0["text"], label=t0["text"])
+            room["provenance"].setdefault("details", {})["generic_label_text_id"] = t0["id"]
+            t0["room_id"] = room["id"]
+            stats["generic_named"] += 1
+            continue
+        found = typed
         anchor = rid_shape[room["id"]].representative_point()
         found.sort(key=lambda ft: anchor.distance(Point(*_centre(ft[0]["polygon_px"]))))
         first_t, first_types = found[0]
@@ -387,6 +399,7 @@ def name_rooms(
             stats["shared"] += 1
     stats["stray_kitchen_skipped"] = 0
     for t, types in label_only:
+        types = [x for x in types if x != glossary.GENERIC]  # a generic label in no region makes no room
         for k, rtype in enumerate(types):
             single = len(re.sub(r"[^a-z]", "", glossary.fold(t["text"]))) == 1
             has_kitchen = any(x["type"] == "kitchen" and x.get("status", "active") == "active" for x in out)

@@ -421,3 +421,13 @@ index copy. Each image has an EN and an FI question, so 2 questions = 1 image. D
     no S label read.
   - Dev: saunas 59.4 → **89.5** (+80 q; 43 images fixed, 3 broken). Every other template unchanged.
     CubiCasa 71.3 → 73.6, TOTAL 84.0 → 85.3. No drops.
+- **Fix 2 — H / huone are generic room labels, not bedroom (principled; k approved).**
+  - This **reverses the Step-7 decision "H = huone = bedroom label".** H/huone mean "room". MH (makuuhuone)
+    is the bedroom label.
+  - They stay in the glossary (type `unknown`, `glossary.GENERIC`). A generic label names the region (name
+    "H") but keeps its segmentation type and does not count as a labelled room. A generic label in no region
+    makes no room. A Bedroom region labelled H still counts once (test).
+  - Cause from the diagnosis (bisect): OCR naming dropped bedrooms from 66.9 (segmentation only) to 58.1.
+    17 of the 19 broken images over-counted: an H-labelled room plus the uncovered Bedroom regions.
+  - Dev: bedrooms 58.1 → **66.9** (+22 q), i.e. back to the segmentation-only score, **not above the earlier
+    peak**. Every other template unchanged. CubiCasa 73.6 → 74.3, TOTAL 85.3 → 85.6. No drops.

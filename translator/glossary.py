@@ -75,7 +75,10 @@ def residential_unit_letter(text: str) -> str | None:
 # in the Swiss data, an entry hall in Swedish), and OCR text needs noise normalisation first.
 # Keys are written without diacritics (matching is diacritic-insensitive, so KEITTIO matches KEITTIÖ).
 _FI_SV: dict[str, list[str]] = {
-    "bedroom": ["mh", "makuuhuone", "makuuh", "h", "huone", "sov", "sovrum", "sovr"],  # H = huone (room)
+    "bedroom": ["mh", "makuuhuone", "makuuh", "sov", "sovrum", "sovr"],
+    # H / huone mean "room", not bedroom (k, Step 10; reverses the Step-7 decision "H = bedroom label").
+    # A generic label names a region but never sets its type: the segmentation class stays (see GENERIC).
+    "unknown": ["h", "huone"],
     "living": ["oh", "olohuone", "oleskelu", "tupa", "vardagsrum", "vardagsr", "allrum"],
     # KK (keittokomero) and AVOK (avokeittio) are kitchenettes; TUPAK/TPK = tupakeittio (farmhouse kitchen)
     "kitchen": [
@@ -105,6 +108,7 @@ _FI_SV: dict[str, list[str]] = {
     "terrace": ["terassi", "terrass", "uteplats"],
 }  # fmt: skip
 _FI_SV_OF = {label: t for t, labels in _FI_SV.items() for label in labels}
+GENERIC = "unknown"  # type of a generic room label (H, huone): names a region, never types or counts it
 _SINGLE_LETTER = {"k", "s", "h"}  # only trusted when the rest of the text is numbers/units or other labels
 _UNIT_TOKEN = re.compile(r"^(m2|m²|m|mm|cm|krs)$")
 

@@ -27,7 +27,7 @@ from translator.extract import ocr  # noqa: E402
     "text, types",
     [
         ("MH", ["bedroom"]),
-        ("H", ["bedroom"]),  # huone, as drawn on high_quality-5815
+        ("H", ["unknown"]),  # huone = "room": generic, never a bedroom (Step 10)
         ("OH", ["living"]),
         ("TUPA", ["living"]),
         ("KEITTIÖ", ["kitchen"]),
@@ -511,3 +511,25 @@ def test_bedrooms_count_labels_plus_uncovered_regions():
     texts = _texts(_item("MH", 0.9, (30, 30, 40, 40)), _item("VH", 0.9, (230, 30, 240, 40)))
     out, _ = ocr.name_rooms([dict(r) for r in rooms], texts, "x.png", label_priority=True)
     assert sorted(r["id"] for r in out if r["type"] == "bedroom") == ["b0", "b1"]
+
+
+def test_generic_h_label_names_but_never_adds_or_types_a_bedroom():
+    """H / huone = "room" (Step 10): a Bedroom region labelled H still counts once; H elsewhere adds none."""
+    rooms = [
+        _room("bed", "Bedroom", "bedroom", (0, 0, 100, 100)),
+        _room("liv", "Living room", "living", (110, 0, 200, 100)),
+        _room("bed2", "Bedroom", "bedroom", (0, 110, 100, 200)),
+    ]
+    texts = _texts(
+        _item("H", 0.9, (40, 40, 50, 50)),  # in the Bedroom region
+        _item("H", 0.9, (150, 40, 160, 50)),  # in the Living region
+        _item("huone", 0.9, (300, 300, 340, 310)),  # in no region
+    )
+    out, stats = ocr.name_rooms(rooms, texts, "x.png", label_priority=True)
+    beds = [r for r in out if r["type"] == "bedroom" and r.get("status", "active") == "active"]
+    assert sorted(r["id"] for r in beds) == ["bed", "bed2"]  # each Bedroom region once, no extra bedroom
+    bed = next(r for r in out if r["id"] == "bed")
+    assert bed["name"] == "H" and not bed.get("text_ids")  # named, not counted as a labelled room
+    liv = next(r for r in out if r["id"] == "liv")
+    assert liv["type"] == "living" and liv["name"] == "H"
+    assert len(out) == 3 and stats["generic_named"] == 2 and stats["label_only"] == 0
