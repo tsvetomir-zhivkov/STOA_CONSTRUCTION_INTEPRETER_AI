@@ -382,8 +382,16 @@ def name_rooms(
             if t is not first_t:
                 t["room_id"] = r["id"]
             stats["shared"] += 1
+    stats["stray_kitchen_skipped"] = 0
     for t, types in label_only:
         for k, rtype in enumerate(types):
+            single = len(re.sub(r"[^a-z]", "", glossary.fold(t["text"]))) == 1
+            has_kitchen = any(x["type"] == "kitchen" and x.get("status", "active") == "active" for x in out)
+            if (
+                rtype == "kitchen" and single and has_kitchen
+            ):  # a stray 'K' outside every room: no 2nd kitchen
+                stats["stray_kitchen_skipped"] += 1
+                continue
             r = label_room(t, rtype, k, LABEL_ONLY_CONF * t["confidence"], ["label_only", "low_confidence"])
             out.append(r)
             if k == 0:

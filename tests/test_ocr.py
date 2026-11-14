@@ -481,3 +481,18 @@ def test_floors_rule_max_takes_the_larger_count():
     lv, cov = ocr.levels(one_title, blobs, "x.png", rule="max")
     assert len(lv) == 2 and cov["status"] == "partial" and cov["confidence"] <= 0.3  # still flagged
     assert lv[0]["provenance"]["details"]["titles"] == ["1. KRS"]
+
+
+def test_stray_single_letter_k_outside_rooms_makes_no_second_kitchen():
+    rooms = [_room("k0", "Kitchen", "kitchen", (0, 0, 80, 80))]
+    out, stats = ocr.name_rooms(
+        [dict(r) for r in rooms], _texts(_item("K", 0.9, (300, 300, 305, 310))), "x.png"
+    )
+    assert [r["id"] for r in out if r["type"] == "kitchen"] == ["k0"] and stats["stray_kitchen_skipped"] == 1
+    # a longer label outside the rooms still makes a room, and so does a stray K when there is no kitchen
+    out, _ = ocr.name_rooms(
+        [dict(r) for r in rooms], _texts(_item("KEITTIÖ", 0.9, (300, 300, 340, 310))), "x.png"
+    )
+    assert sum(r["type"] == "kitchen" for r in out) == 2
+    out, _ = ocr.name_rooms([], _texts(_item("K", 0.9, (300, 300, 305, 310))), "x.png")
+    assert [r["type"] for r in out] == ["kitchen"]
