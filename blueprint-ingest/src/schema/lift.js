@@ -37,7 +37,20 @@ export function liftToV03(doc02, ctx) {
     georeference: bim?.georeference ?? null,
   };
   if (bim?.project) d.project = bim.project;
-  else if (bundle.declaredUnits) d.project.units = { ...d.project.units, ...bundle.declaredUnits };
+  else {
+    // no IFC project: the length unit is what the page scale says (DXF: its declared $INSUNITS); nothing else is declared
+    const sc = d.drawing.scale;
+    if (sc?.m_per_px != null && sc.source !== 'none') {
+      d.project.units.length = { unit: 'page pixel', to_si: sc.m_per_px, status: sc.source === 'vector_units' ? 'explicit' : 'calculated', source: `drawing.scale (${sc.source}${sc.note ? `: ${sc.note.split(' | ')[0]}` : ''})` };
+    }
+    if (bundle.declaredUnits) d.project.units = { ...d.project.units, ...bundle.declaredUnits };
+    for (const k of ['area', 'volume', 'angle']) if (d.project.units[k].status === 'not_available') d.project.units[k].source = `a ${bundle.format.toUpperCase()} source declares no ${k} unit${k === 'angle' ? '' : ` (${k}s are derived by code in ${k === 'area' ? 'm2' : 'm3'})`}`;
+    for (const c of d.coverage) {
+      if (c.extractor !== 'schema_migration') continue;
+      c.extractor = bundle.extractor.id;
+      c.note = ['materials', 'element_types', 'systems'].includes(c.category) ? `a ${bundle.format.toUpperCase()} drawing carries no ${c.category.replace('_', ' ')}` : `not derived for the ${bundle.format.toUpperCase()} route`;
+    }
+  }
   if (bim) { d.site = bim.site ?? null; d.building = bim.building ?? null; }
 
   // ---- key -> id over everything the document will hold --------------------------------------------------------------------
