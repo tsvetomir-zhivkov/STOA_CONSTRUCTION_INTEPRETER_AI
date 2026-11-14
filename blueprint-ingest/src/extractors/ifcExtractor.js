@@ -40,7 +40,7 @@ const PROPS = ['IFCPROPERTYSET', 'IFCPROPERTYSINGLEVALUE', 'IFCPROPERTYENUMERATE
   'IFCMATERIAL', 'IFCMATERIALLAYERSET', 'IFCMATERIALLAYERSETUSAGE', 'IFCMATERIALLAYER', 'IFCMATERIALCONSTITUENTSET', 'IFCMATERIALCONSTITUENT'];
 const GEOM = ['IFCLOCALPLACEMENT', 'IFCAXIS2PLACEMENT3D', 'IFCAXIS2PLACEMENT2D', 'IFCDIRECTION', 'IFCPRODUCTDEFINITIONSHAPE', 'IFCSHAPEREPRESENTATION', 'IFCEXTRUDEDAREASOLID',
   'IFCRECTANGLEPROFILEDEF', 'IFCCIRCLEPROFILEDEF', 'IFCISHAPEPROFILEDEF', 'IFCARBITRARYCLOSEDPROFILEDEF', 'IFCARBITRARYPROFILEDEFWITHVOIDS', 'IFCPOLYLINE', 'IFCINDEXEDPOLYCURVE',
-  'IFCCARTESIANPOINTLIST2D', 'IFCBOOLEANCLIPPINGRESULT', 'IFCBOOLEANRESULT', 'IFCMAPPEDITEM', 'IFCREPRESENTATIONMAP', 'IFCCARTESIANTRANSFORMATIONOPERATOR3D'];
+  'IFCCARTESIANPOINTLIST2D', 'IFCGEOMETRICCURVESET', 'IFCGEOMETRICSET', 'IFCBOOLEANCLIPPINGRESULT', 'IFCBOOLEANRESULT', 'IFCMAPPEDITEM', 'IFCREPRESENTATIONMAP', 'IFCCARTESIANTRANSFORMATIONOPERATOR3D'];
 const UNITS = ['IFCSIUNIT', 'IFCUNITASSIGNMENT', 'IFCCONVERSIONBASEDUNIT', 'IFCMEASUREWITHUNIT'];
 
 const WANTED = new Set([...Object.keys(ELEMENTS), ...COUNT_ONLY, ...STRUCTURE, ...PROPS, ...GEOM, ...UNITS]);
@@ -82,7 +82,13 @@ const groupPsets = (props) => {
   return out;
 };
 
-const guidKey = (guid, fallback) => `ifc_${String(guid ?? fallback).replace(/[^A-Za-z0-9_$.-]/g, '_')}`;
+/**
+ * Element key from an IFC GlobalId. The GUID alphabet is [0-9A-Za-z_$]; ids may only hold [A-Za-z0-9_.-], so '_' and '$'
+ * are escaped INJECTIVELY ('_' -> '_u', '$' -> '_d', anything else -> '_x' + hex): '...q$' and '...q_' stay distinct.
+ * (A plain "replace with _" made 7 pairs of clinic GUIDs collide across levels.) provenance.source_ref keeps the raw GUID.
+ */
+export const encodeGuid = (g) => String(g).replace(/[^A-Za-z0-9.-]/g, (c) => (c === '_' ? '_u' : c === '$' ? '_d' : `_x${c.codePointAt(0).toString(16)}`));
+const guidKey = (guid, fallback) => `ifc_${encodeGuid(guid ?? fallback)}`;
 const slug = (s) => String(s ?? 'level').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'level';
 
 /**
@@ -312,7 +318,7 @@ class IfcModel {
 
   /**
    * Plan outline of a representation item in PRODUCT-LOCAL coordinates.
-   * @returns {{ ring: number[][], depth: number|null, source: 'extrusion'|'curve' } | null}
+   * @returns {{ ring: number[][], depth: number|null, source: 'extrusion'|'swept'|'curve' } | null}
    */
   itemOutline(ref, depth = 0) {
     const it = this.get(ref);
@@ -324,12 +330,16 @@ class IfcModel {
         const pos = this.axis(it.args[1]);
         const dir = this.dir(it.args[2]) ?? [0, 0, 1];
         const dLocal = apply3({ ...pos, t: [0, 0, 0] }, dir);
-        if (Math.abs(dLocal[2]) < 0.85) return null; // not a vertical extrusion: cannot be read as a plan footprint
-        const profile = this.get(it.args[0]);
-        const holes = profile?.type === 'IFCARBITRARYPROFILEDEFWITHVOIDS' ? (profile.args[3] ?? []).map(ref => this.curvePoints(ref)) : [];
-        if (holes.some(h => !h)) return null;
-        const length = typeof it.args[3] === 'number' ? it.args[3] : null;
-        return { ring: prof.map((q) => apply3(pos, [q[0], q[1], 0])), holes: holes.map(h => h.map(q => apply3(pos, [q[0], q[1], 0]))), depth: length, extrusion: length == null ? null : dLocal.map(v => v * length), approximate: profile?.type === 'IFCISHAPEPROFILEDEF', source: 'extrusion' };
+        const depthU = Number(it.args[3]) || 0;
+        if (Math.abs(dLocal[2]) < 0.85) {
+          // not vertical (a horizontal pipe, a beam): the plan footprint is the convex hull of the profile at both ends of the sweep
+          const ends = prof.flatMap((q) => { const p0 = apply3(pos, [q[0], q[1], 0]); return [p0, [p0[0] + dLocal[0] * depthU, p0[1] + dLocal[1] * depthU, p0[2] + dLocal[2] * depthU]]; });
+          const ring = convexHull2(ends);
+          if (ring.length < 3) return null;
+          const zMin = Math.min(...ends.map((p) => p[2]));
+          return { ring: ring.map((p) => [p[0], p[1], zMin]), depth: Math.max(...ends.map((p) => p[2])) - zMin || null, source: 'swept' };
+        }
+        return { ring: prof.map((q) => apply3(pos, [q[0], q[1], 0])), depth: depthU || null, source: 'extrusion' };
       }
       case 'IFCBOOLEANCLIPPINGRESULT':
       case 'IFCBOOLEANRESULT':
@@ -355,6 +365,16 @@ class IfcModel {
           if (o) return { ...o, ring: o.ring.map((p) => apply3(m, p)), holes: (o.holes ?? []).map(h => h.map(p => apply3(m, p))), extrusion: o.extrusion ? apply3({ ...m, t: [0, 0, 0] }, o.extrusion) : null };
         }
         return null;
+      }
+      case 'IFCGEOMETRICCURVESET':
+      case 'IFCGEOMETRICSET': {
+        // a FootPrint representation (IfcSpace in IFC2X3 exports): the largest closed curve of the set is the outline
+        let best = null;
+        for (const el of it.args[0] ?? []) {
+          const o = this.itemOutline(el, depth + 1);
+          if (o && (!best || Math.abs(polygonArea(o.ring)) > Math.abs(polygonArea(best.ring)))) best = o;
+        }
+        return best;
       }
       case 'IFCPOLYLINE':
       case 'IFCINDEXEDPOLYCURVE': {
@@ -503,15 +523,26 @@ async function buildBundles(model, opts) {
     (groups.get(sid) ?? groups.set(sid, []).get(sid)).push(r);
   }
 
+  // ---- buildings: ONE bundle (one JSON) per IfcBuilding, all its storeys as levels on one shared canvas ------------------
   const wanted = opts.levels?.length ? new Set(opts.levels.map((s) => s.toLowerCase())) : null;
-  const bundles = [];
   const order = storeys.length ? storeys : [{ id: 0, name: null, elevationM: 0, guid: null }];
-  const usedSuffix = new Map(); // two storeys may share a name: keep output file names unique
+  const buildingOf = (sid) => { let c = sid; for (let k = 0; k < 16 && c != null; k++) { if (model.e.get(c)?.type === 'IFCBUILDING') return c; c = model.parent.get(c); } return 0; };
+  const byBuilding = new Map(); // building id (0 = none) -> [{ st, list }]
   for (const st of order) {
     if (wanted && !(wanted.has(String(st.name).toLowerCase()) || wanted.has(String(st.guid).toLowerCase()))) continue;
     const list = groups.get(st.id) ?? [];
     if (!list.length) continue;
-    const b = storeyBundle(model, st, list, meshBounds, { config, lenM, typeCounts, countOnly, warnings: [...warnings], schema: model.schema, fileName: opts.filePath });
+    const bid = st.id ? buildingOf(st.id) : 0;
+    (byBuilding.get(bid) ?? byBuilding.set(bid, []).get(bid)).push({ st, list });
+  }
+  const bundles = [];
+  const usedSuffix = new Map(); // two buildings may share a name: keep output file names unique
+  for (const [bid, parts] of byBuilding) {
+    const be = bid ? model.e.get(bid) : null;
+    const building = { id: bid, name: be?.args?.[2] != null ? String(be.args[2]) : null, longName: be?.args?.[7] != null ? String(be.args[7]) : null, guid: be?.args?.[0] ?? null };
+    const b = buildingBundle(model, building, parts, meshBounds, { config, lenM, typeCounts, countOnly, warnings: [...warnings], schema: model.schema, fileName: opts.filePath });
+    // file suffix only when the model has several buildings (one building -> exactly the requested output path)
+    b.page.labelSuffix = byBuilding.size > 1 ? slug(building.name ?? building.longName ?? `building-${bid}`) : null;
     const sfx = b.page.labelSuffix;
     if (sfx) {
       const n = (usedSuffix.get(sfx) ?? 0) + 1;
@@ -521,6 +552,17 @@ async function buildBundles(model, opts) {
     bundles.push(b);
   }
   return bundles;
+}
+
+/** 2D convex hull (x, y of 3D points), counter-clockwise */
+function convexHull2(points) {
+  const p = [...points].map((q) => [q[0], q[1]]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (p.length < 3) return p;
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (const q of p.reverse()) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return [...lo.slice(0, -1), ...up.slice(0, -1)];
 }
 
 /** Convert an element's outline to world XY (metres). Returns ring or null, plus method & elevation. */
@@ -567,16 +609,24 @@ const doorSubtype = (op, isExternal) => {
   return null;
 };
 
-function storeyBundle(model, st, list, meshBounds, ctx) {
+/**
+ * One bundle for one building: every storey becomes a level, every element keeps its storey (`levelKey`), and all
+ * storeys share ONE canvas (one page frame, one transform), so coordinates are consistent across floors.
+ * @param {{ id:number, name:string|null, longName:string|null, guid:any }} building
+ * @param {Array<{ st:any, list:any[] }>} parts storeys of the building, lowest first, with their element records
+ */
+function buildingBundle(model, building, parts, meshBounds, ctx) {
   const { lenM, config } = ctx;
   const warnings = [...ctx.warnings];
-  /** @type {Array<{r:any, fp:any}>} */
+  /** @type {Array<{r:any, fp:any, st:any}>} */
   const placed = [];
   let noGeometry = 0;
-  for (const r of list) {
-    const fp = worldFootprint(model, r, lenM, meshBounds);
-    if (!fp || fp.ring.length < 3) { noGeometry++; continue; }
-    placed.push({ r, fp });
+  for (const { st, list } of parts) {
+    for (const r of list) {
+      const fp = worldFootprint(model, r, lenM, meshBounds);
+      if (!fp || fp.ring.length < 3) { noGeometry++; continue; }
+      placed.push({ r, fp, st });
+    }
   }
   if (noGeometry) warnings.push(`${noGeometry} elements had no usable plan footprint and were skipped`);
 
@@ -586,11 +636,16 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
   const ppm = canvas.pxPerUnit;
   const px = (ring) => ring.map(([x, y]) => canvas.toPx(x, y).map((v) => round(v, 2)));
 
+  const levelKeyOf = (st) => (st.name != null ? `storey_${st.id}` : null);
   const bundle = emptyBundle({
     format: 'ifc',
     extractor: { id: 'vector_ifc', name: 'IFC STEP extractor (streaming)', version: model.schema },
-    page: { widthPx: canvas.widthPx, heightPx: canvas.heightPx, renderDpi: null, pageIndex: 0, pageCount: null, title: st.longName && st.longName !== st.name ? String(st.longName) : null, labelSuffix: st.name != null ? slug(st.name) : null, transforms: [canvas.transform] },
-    level: st.name != null ? { name: String(st.name), sourceRef: st.guid ? String(st.guid) : null, elevationM: round(st.elevationM, 3), heightM: st.heightM ?? null, confidence: 1 } : null,
+    page: { widthPx: canvas.widthPx, heightPx: canvas.heightPx, renderDpi: null, pageIndex: 0, pageCount: null, title: building.longName ?? building.name ?? null, labelSuffix: null, transforms: [canvas.transform] },
+    // every storey of the building, lowest first; elements point to theirs through levelKey
+    levels: parts.filter(({ st }) => st.name != null).map(({ st }) => ({
+      key: levelKeyOf(st), name: String(st.name), sourceRef: st.guid ? String(st.guid) : null, elevationM: round(st.elevationM, 3), heightM: st.heightM ?? null, confidence: 1,
+      longName: st.longName && st.longName !== st.name ? String(st.longName) : null,
+    })),
     scale: { metresPerPx: canvas.metresPerPx, source: 'vector_units', confidence: 1, scaleText: null },
   });
 
@@ -601,9 +656,11 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
   });
   const keyOf = new Set(placed.map((p) => p.r.key));
   const materials = new Set();
-  let objCount = 0, objCapped = 0;
-  for (const { r, fp } of placed) {
+  let objCapped = 0;
+  const objCount = new Map(); // the object cap applies per storey, as before
+  for (const { r, fp, st } of placed) {
     const poly = px(fp.ring);
+    const levelKey = levelKeyOf(st);
     const isExt = r.props.get('IsExternal');
     const mats = model.materialsOf(r.id);
     mats.forEach((m) => materials.add(m));
@@ -613,7 +670,7 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
         // IfcSpace: Name is usually the room number ("2.10"), LongName the room name ("Kitchen")
         const nm = r.ent.args[2] != null ? String(r.ent.args[2]) : null, ln = r.ent.args[7] != null ? String(r.ent.args[7]) : null;
         bundle.rooms.push({
-          ...common(r), key: r.key, polygonPx: poly, rawName: ln || nm || null, rawNumber: ln && nm && nm !== ln ? nm : null,
+          ...common(r), key: r.key, levelKey, polygonPx: poly, rawName: ln || nm || null, rawNumber: ln && nm && nm !== ln ? nm : null,
           writtenAreaM2: r.quantities.get('NetFloorArea') ?? r.quantities.get('GrossFloorArea') ?? null,
           heightM: fp.depthM != null ? round(fp.depthM, 3) : (r.quantities.get('Height') ?? null), floorElevationM: round(st.elevationM, 3), confidence: fp.confidence,
         });
@@ -628,7 +685,7 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
         const cl = polygonCenterline(poly);
         if (cl) { thickness = round(cl.thickness, 2); if (!centerline) centerline = [cl.a, cl.b].map((q) => q.map((v) => round(v, 2))); }
         const lb = r.props.get('LoadBearing');
-        bundle.walls.push({ ...common(r), key: r.key, polygonPx: poly, centerlinePx: centerline, thicknessPx: thickness, isExterior: typeof isExt === 'boolean' ? isExt : null, isLoadBearing: typeof lb === 'boolean' ? lb : null,
+        bundle.walls.push({ ...common(r), key: r.key, levelKey, polygonPx: poly, centerlinePx: centerline, thicknessPx: thickness, isExterior: typeof isExt === 'boolean' ? isExt : null, isLoadBearing: typeof lb === 'boolean' ? lb : null,
           netSideAreaM2: r.quantities.get('NetSideArea') ?? null, netVolumeM3: r.quantities.get('NetVolume') ?? null, heightM: fp.depthM != null ? round(fp.depthM, 3) : (r.quantities.get('Height') ?? null), confidence: fp.confidence });
         break;
       }
@@ -638,7 +695,7 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
         const rect = minAreaRect(poly);
         const sill = Math.max(0, round(zRel, 3));
         bundle.openings.push({
-          ...common(r), key: r.key, kind: r.bucket, heightM: Number.isFinite(hM) && hM > 0 ? round(hM, 3) : null, isEntrance: r.bucket === 'door' && isExt === true ? true : null,
+          ...common(r), key: r.key, levelKey, kind: r.bucket, heightM: Number.isFinite(hM) && hM > 0 ? round(hM, 3) : null, isEntrance: r.bucket === 'door' && isExt === true ? true : null,
           subtype: r.bucket === 'door' ? doorSubtype(unwrap(r.ent.args[11]), isExt === true) : (unwrap(r.ent.args[11]) ? String(unwrap(r.ent.args[11])).toLowerCase() : null),
           polygonPx: poly, widthPx: Number.isFinite(wM) && wM > 0 ? round(wM * ppm, 2) : (rect ? round(rect.length, 2) : null),
           wallKey: r.host != null && keyOf.has(guidKey(model.e.get(r.host)?.args?.[0], r.host)) ? guidKey(model.e.get(r.host).args[0], r.host) : null,
@@ -647,19 +704,19 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
         break;
       }
       case 'object': {
-        if (objCount >= config.ifc.maxObjects) { objCapped++; break; }
-        objCount++;
-        bundle.objects.push({ ...common(r), key: r.key, category: r.category, name: r.name ? String(r.name) : null, polygonPx: poly, netVolumeM3: r.quantities.get('NetVolume') ?? null, confidence: fp.confidence });
+        if ((objCount.get(st.id) ?? 0) >= config.ifc.maxObjects) { objCapped++; break; }
+        objCount.set(st.id, (objCount.get(st.id) ?? 0) + 1);
+        bundle.objects.push({ ...common(r), key: r.key, levelKey, category: r.category, name: r.name ? String(r.name) : null, polygonPx: poly, netVolumeM3: r.quantities.get('NetVolume') ?? null, confidence: fp.confidence });
         break;
       }
       default:
     }
   }
-  if (objCapped) warnings.push(`${objCapped} objects beyond the cap of ${config.ifc.maxObjects} were not emitted`);
+  if (objCapped) warnings.push(`${objCapped} objects beyond the cap of ${config.ifc.maxObjects} per storey were not emitted`);
 
   const has = (arr) => arr.length > 0;
   const cov = (category, status, confidence, note) => bundle.coverage.push({ category, status, confidence, ...(note ? { note } : {}) });
-  cov('rooms', 'analysed', 0.95, has(bundle.rooms) ? undefined : 'IFC contains no IfcSpace elements for this storey');
+  cov('rooms', 'analysed', 0.95, has(bundle.rooms) ? undefined : 'IFC contains no IfcSpace elements for this building');
   cov('walls', 'analysed', 0.95);
   cov('doors', 'analysed', 0.95);
   cov('windows', 'analysed', 0.95);
@@ -672,7 +729,7 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
   cov('legend', 'not_analysed', 0.5);
 
   bundle.stats = { elements: placed.length, skippedNoGeometry: noGeometry, rooms: bundle.rooms.length, walls: bundle.walls.length, openings: bundle.openings.length, objects: bundle.objects.length, lengthUnitMetres: lenM };
-  bundle.semantic = { schema: ctx.schema, storey: st.name, elevationM: round(st.elevationM, 3), elementTypes: ctx.typeCounts, ignoredTypes: ctx.countOnly, materials: [...materials].slice(0, 12), pxPerMetre: ppm };
+  bundle.semantic = { schema: ctx.schema, building: building.name, buildingRef: building.guid ?? null, storeys: parts.map(({ st }) => ({ name: st.name, elevationM: round(st.elevationM, 3) })), elementTypes: ctx.typeCounts, ignoredTypes: ctx.countOnly, materials: [...materials].slice(0, 12), pxPerMetre: ppm };
   bundle.warnings = warnings;
   return bundle;
 }
@@ -683,7 +740,7 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
 
 /**
  * Stream meshes with web-ifc and keep only an axis-aligned bounding box per requested express id; vertex data is
- * discarded immediately so memory stays flat. Coordinates come back in web-ifc's world units (metres for most models).
+ * discarded immediately so memory stays flat. Coordinates come back in metres, Y-up; they are converted to IFC Z-up here.
  *
  * @param {string} filePath
  * @param {Set<number>} ids
@@ -708,7 +765,9 @@ export async function webIfcBounds(filePath, ids) {
         const m = pg.flatTransformation; // column-major 4x4
         for (let k = 0; k < v.length; k += 6) {
           const x = v[k], y = v[k + 1], z = v[k + 2];
-          const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14];
+          // web-ifc returns Y-UP geometry (IFC x, z, -y): convert back to IFC Z-up (x, y = north, z = up)
+          const ux = m[0] * x + m[4] * y + m[8] * z + m[12], uy = m[1] * x + m[5] * y + m[9] * z + m[13], uz = m[2] * x + m[6] * y + m[10] * z + m[14];
+          const wx = ux, wy = -uz, wz = uy;
           b = b ? { minX: Math.min(b.minX, wx), maxX: Math.max(b.maxX, wx), minY: Math.min(b.minY, wy), maxY: Math.max(b.maxY, wy), minZ: Math.min(b.minZ, wz), maxZ: Math.max(b.maxZ, wz) } : { minX: wx, maxX: wx, minY: wy, maxY: wy, minZ: wz, maxZ: wz };
         }
         g.delete?.();

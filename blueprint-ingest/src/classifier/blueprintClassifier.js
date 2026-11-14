@@ -1,8 +1,8 @@
 /**
  * Step 1 - Deterministic format & readability filter.
  *
- * No LLM is involved unless magic bytes, extension AND a header sniff are all inconclusive.
- * Decision order: magic bytes -> extension -> header text signatures -> (optional) light Gemini model.
+ * Fully deterministic. Decision order: magic bytes -> header text signatures -> optional `file-type` -> extension.
+ * When all of them are inconclusive the file is "unsupported" with reason "unknown_format".
  * For PDFs the page content is inspected with pdfjs to tell vector/text-rich pages from scans.
  */
 
@@ -26,7 +26,7 @@ import { openPdf, inspectPage } from '../extractors/pdfCommon.js';
  * @property {string} fileName
  * @property {string} extension lower-case, without dot
  * @property {number} size
- * @property {{ format: DetectedFormat, mime: string|null, by: 'magic'|'extension'|'header'|'llm'|'none', extensionMismatch: boolean }} detected
+ * @property {{ format: DetectedFormat, mime: string|null, by: 'magic'|'extension'|'header'|'none', extensionMismatch: boolean }} detected
  * @property {'vector_extraction'|'vision_agent'|'mixed'|'unsupported'} route
  * @property {string} reason machine-readable reason, e.g. "scanned_pdf_no_vector_data"
  * @property {PageDecision[]} [pages] PDF only
@@ -86,14 +86,9 @@ export function sniffText(b) {
   return null;
 }
 
-/** printable-only, truncated header for the (rare) LLM fallback */
-function printableSnippet(buf, n = 1500) {
-  return buf.subarray(0, n).toString('latin1').replace(/[^\x20-\x7E\n]/g, '.');
-}
-
 /**
  * @param {string} filePath
- * @param {{ config?: import('../config.js').PipelineConfig, gemini?: any, logger?: any, allowLlm?: boolean }} [opts]
+ * @param {{ config?: import('../config.js').PipelineConfig, logger?: any }} [opts]
  * @returns {Promise<ClassificationResult>}
  */
 export async function classifyBlueprint(filePath, opts = {}) {
@@ -154,34 +149,8 @@ export async function classifyBlueprint(filePath, opts = {}) {
   /** @type {ClassificationResult} */
   const base = { filePath, fileName, extension, size: stat.size, detected, route: 'unsupported', reason: 'unknown_format', warnings };
 
-  // ---- ambiguous: last resort = ask a light LLM about a printable header snippet --------------
-  if (detected.format === 'unknown') {
-    if (opts.allowLlm !== false && opts.gemini?.isConfigured) {
-      try {
-        const r = await opts.gemini.generateJson({
-          tier: 'light',
-          label: 'classify_unknown',
-          systemInstruction: 'You identify file formats from a printable header snippet. Answer only with JSON.',
-          prompt: `File name: ${fileName}\nFirst bytes (non-printable replaced by "."):\n${printableSnippet(head)}\n\nIs this a structured CAD/BIM/vector text format we can parse directly (ifc, dxf, svg), some other text, or unreadable binary?`,
-          responseJsonSchema: {
-            type: 'object',
-            properties: { kind: { type: 'string', enum: ['ifc', 'dxf', 'svg', 'other_text', 'binary_unreadable'] }, confidence: { type: 'number' } },
-            required: ['kind', 'confidence'],
-          },
-        });
-        const kind = r.data?.kind;
-        if (['ifc', 'dxf', 'svg'].includes(kind) && (r.data.confidence ?? 0) >= 0.7) {
-          base.detected = { format: kind, mime: FORMAT_MIME[kind], by: 'llm', extensionMismatch: false };
-          return { ...base, route: 'vector_extraction', reason: `llm_identified_${kind}` };
-        }
-        return { ...base, reason: `llm_says_${kind ?? 'unreadable'}` };
-      } catch (err) {
-        logger.warn('LLM format check failed:', err.message);
-        warnings.push(`llm_check_failed: ${err.message}`);
-      }
-    }
-    return base;
-  }
+  // ---- ambiguous: nothing recognised the content -> unsupported / unknown_format ----------------
+  if (detected.format === 'unknown') return base;
 
   // ---- routing ---------------------------------------------------------------------------
   switch (detected.format) {

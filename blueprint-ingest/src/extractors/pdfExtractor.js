@@ -3,10 +3,7 @@
  *
  * Deterministic output only: text runs with coordinates, closed-polygon room candidates, filled thin rectangles as
  * wall candidates, scale from a printed note ("1:100"). Semantics (room types, text roles...) are added later.
- * Doors/windows/fixtures are NOT inferred from bare vector paths; coverage says so, and the mapper/vision agent may fill them.
- *
- * Optional: `understandPdfWithGemini` uploads the PDF with the Gemini Files API (and ALWAYS deletes it in `finally`) to read
- * legend/schedule-like pages that geometry cannot explain.
+ * Doors/windows/fixtures are NOT inferred from bare vector paths; coverage says so, and the vision agent may fill them.
  */
 
 import fs from 'node:fs/promises';
@@ -181,56 +178,4 @@ function mergeRuns(runs) {
     out.push({ ...r });
   }
   return out;
-}
-
-// =====================================================================================================
-// optional Gemini Files-API understanding of whole PDF pages (legends / schedules / title blocks)
-// =====================================================================================================
-
-const UNDERSTAND_SCHEMA = {
-  type: 'object',
-  properties: {
-    page_kind: { type: 'string', enum: ['floor_plan', 'section', 'elevation', 'site_plan', 'detail', 'legend', 'schedule', 'title_sheet', 'other'] },
-    title: { type: 'string', nullable: true },
-    level: { type: 'string', nullable: true },
-    scale_note: { type: 'string', nullable: true },
-    legend: { type: 'array', items: { type: 'object', properties: { symbol: { type: 'string' }, meaning: { type: 'string' } }, required: ['symbol', 'meaning'] } },
-    schedules: { type: 'array', items: { type: 'object', properties: {
-      name: { type: 'string' }, schedule_type: { type: 'string', enum: ['door', 'window', 'room_finish', 'material', 'equipment', 'sanitary_fixture', 'other'] },
-      headers: { type: 'array', items: { type: 'string' } },
-      rows: { type: 'array', items: { type: 'object', properties: { cells: { type: 'array', items: { type: 'string' } } }, required: ['cells'] } },
-    }, required: ['name', 'schedule_type', 'headers', 'rows'] } },
-  },
-  required: ['page_kind', 'legend'],
-};
-
-/**
- * Upload the PDF, ask for page-level facts, delete the upload no matter what.
- * `gemini` is the client from mappers/geminiClient.js (uploadFile / deleteFile / generateJson).
- *
- * @param {string} filePath
- * @param {{ gemini: any, pageIndex: number, logger?: any }} opts
- * @returns {Promise<{ page_kind:string, title?:string|null, level?:string|null, scale_note?:string|null, legend:Array<{symbol:string,meaning:string}> } | null>}
- */
-export async function understandPdfWithGemini(filePath, { gemini, pageIndex, logger }) {
-  if (!gemini?.isConfigured) return null;
-  let uploaded = null;
-  try {
-    uploaded = await gemini.uploadFile(filePath, 'application/pdf');
-    const { json } = await gemini.generateJson({
-      tier: 'primary',
-      label: 'pdf_page_understanding',
-      prompt: `Read page ${pageIndex + 1} (1-based) of this architectural PDF. Report only printed page kind, title, level, scale note, legend entries, and schedules. Preserve table headers including units and every cell in row order. Schedule rows describe specifications, never physical instances. Do not infer instance counts or entity links. Return an empty schedules array if no readable table is present. Do not invent values; use null when absent.`,
-      schema: UNDERSTAND_SCHEMA,
-      file: uploaded,
-    });
-    return json;
-  } catch (err) {
-    logger?.warn?.(`Gemini PDF understanding failed: ${err.message}`);
-    return null;
-  } finally {
-    if (uploaded?.name) {
-      try { await gemini.deleteFile(uploaded.name); } catch (err) { logger?.warn?.(`could not delete uploaded file ${uploaded.name}: ${err.message}`); }
-    }
-  }
 }

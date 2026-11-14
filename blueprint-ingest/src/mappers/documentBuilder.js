@@ -1,5 +1,5 @@
 /**
- * Bundle -> internal v0.2 page fragment (deterministic); the mapper aggregates it into v0.3. No LLM here: this step turns geometry + raw facts into the schema shape,
+ * Bundle -> schema v0.2 document (deterministic): this step turns geometry + raw facts into the schema shape,
  * resolves names through the glossary, links texts to rooms by geometry and writes the code-owned fields.
  */
 
@@ -10,7 +10,7 @@ import { lookupRoomName, OUTDOOR_TYPES } from './glossary.js';
 import { recomputeMetres } from '../storage/metres.js';
 
 export const SCHEMA_VERSION = '0.2';
-export const TRANSLATOR_VERSION = 'blueprint-ingest@0.3.0';
+export const TRANSLATOR_VERSION = 'blueprint-ingest@0.2.2';
 
 /** bundle format -> drawing.route */
 const ROUTE = { ifc: 'ifc', dxf: 'dxf', svg: 'svg', pdf: 'vector_pdf' };
@@ -19,7 +19,10 @@ const SCALE_SOURCE = { vector_units: 'vector_units', scale_note: 'scale_note', d
 /** legacy / extractor text roles -> text.role (undefined = role unknown, the field is omitted) */
 const TEXT_ROLE = { room_label: 'room_label', room_number: 'room_number', area: 'area', dimension: 'dimension', scale_note: 'scale_note', title: 'title', level_title: 'level_title', level: 'level_title', unit_label: 'unit_label', legend: 'legend', legend_entry: 'legend', other: 'other', note: 'other' };
 
-/** free-form object category (+ name) -> object.category enum */
+/** schema object.category enum (stove..radiator added in 0.2.1) */
+export const OBJECT_CATEGORIES = new Set(['toilet', 'sink', 'shower', 'bathtub', 'sauna_bench', 'stair', 'stove', 'fridge', 'washing_machine', 'elevator', 'radiator', 'closet', 'other']);
+
+/** free-form object category (+ name) -> object.category enum (IFC / SVG / PDF; DXF classifies itself) */
 const OBJECT_RULES = [
   ['toilet', /toilet|\bwc\b|klosett|vessa|water.?closet|\bwc[-_ ]/i],
   ['bathtub', /bath.?tub|badewanne|kylpyamme|baignoire|vann\b|\btub\b/i],
@@ -80,7 +83,7 @@ export function datasetPath(inputFilePath, o = {}) {
 /**
  * @param {import('../extractors/bundle.js').Bundle} bundle
  * @param {BuildOptions} opts
- * @returns {{ document: any, pending: { roomNames: Array<{id:string, raw:string}>, texts: Array<{id:string, raw:string, bbox:number[], fontPx:number}>, looksLikeLegendOrSchedule: boolean, semantic: Record<string, any>, languages: string[] } }}
+ * @returns {{ document: any, pending: { roomNames: Array<{id:string, raw:string}> } }}  roomNames: labels not in the glossary (type stays "unknown")
  */
 export function buildDocument(bundle, opts) {
   const now = opts.now ?? new Date().toISOString();
@@ -89,25 +92,41 @@ export function buildDocument(bundle, opts) {
   const ds = datasetPath(opts.inputFilePath, { datasetRoot: opts.datasetRoot });
 
   // ---- level ---------------------------------------------------------------------------------------------------------------
+  // a bundle has ONE level (a page / a storey) or SEVERAL (an IFC building: bundle.levels, elements carry levelKey)
   const levels = [];
   let levelId = null;
-  if (bundle.level?.name) {
-    levelId = mk('level_', bundle.level.name);
+  const levelIdByKey = new Map();
+  const addLevel = (lv, longName) => {
+    const id = mk('level_', lv.name);
     levels.push({
-      id: levelId, confidence: clamp01(bundle.level.confidence, 0.9),
-      provenance: { extractor: extId, source_ref: bundle.level.sourceRef || bundle.level.name },
+      id, confidence: clamp01(lv.confidence, 0.9),
+      provenance: { extractor: extId, source_ref: lv.sourceRef || lv.name },
       status: 'active', superseded_by: null, level_id: null, flags: [],
-      ...(bundle.page.title ? { properties: { long_name: bundle.page.title } } : {}),
-      name: bundle.level.name, elevation_m: bundle.level.elevationM ?? null, height_m: bundle.level.heightM ?? null, bbox_px: null,
+      ...(longName ? { properties: { long_name: longName } } : {}),
+      name: lv.name, elevation_m: lv.elevationM ?? null, height_m: lv.heightM ?? null, bbox_px: null,
     });
+    return id;
+  };
+  if (Array.isArray(bundle.levels) && bundle.levels.length) {
+    for (const lv of bundle.levels) if (lv?.name) levelIdByKey.set(lv.key ?? lv.name, addLevel(lv, lv.longName));
+  } else if (bundle.level?.name) {
+    levelId = addLevel(bundle.level, bundle.page.title);
   }
+  /** level of a bundle element: its own storey in a multi-level bundle, else the bundle's single level */
+  const levelOf = (el) => (el?.levelKey != null && levelIdByKey.has(el.levelKey) ? levelIdByKey.get(el.levelKey) : levelId);
 
   /** entity base fields */
   const base = (id, el, defConf, extra = {}) => {
     const prov = { extractor: extId, source_ref: String(el.sourceRef ?? el.key ?? id) || id };
     if (el.layer) prov.layer = String(el.layer);
+    let confidence = clamp01(el.confidence, defConf);
+    if (el.correctedBy) { // layer reclassified by corrections.json ("layer:NAME": { as })
+      prov.extractor = 'human';
+      prov.details = { rule: el.correctedBy, geometry_extractor: extId };
+      confidence = 1;
+    }
     const properties = nonEmpty({ ...(el.properties ?? {}), ...extra });
-    return { id, confidence: clamp01(el.confidence, defConf), provenance: prov, status: 'active', superseded_by: null, level_id: levelId, flags: [], ...(properties ? { properties } : {}) };
+    return { id, confidence, provenance: prov, status: 'active', superseded_by: null, level_id: levelOf(el), flags: [...(el.flags ?? [])], ...(properties ? { properties } : {}) };
   };
 
   // ---- texts ---------------------------------------------------------------------------------------------------------------
@@ -159,9 +178,10 @@ export function buildDocument(bundle, opts) {
   });
 
   // ---- link texts to rooms (geometry only) ----------------------------------------------------------------------------------
-  const roomAt = (pt) => {
+  // lid: only rooms of that level (a multi-level document stacks floors in one plan frame)
+  const roomAt = (pt, lid = null) => {
     let best = null;
-    for (const r of rooms) { const x = internal.get(r.id); if (pointInPolygon(pt, x.poly) && (!best || x.area < internal.get(best.id).area)) best = r; }
+    for (const r of rooms) { if (lid != null && r.level_id !== lid) continue; const x = internal.get(r.id); if (pointInPolygon(pt, x.poly) && (!best || x.area < internal.get(best.id).area)) best = r; }
     return best;
   };
   const byRoom = new Map(rooms.map((r) => [r.id, { names: [], numbers: [], areas: [] }]));
@@ -175,7 +195,6 @@ export function buildDocument(bundle, opts) {
     else if (!t.role && hasWord(t.text) && t.text.length <= 40) slot.names.push(t);
   }
 
-  const languages = new Set();
   const pendingNames = [];
   for (const r of rooms) {
     const { names, numbers, areas } = byRoom.get(r.id);
@@ -206,7 +225,6 @@ export function buildDocument(bundle, opts) {
       const hit = lookupRoomName(raw);
       if (hit) {
         applyRoomType(r, hit.type, { normalized: hit.normalized, expanded: hit.expanded, language: hit.language, glossary_term_id: hit.glossary_term_id, resolved_by: 'glossary' });
-        languages.add(hit.language);
         const lt = texts.find((t) => t.id === r.text_ids[0] && t.role === 'room_label');
         if (lt) (lt.properties ??= {}).language = hit.language;
       } else {
@@ -235,12 +253,24 @@ export function buildDocument(bundle, opts) {
   const objects = bundle.objects.map((o) => {
     const id = mk('obj_', o.key);
     const bb = bboxOf(o.polygonPx);
-    const category = mapObjectCategory(o.category, o.name);
+    const category = bundle.format === 'dxf' && OBJECT_CATEGORIES.has(o.category) ? o.category : mapObjectCategory(o.category, o.name);
     return {
-      ...base(id, o, 0.5, o.name ? { name: o.name } : {}), category, subtype: o.category && o.category !== category ? o.category : null,
-      bbox_px: bb, polygon_px: o.polygonPx, polygon_m: null, room_id: roomAt(center(bb))?.id ?? null, net_volume_m3: o.netVolumeM3 ?? null, area_m2: null,
+      ...base(id, o, 0.5, o.name ? { name: o.name } : {}), category, subtype: o.subtype !== undefined ? o.subtype : (o.category && o.category !== category ? o.category : null),
+      bbox_px: bb, polygon_px: o.polygonPx, polygon_m: null, room_id: roomAt(center(bb), levelOf(o))?.id ?? null, net_volume_m3: o.netVolumeM3 ?? null, area_m2: null,
     };
   });
+
+  // ---- a room that contains a detected stair is a stair room (DXF only) ---------------------------------------------------------
+  // Only rooms whose own label did not resolve (unknown / other) are changed: a type read from the label is stronger evidence
+  // than "a stair's centre falls inside". Not applied to IFC, whose stairs and spaces overlap freely (gross-area spaces).
+  for (const o of bundle.format === 'dxf' ? objects : []) {
+    if (o.category !== 'stair' || !o.room_id) continue;
+    const r = rooms.find((x) => x.id === o.room_id);
+    if (!r || (r.type !== 'unknown' && r.type !== 'other')) continue;
+    const prev = r.type;
+    applyRoomType(r, 'stair', { ...(r.properties?.name_resolution ?? {}), resolved_by: 'contains_stair', type_before: prev });
+    if (!r.flags.includes('inferred_from_contents')) r.flags.push('inferred_from_contents');
+  }
 
   // ---- units (apartments) from unit-label texts -----------------------------------------------------------------------------------
   const units = [];
@@ -264,8 +294,10 @@ export function buildDocument(bundle, opts) {
   };
 
   // ---- level extent ----------------------------------------------------------------------------------------------------------------
-  const geom = [...rooms, ...walls].flatMap((e) => e.polygon_px);
-  if (levels.length && geom.length) levels[0].bbox_px = bboxOf(geom);
+  for (const lv of levels) {
+    const geom = [...rooms, ...walls].filter((e) => e.level_id === lv.id || (levels.length === 1 && e.level_id == null)).flatMap((e) => e.polygon_px);
+    if (geom.length) lv.bbox_px = bboxOf(geom);
+  }
 
   const coverage = bundle.coverage.map((c) => ({
     category: c.category, region: 'page', status: c.status, extractor: extId, confidence: clamp01(c.confidence, 0), ...(c.note ? { note: c.note } : {}),
@@ -298,13 +330,7 @@ export function buildDocument(bundle, opts) {
   recomputeMetres(document);
   return {
     document,
-    pending: {
-      roomNames: pendingNames,
-      texts: texts.filter((t) => !t.role).map((t) => ({ id: t.id, raw: t.text, bbox: t.bbox_px, fontPx: fontOf.get(t.id) ?? 0 })),
-      looksLikeLegendOrSchedule: !!bundle.semantic?.looksLikeLegendOrSchedule,
-      semantic: bundle.semantic ?? {},
-      languages: [...languages],
-    },
+    pending: { roomNames: pendingNames },
   };
 }
 

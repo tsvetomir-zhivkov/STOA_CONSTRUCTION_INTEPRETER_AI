@@ -1,7 +1,7 @@
 {
   "name": "blueprint-ingest",
-  "version": "0.3.0",
-  "description": "Entry-point filter, vector extractor and Gemini schema mapper for the Stoa blueprint pipeline.",
+  "version": "0.2.2",
+  "description": "Deterministic entry-point filter, vector extractor and schema mapper for the Stoa blueprint pipeline.",
   "private": true,
   "type": "module",
   "main": "src/index.js",
@@ -17,7 +17,6 @@
     "validate": "node src/index.js --validate-only"
   },
   "dependencies": {
-    "@google/genai": "^1.0.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "pdfjs-dist": "^6.2.108"

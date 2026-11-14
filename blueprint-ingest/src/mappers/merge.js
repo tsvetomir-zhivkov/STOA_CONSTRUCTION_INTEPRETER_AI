@@ -101,7 +101,8 @@ function mergePageDocuments(existing, incoming, cfg, opts = {}) {
   }
 
   // ---- geometric entities -------------------------------------------------------------------------------------------------------
-  const sameKind = (key, a, b) => (key === 'openings' ? a.kind === b.kind : key === 'objects' ? a.category === b.category : true);
+  // a human correction changes kind/category on purpose: it must still find (and supersede) its uncorrected twin
+  const sameKind = (key, a, b) => (b.provenance?.extractor === 'human' ? true : key === 'openings' ? a.kind === b.kind : key === 'objects' ? a.category === b.category : true);
   for (const key of GEOMETRIC) {
     for (const el of inc[key]) {
       const box = bboxFor(el);
@@ -189,7 +190,7 @@ function mergePageDocuments(existing, incoming, cfg, opts = {}) {
   // ---- history ----------------------------------------------------------------------------------------------------------------------------------
   const changed = report.added.length || report.superseded.length || report.enriched.length || report.coverageUpdated.length || report.scaleChanged;
   if (changed) {
-    for (const h of inc.history) doc.history.push(clone(h));
+    for (const h of inc.history) doc.history.push({ ...clone(h), ...(h.entity_ids ? { entity_ids: [...new Set(h.entity_ids.map(remap))] } : {}) }); // ids as they are in THIS file
     const ids = [...report.added, ...report.superseded];
     doc.history.push({
       at: now, extractor: inc.history[0]?.extractor ?? 'merge', action: 'merge',

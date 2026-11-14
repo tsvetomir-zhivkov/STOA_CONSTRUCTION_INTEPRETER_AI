@@ -5,7 +5,7 @@
  *   processBlueprint({ inputFilePath, outputJsonPath, mode })
  *     1. classify (magic bytes + extension + content; scanned/unreadable -> vision agent)
  *     2. vector extraction (IFC / DXF / SVG / vector PDF)  -> deterministic bundles
- *     3. Gemini semantic mapping + validation + create-or-merge + atomic write
+ *     3. deterministic schema mapping + validation + create-or-merge + atomic write
  *
  * CLI:  node src/index.js <input> [--out out.json] [--mode auto|create|merge] [--frame-mismatch error|sibling|reproject] [--levels "Level 1,Level 2"] [--file data/x/plan.pdf] [--source x]
  *       node src/index.js --validate-only <file.json>
@@ -17,15 +17,13 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { loadConfig } from './config.js';
 import { createLogger } from './util/logger.js';
-import { UsageTracker } from './util/usage.js';
 import { UnsupportedFormatError, PipelineError } from './util/errors.js';
 import { classifyBlueprint } from './classifier/blueprintClassifier.js';
 import { extractIfcBuildings } from './extractors/ifcExtractor.js';
 import { extractPdf } from './extractors/pdfExtractor.js';
 import { extractDxf, extractSvg } from './extractors/cadExtractor.js';
-import { createGeminiClient } from './mappers/geminiClient.js';
-import { mapToSchema, persistBuilding } from './mappers/geminiSchemaMapper.js';
-import { migrate } from './storage/building.js';
+import { mapToSchema } from './mappers/schemaMapper.js';
+import { loadCorrections } from './mappers/corrections.js';
 import { routeToVisionAgent } from './agents/visionAgentAdapter.js';
 import { createValidator, describeErrors } from './storage/jsonStore.js';
 
@@ -37,7 +35,6 @@ import { createValidator, describeErrors } from './storage/jsonStore.js';
  * @property {Partial<import('./config.js').PipelineConfig>|Record<string,any>} [configOverrides] shallow-merged per top-level key
  * @property {NodeJS.ProcessEnv} [env]
  * @property {any} [logger]
- * @property {any} [gemini] injected client (tests)
  * @property {string[]} [levels] IFC: only these storeys
  * @property {string} [file] drawing.file: dataset-relative path (default: derived from the input path, `data/<source>/...`)
  * @property {string} [source] drawing.source: dataset folder (default: derived from the input path)
@@ -47,7 +44,7 @@ import { createValidator, describeErrors } from './storage/jsonStore.js';
  * @param {ProcessOptions} opts
  * @returns {Promise<
  *   | { status:'routed_to_vision_agent', filePath:string, reason:string, outputJsonPath:string, agentInvoked:boolean, agentResult?:any }
- *   | { status:'processed'|'processed_with_vision_routing', route:string, classification:any, outputs:any[], vision?:any, usage:any }
+ *   | { status:'processed'|'processed_with_vision_routing', route:string, classification:any, outputs:any[], vision?:any }
  * >}
  */
 export async function processBlueprint(opts) {
@@ -57,10 +54,8 @@ export async function processBlueprint(opts) {
   const logger = opts.logger ?? createLogger();
   const inputFilePath = path.resolve(opts.inputFilePath);
   const outputJsonPath = path.resolve(opts.outputJsonPath ?? path.join('out', `${path.basename(inputFilePath, path.extname(inputFilePath))}.json`));
-  const usage = new UsageTracker(config.gemini.pricing);
-  const gemini = opts.gemini ?? createGeminiClient({ config, usage, logger });
 
-  const classification = await classifyBlueprint(inputFilePath, { config, gemini, logger, allowLlm: true });
+  const classification = await classifyBlueprint(inputFilePath, { config, logger });
   logger.info(`classified ${path.basename(inputFilePath)} as ${classification.detected.format} -> ${classification.route} (${classification.reason})`);
 
   const toVision = (details) => routeToVisionAgent(
@@ -83,7 +78,9 @@ export async function processBlueprint(opts) {
   const fmt = classification.detected.format;
   const vectorPages = classification.pages?.filter((p) => p.route === 'vector_extraction').map((p) => p.index);
   const scannedPages = classification.pages?.filter((p) => p.route !== 'vector_extraction').map((p) => p.index) ?? [];
-  const exOpts = { config, logger };
+  const corrections = await loadCorrections(config.correctionsPath, { logger });
+  if (corrections.rules.length) logger.info(`${corrections.rules.length} correction rule(s) from ${corrections.path}`);
+  const exOpts = { config, logger, corrections };
   /** @type {import('./extractors/bundle.js').Bundle[]} */
   let bundles;
   if (fmt === 'ifc') {
@@ -106,10 +103,10 @@ export async function processBlueprint(opts) {
   }
 
   const mapped = bundles.length
-    ? await mapToSchema({ inputFilePath, outputJsonPath, mode: opts.mode ?? 'auto', bundles, config, gemini, usage, logger, file: opts.file, source: opts.source })
-    : { outputs: [], usage: usage.snapshot() };
+    ? await mapToSchema({ inputFilePath, outputJsonPath, mode: opts.mode ?? 'auto', bundles, config, logger, corrections, file: opts.file, source: opts.source })
+    : { outputs: [] };
 
-  const result = { status: /** @type {'processed'|'processed_with_vision_routing'} */ ('processed'), route: classification.route, classification: summarize(classification), outputs: mapped.outputs, usage: mapped.usage };
+  const result = { status: /** @type {'processed'|'processed_with_vision_routing'} */ ('processed'), route: classification.route, classification: summarize(classification), outputs: mapped.outputs };
   if (classification.route === 'mixed' && scannedPages.length) {
     result.vision = await toVision({ pages: scannedPages });
     result.status = 'processed_with_vision_routing';
