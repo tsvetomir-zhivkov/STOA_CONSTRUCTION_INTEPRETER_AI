@@ -20,6 +20,7 @@ Every result has the same envelope so the UI can highlight without knowing the t
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import itertools
 import json
 import math
@@ -28,6 +29,8 @@ from collections import Counter
 from pathlib import Path
 
 import networkx as nx
+
+from pipes.tags import normalise
 
 STRUCTURAL = {"tee", "junction", "elbow", "cross", "open_end"}
 MIN_SYMBOL_CONFIDENCE = 0.5  # coverage confidence below this is not "good" (CLAUDE.md: never claim absence)
@@ -72,13 +75,26 @@ class PipeIndex:
 
     def _node_hl(self, ids) -> list[dict]:
         return [
-            {"id": i, "type": self.nodes[i]["type"], "bbox_px": self.nodes[i]["bbox_px"],
-             "center_px": self.nodes[i]["center_px"]}
+            {"id": i, "type": self.nodes[i]["type"], "tag": self.nodes[i].get("tag"),
+             "bbox_px": self.nodes[i]["bbox_px"], "center_px": self.nodes[i]["center_px"]}
             for i in ids if i in self.nodes
         ]  # fmt: skip
 
     def _edge_hl(self, ids) -> list[dict]:
-        return [{"id": i, "polyline_px": self.edges[i]["polyline_px"]} for i in ids if i in self.edges]
+        return [
+            {"id": i, "line_tag": self.edges[i].get("line_tag"), "polyline_px": self.edges[i]["polyline_px"]}
+            for i in ids
+            if i in self.edges
+        ]
+
+    def _unattached_tag_texts(self, pattern: str) -> list[dict]:
+        """Texts on the sheet that read like `pattern` but are attached to no symbol and no pipe."""
+        pat = normalise(pattern)
+        return [
+            {"text_id": t["id"], "raw_text": t["raw_text"], "bbox_px": t["bbox_px"]}
+            for t in self.doc["texts"]
+            if not t["attached_to"] and fnmatch.fnmatchcase(normalise(t["raw_text"]), pat)
+        ]
 
     def _oriented(self, edge_id: str, start_node: str) -> list:
         """Edge polyline running away from start_node."""
@@ -92,7 +108,10 @@ class PipeIndex:
             if c["category"] != category:
                 continue
             if region is None or c["region"] == "page" or _overlap(c["region"], region):
-                out.append({k: c[k] for k in ("id", "category", "status", "confidence", "region", "note")})
+                out.append(
+                    {k: c[k] for k in ("id", "category", "status", "confidence", "region", "note")}
+                    | {"element_ids": c.get("element_ids", [])}
+                )
         return out
 
     def _result(self, tool, answer, node_ids, edge_ids, coverage, reliable, caveats, regions=None) -> dict:
@@ -129,10 +148,44 @@ class PipeIndex:
                 out.append(eid)
         return out
 
+    def _tag_check(self, pattern: str, n_found: int, target: str) -> tuple[list[dict], bool, list[str]]:
+        """(tags coverage entries, reliable?, caveats) for a tag query.
+
+        No tags coverage, or text that reads like the tag but is attached to nothing, makes the answer unreliable.
+        Partly attached tags elsewhere on the sheet only block an absence claim (a result of 0).
+        """
+        cov = self._coverage("tags")
+        caveats = []
+        ok = True
+        for u in self._unattached_tag_texts(pattern):
+            ok = False
+            caveats.append(
+                f"the text {u['raw_text']!r} at {u['bbox_px']} matches the tag but is attached to no {target}"
+            )
+        if not cov:
+            return (
+                cov,
+                False,
+                ["tags were not analysed on this sheet: absence of a tag proves nothing", *caveats],
+            )
+        partial = [c for c in cov if c["status"] != "analysed"]
+        if partial:
+            n = sum(len(c["element_ids"]) for c in partial)
+            caveats.append(
+                f"tags are only partly attached on this sheet: {n} tag-like text(s) found no symbol or pipe"
+            )
+            if n_found == 0:
+                ok = False
+                caveats.append("nothing matched and tags are partial: do not say the tag is absent")
+        caveats.append(
+            "tags are read by OCR: a misread or missed tag is not matched, so a result can be a lower bound"
+        )
+        return cov, ok, caveats
+
     # ------------------------------------------------------------------ tools
 
-    def count_symbols(self, region=None, type: str | None = None) -> dict:  # noqa: A002
-        """Count reported symbols (optionally in a bbox [x0,y0,x1,y1] and/or of one type)."""
+    def count_symbols(self, region=None, type: str | None = None, tag: str | None = None) -> dict:  # noqa: A002
+        """Count reported symbols, optionally in a bbox [x0,y0,x1,y1], of one type and/or with a tag ('V-601', 'V-*')."""
         if region is not None and (len(region) != 4 or region[0] >= region[2] or region[1] >= region[3]):
             return self._error(
                 "count_symbols", f"region must be [x0, y0, x1, y1] with x0<x1, y0<y1, got {region}"
@@ -141,6 +194,7 @@ class PipeIndex:
             i for i in sorted(self.symbol_ids, key=lambda s: int(s.split("_")[-1]))
             if (region is None or _inside(self.nodes[i]["center_px"], region))
             and (type is None or self.nodes[i]["type"] == type)
+            and (tag is None or fnmatch.fnmatchcase(normalise(self.nodes[i].get("tag") or ""), normalise(tag)))
         ]  # fmt: skip
         cov = self._coverage("symbols", region)
         caveats = []
@@ -154,6 +208,10 @@ class PipeIndex:
                 caveats.append(f"symbols are {c['status']} in {c['region']} ({c['id']})")
             elif c["confidence"] < MIN_SYMBOL_CONFIDENCE:
                 caveats.append(f"symbol detection confidence is only {c['confidence']:.2f} ({c['id']})")
+        if tag is not None:
+            tcov, ok, tcav = self._tag_check(tag, len(ids), "symbol")
+            cov, caveats = cov + tcov, caveats + tcav
+            reliable = reliable and ok
         if not ids and not reliable:
             caveats.append(
                 "0 symbols found but the region was not reliably analysed: do not say there are none"
@@ -167,8 +225,10 @@ class PipeIndex:
         if set(types) == {"unknown"}:
             caveats.append("the detector is single-class: symbols are counted but not typed")
         return self._result(
-            "count_symbols", {"count": len(ids), "by_type": types, "type_filter": type}, ids, [], cov,
-            reliable, caveats, [list(region)] if region else [],
+            "count_symbols",
+            {"count": len(ids), "by_type": types, "type_filter": type, "tag_filter": tag,
+             "tags": {i: self.nodes[i]["tag"] for i in ids if self.nodes[i].get("tag")}},
+            ids, [], cov, reliable, caveats, [list(region)] if region else [],
         )  # fmt: skip
 
     def connected_to(self, node: str) -> dict:
@@ -273,14 +333,16 @@ class PipeIndex:
                 return self._error("pipe_length", f"unknown edge id {edge!r}")
             ids = [edge]
         else:
-            ids = [i for i, e in self.edges.items() if (e.get("line_tag") or "").upper() == tag.upper()]
+            pat = normalise(tag)
+            ids = [
+                i
+                for i, e in self.edges.items()
+                if fnmatch.fnmatchcase(normalise(e.get("line_tag") or ""), pat)
+            ]
         caveats, cov = [], []
         reliable = True
         if tag is not None:
-            cov = self._coverage("tags")
-            if not cov or any(c["status"] != "analysed" for c in cov):
-                reliable = False
-                caveats.append("line tags were not analysed on this sheet: absence of a tag proves nothing")
+            cov, reliable, caveats = self._tag_check(tag, len(ids), "pipe")
             if not ids:
                 caveats.append(f"no edge carries the line tag {tag!r}")
         lengths = {}
@@ -296,6 +358,16 @@ class PipeIndex:
             }
             basis = kinds.pop() if len(kinds) == 1 else "mixed"
         total_px = round(sum(self.length_px[i] for i in ids), 1)
+        carried = [
+            i
+            for i in ids
+            if any(x.startswith("pipe_") for x in self.edges[i]["provenance"].get("evidence_ids", []))
+        ]
+        if carried:
+            caveats.append(
+                f"{len(carried)} of these pipe(s) inherit the tag along the run through in-line symbols, "
+                "not from a label next to them"
+            )
         if not known and ids:
             scale = self.doc["scale"]
             caveats.append(
@@ -317,7 +389,8 @@ class PipeIndex:
             "pipe_length",
             {"edge": edge, "tag": tag, "n_edges": len(ids), "length_m": round(sum(known.values()), 3) if known else None,
              "length_px": total_px, "basis": basis, "lower_bound": bool(missing and known),
-             "missing_length_edge_ids": missing, "per_edge_m": lengths},
+             "missing_length_edge_ids": missing, "per_edge_m": lengths, "propagated_edge_ids": carried,
+             "tags_found": sorted({self.edges[i]["line_tag"] for i in ids})},
             [self.edges[i]["ends"][k]["node_id"] for i in ids for k in (0, 1) if self.edges[i]["ends"][k]["node_id"]],
             ids, cov, reliable, caveats,
         )  # fmt: skip
@@ -331,6 +404,7 @@ def add_tool_args(sub) -> None:
     c = sub.add_parser("count_symbols")
     c.add_argument("--region", nargs=4, type=float, metavar=("X0", "Y0", "X1", "Y1"))
     c.add_argument("--type")
+    c.add_argument("--tag")
     sub.add_parser("connected_to").add_argument("node")
     p = sub.add_parser("path_between")
     p.add_argument("a")
@@ -342,7 +416,7 @@ def add_tool_args(sub) -> None:
 
 def call(idx: PipeIndex, a: argparse.Namespace) -> dict:
     if a.tool == "count_symbols":
-        return idx.count_symbols(a.region, a.type)
+        return idx.count_symbols(a.region, a.type, a.tag)
     if a.tool == "connected_to":
         return idx.connected_to(a.node)
     if a.tool == "path_between":

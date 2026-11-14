@@ -26,6 +26,7 @@ from pipes.raster import ocr_run
 from pipes.raster import regions as rg
 from pipes.raster.detect import merge
 from pipes.raster.trace_skeleton import trace
+from pipes.tags import attach_tags
 from pipes.write import finalize
 
 HERE = Path(__file__).parent.parent
@@ -287,6 +288,7 @@ def assemble(sheet_dir, mode, conf, syms, port_list, texts, g, w, size, transfor
                  "element_ids": [], "note": f"{rgn['kind']} region is not traced"}
             )  # fmt: skip
     doc["history"] = []
+    stats["tags"] = attach_tags(doc)
     doc = finalize(doc)
     doc["_debug"] = {"stroke_width_px": round(w, 2), "snap_radius_px": r, **stats, "transforms": transforms}
     return doc

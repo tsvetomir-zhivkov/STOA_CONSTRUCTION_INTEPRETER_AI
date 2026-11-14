@@ -126,12 +126,14 @@ def render(result: dict, image: Path, out: Path) -> Path:
         x0, y0, x1, y1 = n["bbox_px"]
         d.rectangle([sh((x0, y0)), sh((x1, y1))], fill=(*accent, 70), outline=(*accent, 235), width=box_w)
     for e in hl["edges"]:  # labels last so they sit on top of the fills
-        label = e["id"]
+        label = e["id"] + (f" [{e['line_tag']}]" if e.get("line_tag") else "")
         if route and e["id"] in route:
-            label = f"{route.index(e['id']) + 1}: {e['id']}"
+            label = f"{route.index(e['id']) + 1}: {label}"
         _label(d, sh(_midpoint(e["polyline_px"])), label, font, EDGE, fs)
     for n in hl["nodes"]:
-        _label(d, sh(n["bbox_px"][:2]), n["id"], font, accent, fs)
+        _label(
+            d, sh(n["bbox_px"][:2]), n["id"] + (f" [{n['tag']}]" if n.get("tag") else ""), font, accent, fs
+        )
 
     img = Image.alpha_composite(canvas, layer)
     cd = ImageDraw.Draw(img)
