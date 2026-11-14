@@ -140,6 +140,7 @@
       #panel { top: auto; bottom: 12px; left: 12px; width: auto; max-height: 45vh; }
     }
   </style>
+<link rel="stylesheet" href="workspace.css">
 </head>
 <body>
   <main id="picker">
@@ -147,12 +148,15 @@
       <h1>Blueprint Viewer</h1>
       <p>Open drawing JSON files and IFC models: several at once, mixed, or drop them anywhere.</p>
       <button id="openBtn" type="button">Open files (.json, .ifc)</button>
-      <input id="fileInput" type="file" accept=".json,.ifc,application/json" multiple hidden>
+      <input id="fileInput" type="file" accept=".json,.ifc,.dxf,.svg,.pdf,.png,.jpg,.jpeg,.webp" multiple hidden>
       <p id="error" role="alert"></p>
     </div>
   </main>
 
+  <header id="workspaceBar"><strong id="workspaceTitle">Stoa workspace</strong><button class="ghost" data-mode="2d">2D</button><button class="ghost" data-mode="3d" aria-pressed="true">3D</button><button class="ghost" data-mode="parallel">Parallel</button><select id="floorSelect" aria-label="Floor plan"></select><button class="ghost" id="fitView">Fit</button><button class="ghost" id="resetView">Reset</button></header>
+  <section id="planPane" aria-label="2D drawing"><div id="planTools"><label>Cut height <input id="planCut" type="number" min="0.1" max="10" step="0.1" value="1.2"> m</label></div><div id="planSurface"></div></section>
   <div id="stage"></div>
+  <div id="workspaceMessage" role="status">Open a drawing to begin</div>
 
   <div id="banners" aria-live="polite"></div>
 
@@ -239,6 +243,7 @@
   </aside>
 
   <script type="module">
+    import { Workspace } from './workspace.js';
     import { BlueprintViewer, FIXTURE_STYLE } from './blueprintViewer.js';
 
     const $ = (id) => document.getElementById(id);
@@ -247,35 +252,18 @@
     const ensureViewer = () => {
       document.body.classList.add('viewing');
       if (viewer) { viewer.resize(); return viewer; } // the stage needs a size before the renderer measures it
-      viewer = new BlueprintViewer($('stage'), { onSelect: showSelection, onCorrectionsChange: showCorrectionCount, onChange: render });
+      viewer = new BlueprintViewer($('stage'), { onSelect: info => { showSelection(info); window.workspace?.selectionChanged(); }, onCorrectionsChange: showCorrectionCount, onChange: sum => { render(sum); window.workspace?.sceneChanged(sum); } });
       window.viewer = viewer; // for inspection from the browser console
       applyControls();
       return viewer;
     };
 
-    async function addFiles(list) {
-      const files = [...list].filter((f) => /\.(json|ifc)$/i.test(f.name));
-      if (!files.length) return;
-      $('error').textContent = '';
-      const hadViewer = !!viewer;
-      ensureViewer();
-      setStatus(`loading ${files.map((f) => f.name).join(', ')} …`);
-      const results = await viewer.addFiles(files);
-      const bad = results.filter((r) => !r.ok);
-      if (bad.length) {
-        const msg = bad.map((r) => `${r.name}: ${r.error}`).join('\n');
-        if (!viewer.bp.sources.length) { document.body.classList.remove('viewing'); $('error').textContent = msg; }
-        else addBanner('Some files could not be loaded', msg);
-      }
-      for (const r of results.filter((x) => x.ok && x.kind === 'ifc')) console.info(`[blueprint-viewer] ${r.name}: ${r.stats.elements} elements, ${r.stats.triangles} triangles, ${r.stats.batches} batches in ${r.ms} ms`);
-      viewer.resize();
-      if (!hadViewer || results.some((r) => r.ok)) cutRange();
-    }
+    async function addFiles(list) { await workspace.addFiles([...list]); }
 
     $('openBtn').addEventListener('click', () => input.click());
     $('addBtn').addEventListener('click', () => input.click());
     for (const [id,visible] of [['levelsAll',true],['levelsNone',false]]) $(id).addEventListener('click',()=>{ if(!viewer)return; viewer.bp.view.isolateLevel=null; isolatedLevel=null; for(const key of viewer.bp.levels.keys()) viewer.setLevelVisible(key,visible); render(viewer.summary()); });
-    $('clearBtn').addEventListener('click', () => { viewer?.clear(); isolatedLevel = null; isolatedCategory = null; document.body.classList.remove('viewing'); });
+    $('clearBtn').addEventListener('click', () => { workspace.clear(); isolatedLevel = null; isolatedCategory = null; document.body.classList.remove('viewing'); });
     input.addEventListener('change', () => { const f = [...input.files]; input.value = ''; addFiles(f); });
     // drag and drop anywhere
     let depth = 0;
@@ -348,7 +336,7 @@
         const li = document.createElement('li');
         const btn = Object.assign(document.createElement('button'), { className: 'small ghost', type: 'button', textContent: 'Remove' });
         btn.setAttribute('aria-label', `Remove ${s.name}`);
-        btn.addEventListener('click', () => { viewer.remove(s.id); cutRange(); });
+        btn.addEventListener('click', () => { workspace.removeSource(s.id); cutRange(); });
         const meta = document.createElement('span'); meta.className = 'meta';
         if (s.kind === 'ifc') meta.textContent = `geometry: ${s.geometry} · ${s.ifc.stats.elements} elements, ${(s.ifc.stats.triangles / 1e6).toFixed(2)} M triangles, ${s.ifc.stats.ms} ms · linked to JSON: ${s.match.withJson}/${s.match.meshes} meshes${s.ifc.stats.unsupported ? ` · ${s.ifc.stats.unsupported} representation(s) web-ifc could not mesh` : ''}`;
         else meta.textContent = `geometry: ${s.geometry}${s.match?.elements ? ` · ${s.match.withMesh}/${s.match.elements} elements have a web-ifc mesh` : ''}`;
@@ -506,6 +494,8 @@
       }
       panel.classList.add('open');
     }
+    const workspace = new Workspace({ ensureViewer, render, showSelection });
+    window.workspace = workspace;
   </script>
 </body>
 </html>
