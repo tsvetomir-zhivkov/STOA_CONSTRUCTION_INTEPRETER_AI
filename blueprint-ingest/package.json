@@ -1,6 +1,6 @@
 {
   "name": "blueprint-ingest",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Deterministic entry-point filter, vector extractor and schema mapper for the Stoa blueprint pipeline.",
   "private": true,
   "type": "module",

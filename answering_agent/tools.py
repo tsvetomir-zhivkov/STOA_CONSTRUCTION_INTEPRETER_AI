@@ -1,7 +1,9 @@
-"""Deterministic drawing tools for Stoa schema v0.2.
+"""Deterministic drawing tools for Stoa schema v0.2 and v0.3.
 
 Install: uv add shapely
-Every function accepts the already-validated v0.2 drawing dict as its first argument.
+Every function accepts the already-validated drawing dict (v0.2, or v0.3 from translator.schema_compat.load_document)
+as its first argument. v0.3 adds the collections element_types, materials, material_layer_sets, systems, schedules,
+relationships and statistics; they are simply absent from a v0.2 dict.
 """
 from __future__ import annotations
 
@@ -10,7 +12,8 @@ from typing import Any
 
 from shapely.geometry import Polygon
 
-COLLECTIONS = ("levels", "units", "rooms", "walls", "openings", "objects", "texts", "edges")
+COLLECTIONS = ("levels", "units", "rooms", "walls", "openings", "objects", "texts", "edges",
+               "element_types", "materials", "material_layer_sets", "systems", "schedules", "relationships", "statistics")
 MEASURES = ("area_m2", "area_written_m2", "area_computed_m2", "height_m", "volume_m3", "length_m", "width_m", "thickness_m", "net_side_area_m2", "net_volume_m3")
 
 
@@ -30,7 +33,8 @@ def _assumed_ids(items: list[dict]) -> list[str]:
 
 def _brief(item: dict, collection: str) -> dict:
     """Return short entity facts; omit polygons, provenance and unrelated flags."""
-    fields = ("id", "name", "label", "number", "type", "kind", "category", "room_id", "room_ids", "unit_id", "level_id", "area_m2", "width_m", "confidence")
+    fields = ("id", "name", "label", "number", "type", "kind", "category", "room_id", "room_ids", "unit_id", "level_id", "area_m2", "width_m", "confidence",
+              "ifc_class", "discipline", "type_id", "mark", "thickness_m", "total_thickness_m", "value", "unit", "status", "exact")
     out = {k: item[k] for k in fields if k in item}
     out["collection"] = collection
     if _assumed_prior(item):
@@ -50,10 +54,11 @@ def _coverage(data: dict, category: str) -> dict:
 
 
 def query_entities(data: dict, collection: str, field: str = "", value: str = "", limit: int = 50) -> dict:
-    """Search active entities in one v0.2 collection. Filter by an exact string field, or search all if field is empty."""
+    """Search active entities in one collection (v0.2, or v0.3 with its extra collections). Filter by an exact string field, or search all if field is empty."""
     if collection not in COLLECTIONS:
         return {"error": f"Unknown collection: {collection}", "allowed": COLLECTIONS}
-    if field and field not in ("id", "name", "label", "number", "type", "kind", "category", "unit_id", "level_id", "room_id", "text", "role", "is_entrance"):
+    if field and field not in ("id", "name", "label", "number", "type", "kind", "category", "unit_id", "level_id", "room_id", "text", "role", "is_entrance",
+                               "ifc_class", "discipline", "type_id", "global_id", "mark", "predefined_type"):
         return {"error": "Unsupported filter field"}
     items = [x for x in data.get(collection, []) if _active(x)]
     if field:
