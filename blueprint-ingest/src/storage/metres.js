@@ -26,7 +26,10 @@ export const AREA_MISMATCH_PCT = 10;
  * @returns {any} the same document
  */
 export function recomputeMetres(doc) {
-  const explicit = (e, f) => e.quantities?.[f]?.status === 'explicit';
+  // locked = read from the source (explicit), or derived by the extractor from source data (e.g. a layer-set sum): only
+  // records this module itself produces (sources below) are recomputed
+  const CODE_SOURCES = new Set(['polygon_px', 'polyline_px', 'properties.thickness_px', 'properties.width_px', 'area_m2, height_m', 'area_written_m2']);
+  const explicit = (e, f) => { const q = e.quantities?.[f]; return !!q && (q.status === 'explicit' || (q.source != null && !CODE_SOURCES.has(q.source) && !/^(rooms|walls|openings|objects|units|levels)\[\]\./.test(q.source))); };
   const set = (e, f, v) => { if (!explicit(e, f)) e[f] = v; };
   const k = doc.drawing?.scale?.m_per_px ?? null;
   const has = typeof k === 'number' && k > 0;
