@@ -8,6 +8,7 @@ Run (the modal command is not on PATH here, so through python -m; the app has tw
   python -m modal run -m translator.modal_app::main                # every dev image without a raw seg file
   python -m modal run -m translator.modal_app::ocr_main --limit 1  # step 7 OCR (PaddleOCR, Latin model)
   python -m modal run -m translator.modal_app::ocr_main --names colorful-7513,high_quality-5815
+  python -m modal run -m translator.modal_app::ocr_rot_main         # rotated pass, triggered images only
 
 Only images NOT in eval/holdout_files.txt are ever read or sent (translator.extract.cubicasa.dev_images).
 Raw results go to index/_raw/cubicasa/<name>.seg.json; images that already have one are skipped.
@@ -270,6 +271,28 @@ class Ocr:
             "timing_s": timing,
         }
 
+    @modal.method()
+    def run_rotated(self, png_bytes: bytes, name: str) -> dict:
+        """Rotated pass: the OCR input turned 90 degrees clockwise; boxes mapped back to original pixels."""
+        import cv2
+        import numpy as np
+
+        from translator.extract.ocr import items_from_result
+        from translator.raster.preprocess import preprocess, to_bgr
+
+        t0 = time.time()
+        img = cv2.imdecode(np.frombuffer(png_bytes, np.uint8), cv2.IMREAD_UNCHANGED)
+        pre = preprocess(to_bgr(img, name), source=name)
+        k = pre.transforms["ocr_upscale"]
+        src = pre.ocr_upscaled if pre.ocr_upscaled is not None else pre.ocr_gray
+        im = np.ascontiguousarray(cv2.rotate(cv2.cvtColor(src, cv2.COLOR_GRAY2BGR), cv2.ROTATE_90_CLOCKWISE))
+        r = self.ocr.predict(im)[0]
+        d = r if "rec_texts" in r else r.json["res"]
+        items = items_from_result(
+            d["rec_texts"], d["rec_scores"], d["rec_polys"], k, False, im.shape[1], rotated=True
+        )
+        return {"items": items, "deg": 90, "direction": "clockwise", "timing_s": round(time.time() - t0, 3)}
+
 
 def _select(files: list[str], names: str, limit: int, overwrite: bool, exists) -> list[str]:
     from translator.extract import cubicasa
@@ -318,6 +341,48 @@ def ocr_main(limit: int = 0, names: str = "", overwrite: bool = False):
         f"\n{done}/{len(files)} images, {len(failures)} failures, wall {time.time() - t0:.0f}s, "
         f"GPU time in run() {gpu_s:.0f}s (~${gpu_s * T4_USD_PER_S:.3f} at T4 list price, excl. start-up)"
     )
+
+
+@app.local_entrypoint()
+def ocr_rot_main(names: str = "", overwrite: bool = False):
+    """Rotated OCR pass for dev images whose as-drawn reading triggers it (ocr.needs_rotation)."""
+    from translator.config import data_root
+    from translator.extract import cubicasa, ocr
+
+    files = _select(cubicasa.dev_images(), names, 0, True, lambda s: False)
+    todo, skipped = [], 0
+    for f in files:
+        raw = ocr.load_raw(Path(f).stem)
+        if raw is None or ("rotated" in raw["orientations"] and not overwrite):
+            continue
+        need, why = ocr.needs_rotation(raw["orientations"]["original"])
+        if need:
+            todo.append((f, why))
+        else:
+            skipped += 1
+    print(f"rotated pass: {len(todo)} images triggered, {skipped} not")
+    if not todo:
+        return
+    stems = [Path(f).stem for f, _ in todo]
+    blobs = [(data_root() / f).read_bytes() for f, _ in todo]
+    gpu_s, failures = 0.0, []
+    for (_f, why), stem, res in zip(
+        todo, stems, Ocr().run_rotated.map(blobs, stems, return_exceptions=True), strict=True
+    ):
+        if isinstance(res, Exception):
+            failures.append(stem)
+            print("FAIL", stem, repr(res)[:300])
+            continue
+        raw = ocr.load_raw(stem)
+        raw["orientations"]["rotated"] = res["items"]
+        cost = round(res["timing_s"] * T4_USD_PER_S, 6)
+        raw["rotation"] = {"deg": res["deg"], "direction": res["direction"], "trigger": why,
+                           "timing_s": res["timing_s"], "cost_usd": cost}  # fmt: skip
+        ocr.raw_path(stem).write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+        gpu_s += res["timing_s"]
+        print(f"{stem}: {len(res['items'])} rotated texts ({why}) in {res['timing_s']}s")
+    print(f"\n{len(todo) - len(failures)}/{len(todo)} images, {len(failures)} failures, "
+          f"added GPU time {gpu_s:.0f}s (~${gpu_s * T4_USD_PER_S:.3f})")  # fmt: skip
 
 
 @app.local_entrypoint()
