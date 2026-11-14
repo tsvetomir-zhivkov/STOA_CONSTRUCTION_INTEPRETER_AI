@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
+import time
 import urllib.error
 import urllib.request
 
@@ -17,6 +19,9 @@ from translator.vlm.base import BaseClient, VLMError, scrub
 
 API_ROOT = "https://generativelanguage.googleapis.com/v1beta"
 TIMEOUT_S = 300  # default thinking on 3.x can take minutes; a timed-out call may still be billed
+RETRIES = 1  # one retry with backoff on a timeout, connection error, 429 or 5xx
+RETRY_BACKOFF_S = 10.0
+log = logging.getLogger("translator.vlm")
 
 ANSWER_SCHEMA = {
     "type": "OBJECT",
@@ -35,21 +40,47 @@ def _key() -> str:
     return key
 
 
-def _request(method: str, path: str, body: dict | None = None, opener=urllib.request.urlopen) -> dict:
+def _retryable(e: Exception) -> bool:
+    if isinstance(e, urllib.error.HTTPError):
+        return e.code == 429 or e.code >= 500
+    return isinstance(e, (TimeoutError, urllib.error.URLError, ConnectionError, OSError))
+
+
+def _request(
+    method: str, path: str, body: dict | None = None, opener=urllib.request.urlopen, sleep=time.sleep
+) -> dict:
+    """One request, retried once (after RETRY_BACKOFF_S) on a timeout, connection error, 429 or 5xx.
+
+    A latency line per attempt goes to the 'translator.vlm' logger (method, path, seconds; never the key).
+    A timed-out attempt may still have been billed by the API without returning token counts.
+    """
     key = _key()
     data = json.dumps(body).encode("utf-8") if body is not None else None
-    req = urllib.request.Request(f"{API_ROOT}/{path}", data=data, method=method)
-    req.add_header("x-goog-api-key", key)
-    if data is not None:
-        req.add_header("Content-Type", "application/json")
-    try:
-        with opener(req, timeout=TIMEOUT_S) as resp:
-            return json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode("utf-8", "replace")[:500] if e.fp else ""
-        raise VLMError(scrub(f"HTTP {e.code} on {method} {path}: {detail}", [key])) from None
-    except Exception as e:
-        raise VLMError(scrub(f"{type(e).__name__} on {method} {path}: {e}", [key])) from None
+    for attempt in range(1, RETRIES + 2):
+        req = urllib.request.Request(f"{API_ROOT}/{path}", data=data, method=method)
+        req.add_header("x-goog-api-key", key)
+        if data is not None:
+            req.add_header("Content-Type", "application/json")
+        t0 = time.monotonic()
+        try:
+            with opener(req, timeout=TIMEOUT_S) as resp:
+                out = json.loads(resp.read().decode("utf-8"))
+            log.info("gemini %s %s: %.1f s (attempt %d)", method, path, time.monotonic() - t0, attempt)
+            return out
+        except Exception as e:
+            dt = time.monotonic() - t0
+            if isinstance(e, urllib.error.HTTPError):
+                detail = e.read().decode("utf-8", "replace")[:500] if e.fp else ""
+                msg = f"HTTP {e.code} on {method} {path}: {detail}"
+            else:
+                msg = f"{type(e).__name__} on {method} {path}: {e}"
+            msg = scrub(msg, [key])
+            log.warning("gemini %s %s: failed after %.1f s (attempt %d): %s", method, path, dt, attempt, msg)
+            if attempt <= RETRIES and _retryable(e):
+                sleep(RETRY_BACKOFF_S * attempt)
+                continue
+            raise VLMError(msg) from None
+    raise AssertionError("unreachable")
 
 
 def list_models(opener=urllib.request.urlopen) -> list[dict]:
@@ -66,12 +97,16 @@ def list_models(opener=urllib.request.urlopen) -> list[dict]:
 
 class GeminiClient(BaseClient):
     def __init__(
-        self, model: str = config.GEMINI_MODEL, thinking_level: str | None = None, opener=None, **kw
+        self,
+        model: str = config.GEMINI_MODEL,
+        thinking_level: str | None = config.THINKING_LEVEL,
+        opener=None,
+        **kw,
     ):
         super().__init__(**kw)
         self.model_name = model
         self.settings = dict(config.GENERATION)
-        if thinking_level is not None:  # None = the model's default; 3.x models: low | medium | high
+        if thinking_level is not None:  # None = the model's default thinking; 3.x: low | medium | high
             self.settings["thinking_level"] = thinking_level
         self._opener = opener or urllib.request.urlopen
 

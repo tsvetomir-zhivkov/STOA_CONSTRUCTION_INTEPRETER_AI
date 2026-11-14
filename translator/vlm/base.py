@@ -1,8 +1,8 @@
 """Step 9: the swappable VLM interface, with the guards every client goes through.
 
 VLMClient.check(image_bytes, category, prompt, *, source, crop) -> VLMResult. BaseClient.check runs, in order:
-  1. hold-out guard: refuses (raises HoldoutError) when `source` is a hold-out file (by path or stem) or the
-     image bytes / decoded pixels hash to a hold-out image. Runs before any cache or network code.
+  1. hold-out guard: refuses (raises HoldoutError) when `source` is a hold-out file by normalised path,
+     basename or stem. Runs before any cache or network code. Hold-out files are never read, not even hashed.
   2. cache: index/_raw/vlm/<key>.json, key = sha256(image bytes hash, category, prompt, model, generation
      settings). A cached answer is returned; the same key is never sent twice.
   3. budget: aborts (BudgetExceeded) when the cumulative cost of the run reached its cap.
@@ -19,9 +19,6 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
-
-import cv2
-import numpy as np
 
 from translator.vlm import config
 
@@ -86,42 +83,33 @@ def _sha(b: bytes) -> str:
     return hashlib.sha256(b).hexdigest()
 
 
-def pixel_hash(image_bytes: bytes) -> str | None:
-    arr = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_UNCHANGED)
-    if arr is None:
-        return None
-    return _sha(arr.shape.__repr__().encode() + np.ascontiguousarray(arr).tobytes())
+def _norm(path: str) -> str:
+    return (path or "").replace("\\", "/").strip().casefold()
 
 
 class HoldoutGuard:
-    """Refuses hold-out inputs by path/stem and by hash of the file bytes and of the decoded pixels.
+    """Refuses hold-out inputs by normalised path, basename and stem (eval/holdout_files.txt).
 
-    The hashes are computed once from the hold-out files' bytes (read only to hash them; never sent, scored
-    or shown). A crop or downscale of a hold-out image is caught by the path check, not by the hash.
+    It never reads a hold-out file: only the list of names. A crop or downscale of a hold-out image is
+    caught because every input must name its source file.
     """
 
-    def __init__(self, holdout_paths: set[str], data_root: Path | None):
-        self.paths = {p.replace("\\", "/") for p in holdout_paths}
-        self.stems = {Path(p).stem for p in self.paths}
-        self.file_hashes: set[str] = set()
-        self.pixel_hashes: set[str] = set()
-        for p in sorted(self.paths):
-            f = (data_root / p) if data_root else None
-            if f is not None and f.is_file():
-                b = f.read_bytes()
-                self.file_hashes.add(_sha(b))
-                ph = pixel_hash(b)
-                if ph:
-                    self.pixel_hashes.add(ph)
+    def __init__(self, holdout_paths: set[str]):
+        self.paths = {_norm(p) for p in holdout_paths}
+        self.names = {p.rsplit("/", 1)[-1] for p in self.paths}
+        self.stems = {n.rsplit(".", 1)[0] for n in self.names}
 
-    def check(self, source: str, image_bytes: bytes) -> None:
-        s = (source or "").replace("\\", "/")
+    def check_source(self, source: str) -> None:
+        s = _norm(source)
         if not s:
             raise HoldoutError("refused: every VLM input needs its source path (hold-out guard)")
-        if s in self.paths or any(s.endswith("/" + p) for p in self.paths) or Path(s).stem in self.stems:
-            raise HoldoutError(f"refused: {s} is a hold-out file")
-        if _sha(image_bytes) in self.file_hashes or pixel_hash(image_bytes) in self.pixel_hashes:
-            raise HoldoutError(f"refused: image bytes for {s} match a hold-out image")
+        name = s.rsplit("/", 1)[-1]
+        if (s in self.paths or any(s.endswith("/" + p) for p in self.paths) or name in self.names
+                or name.rsplit(".", 1)[0] in self.stems):  # fmt: skip
+            raise HoldoutError(f"refused: {source} is a hold-out file")
+
+    def check(self, source: str, image_bytes: bytes | None = None) -> None:
+        self.check_source(source)
 
 
 _GUARD: HoldoutGuard | None = None
@@ -130,12 +118,15 @@ _GUARD: HoldoutGuard | None = None
 def default_guard() -> HoldoutGuard:
     global _GUARD
     if _GUARD is None:
-        from translator.config import data_root
         from translator.extract.cubicasa import holdout_files
 
-        root = data_root()
-        _GUARD = HoldoutGuard(holdout_files(), root if (root / "data").is_dir() else None)
+        _GUARD = HoldoutGuard(holdout_files())
     return _GUARD
+
+
+def guard_source(source: str) -> None:
+    """Call before reading ANY file for the VLM step (image, index document): raises on a hold-out file."""
+    default_guard().check_source(source)
 
 
 # ------------------------------------------------------------------ budget, cost, cache

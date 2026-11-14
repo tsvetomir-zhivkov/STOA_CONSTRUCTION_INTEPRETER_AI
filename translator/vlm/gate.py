@@ -10,9 +10,23 @@ One task per (image, category): an image passing several gates for the same cate
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
+from translator.vlm.base import guard_source
+
 WET_TYPES = {"bathroom", "wc", "sauna"}
 WIN_DOOR_CONF = 0.7
 GATES = ("shower", "prior", "no_evidence", "floors", "win_door")
+
+
+def load_doc(source: str, index_dir: Path | None = None) -> dict:
+    """The index document of a dataset image, read only after the hold-out guard passed for its source."""
+    from translator.config import INDEX_DIR
+    from translator.store import index_path
+
+    guard_source(source)
+    return json.loads(index_path(source, None, index_dir or INDEX_DIR).read_text(encoding="utf-8"))
 
 
 def _active(items):

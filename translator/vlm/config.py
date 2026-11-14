@@ -21,6 +21,10 @@ PRICES_USD_PER_MTOK = {
 }
 
 # Generation settings are part of the cache key: changing any of them never reuses an old answer.
+# Thinking level for gemini-3.8-flash: "low" (k, 2026-11-14): on 3 dev shower images it was 3/3 like the
+# default, at $0.0030 vs $0.0091 per image. "minimal" is not supported by this model (its model page).
+THINKING_LEVEL = "low"
+
 # Temperature stays at the model default (Gemini 3 guidance); every answer is cached, so runs repeat.
 GENERATION = {"response_mime_type": "application/json"}
 

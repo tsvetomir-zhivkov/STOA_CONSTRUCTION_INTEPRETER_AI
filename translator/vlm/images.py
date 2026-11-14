@@ -7,9 +7,22 @@ import cv2
 import numpy as np
 
 from translator.vlm import config
-from translator.vlm.base import Crop
+from translator.vlm.base import Crop, guard_source
 
 MIN_CROP_SIDE_PX = 512  # small crops are upscaled to this (recorded in Crop.scale)
+
+
+def load_page(source: str, root=None) -> np.ndarray:
+    """Read a page image (dataset-relative path) after the hold-out guard; a hold-out file is never opened."""
+    from pathlib import Path
+
+    from translator.config import data_root
+
+    guard_source(source)
+    img = cv2.imread(str(Path(data_root(root)) / source))
+    if img is None:
+        raise FileNotFoundError(source)
+    return img
 
 
 def _encode(img: np.ndarray) -> bytes:

@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 import pytest
 
-from translator.vlm import base, config, gate, images, shower
+from translator.vlm import base, config, gate, gemini, images, shower
 from translator.vlm.base import Budget, BudgetExceeded, Crop, HoldoutError, HoldoutGuard, VLMError
 from translator.vlm.fake import FakeClient, QwenClient
 from translator.vlm.gemini import GeminiClient
@@ -25,6 +25,7 @@ def no_network(monkeypatch):
         raise AssertionError("network call in a test")
 
     monkeypatch.setattr(urllib.request, "urlopen", refuse)
+    monkeypatch.setattr(gemini, "RETRY_BACKOFF_S", 0.0)
     monkeypatch.setenv("STOA_VLM", "fake")
 
 
@@ -37,11 +38,8 @@ def _png(h=40, w=60, value=255, seed=None) -> bytes:
 
 
 @pytest.fixture
-def guard(tmp_path):
-    folder = tmp_path / "data" / "cubicasa5k"
-    folder.mkdir(parents=True)
-    (folder / "held.png").write_bytes(_png(seed=7))
-    return HoldoutGuard({"data/cubicasa5k/held.png"}, tmp_path)
+def guard():
+    return HoldoutGuard({"data/cubicasa5k/held.png", "data/swiss_dwellings/Plan_7.pdf"})
 
 
 def _client(guard, tmp_path, cls=FakeClient, **kw):
@@ -93,8 +91,12 @@ def test_page_image_is_downscaled_never_upscaled():
 # ------------------------------------------------------------------ hold-out guard
 
 
-@pytest.mark.parametrize("source", ["data/cubicasa5k/held.png", "held", "C:/x/data/cubicasa5k/held.png"])
-def test_holdout_refused_by_name_before_any_network(guard, tmp_path, source):
+@pytest.mark.parametrize(
+    "source",
+    ["data/cubicasa5k/held.png", "held.png", "held", r"C:\x\data\cubicasa5k\HELD.PNG", "held.jpg",
+     "data/swiss_dwellings/plan_7.dxf", "Plan_7"],
+)  # fmt: skip
+def test_holdout_refused_by_path_basename_or_stem_before_any_network(guard, tmp_path, source):
     opener_called = []
     c = _client(guard, tmp_path, GeminiClient, opener=lambda *a, **k: opener_called.append(1))
     with pytest.raises(HoldoutError):
@@ -102,18 +104,38 @@ def test_holdout_refused_by_name_before_any_network(guard, tmp_path, source):
     assert not opener_called and not (tmp_path / "vlm").exists()
 
 
-def test_holdout_refused_by_hash_under_another_name(guard, tmp_path):
-    held = (tmp_path / "data" / "cubicasa5k" / "held.png").read_bytes()
-    c = _client(guard, tmp_path)
-    with pytest.raises(HoldoutError, match="match a hold-out image"):
-        c.check(held, "shower", "p", source="data/cubicasa5k/renamed.png")
-    # the same pixels re-encoded (other PNG bytes) are caught by the pixel hash
-    img = cv2.imdecode(np.frombuffer(held, np.uint8), cv2.IMREAD_UNCHANGED)
-    ok, buf = cv2.imencode(".png", img, [cv2.IMWRITE_PNG_COMPRESSION, 0])
-    assert buf.tobytes() != held
+def test_guard_never_reads_holdout_files(tmp_path, monkeypatch):
+    """The guard is built from names only; the loaders refuse before opening anything."""
+    import translator.store  # noqa: F401  (jsonschema reads its own files on import)
+
+    opened = []
+    real_text, real_bytes = Path.read_text, Path.read_bytes
+
+    def spy(real):
+        def f(self, *a, **k):
+            if "held" in str(self):
+                opened.append(str(self))
+            return real(self, *a, **k)
+
+        return f
+
+    monkeypatch.setattr(cv2, "imread", lambda p, *a: opened.append(p))
+    monkeypatch.setattr(Path, "read_text", spy(real_text))
+    monkeypatch.setattr(Path, "read_bytes", spy(real_bytes))
+    monkeypatch.setattr(base, "_GUARD", HoldoutGuard({"data/cubicasa5k/held.png"}))
     with pytest.raises(HoldoutError):
-        c.check(buf.tobytes(), "shower", "p", source="data/cubicasa5k/other.png")
-    assert c.calls == []
+        images.load_page("data/cubicasa5k/held.png", tmp_path)
+    with pytest.raises(HoldoutError):
+        gate.load_doc("data/cubicasa5k/held.png", tmp_path)
+    assert opened == []
+    assert not any(hasattr(base, n) for n in ("pixel_hash", "file_hashes"))
+
+
+def test_real_holdout_list_is_enforced():
+    from translator.extract.cubicasa import holdout_files
+
+    with pytest.raises(HoldoutError):
+        base.guard_source(sorted(holdout_files())[0])
 
 
 def test_every_input_needs_a_source(guard, tmp_path):
@@ -154,7 +176,8 @@ def test_cache_key_covers_image_category_prompt_model_and_settings():
     assert k != base.cache_key(b"img", "shower", "p2", "m", {"t": 1})
     assert k != base.cache_key(b"img", "shower", "p", "m2", {"t": 1})
     assert k != base.cache_key(b"img", "shower", "p", "m", {"t": 2})
-    assert GeminiClient(thinking_level="low").settings != GeminiClient().settings
+    assert GeminiClient().settings["thinking_level"] == config.THINKING_LEVEL == "low"
+    assert GeminiClient(thinking_level=None).settings != GeminiClient().settings
 
 
 # ------------------------------------------------------------------ budget and cost
@@ -271,6 +294,41 @@ def test_missing_key_stops(monkeypatch, guard, tmp_path):
         c.check(_png(), "shower", "p", source="data/cubicasa5k/dev.png")
 
 
+def test_one_retry_with_backoff_then_success_and_latency_logged(guard, tmp_path, monkeypatch, caplog):
+    import logging
+
+    monkeypatch.setenv(config.API_KEY_ENV, SECRET)
+    attempts = []
+
+    def flaky(req, timeout):
+        attempts.append(timeout)
+        if len(attempts) == 1:
+            raise TimeoutError("The read operation timed out")
+        body = {"candidates": [{"content": {"parts": [{"text": '{"count": 0, "boxes": []}'}]}}],
+                "usageMetadata": {"promptTokenCount": 1, "candidatesTokenCount": 1}}  # fmt: skip
+        return _Resp(json.dumps(body).encode())
+
+    caplog.set_level(logging.INFO, logger="translator.vlm")
+    c = _client(guard, tmp_path, GeminiClient, opener=flaky)
+    r = c.check(_png(), "shower", "p", source="data/x/dev.png")
+    assert r.count == 0 and len(attempts) == 2 and attempts[0] == gemini.TIMEOUT_S == 300
+    assert "failed after" in caplog.text and "(attempt 2)" in caplog.text and SECRET not in caplog.text
+
+
+def test_gives_up_after_one_retry(guard, tmp_path, monkeypatch):
+    monkeypatch.setenv(config.API_KEY_ENV, SECRET)
+    attempts = []
+
+    def down(req, timeout):
+        attempts.append(1)
+        raise TimeoutError("timed out")
+
+    c = _client(guard, tmp_path, GeminiClient, opener=down)
+    with pytest.raises(VLMError, match="TimeoutError"):
+        c.check(_png(), "shower", "p", source="data/x/dev.png")
+    assert len(attempts) == 2
+
+
 # ------------------------------------------------------------------ gates
 
 
@@ -343,3 +401,15 @@ def test_crop_variant_sums_counts_and_drops_cross_crop_duplicates(guard, tmp_pat
     c = _client(guard, tmp_path, answers={"shower": {"count": 1, "boxes": [[400, 400, 600, 600]]}})
     res = shower.count_crops(c, img, _gdoc(rooms=rooms), "data/cubicasa5k/dev.png")
     assert res.count == 2 and len(res.calls) == 2 and len(res.boxes_px) == 2
+
+
+def test_ledger_totals_include_estimates(tmp_path, monkeypatch):
+    from translator.vlm import ledger
+
+    monkeypatch.setattr(ledger, "cache_dir", lambda: tmp_path)
+    ledger.append_run("a", calls=10, cost_usd=0.05, images_sent=5)
+    ledger.add_estimate("timed-out call, possibly billed", 0.025)
+    data = ledger.load()
+    assert data["totals"] == {"logged_usd": 0.05, "estimated_unlogged_usd": 0.025, "total_usd": 0.075}
+    assert data["runs"][0]["avg_cost_per_gated_image"] == 0.01
+    assert data["runs"][0]["avg_cost_per_dev_image"] == round(0.05 / 193, 6)
