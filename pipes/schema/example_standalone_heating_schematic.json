@@ -1,0 +1,1289 @@
+{
+  "schema_version": "0.1",
+  "kind": "pipe_index",
+  "sheet": {
+    "id": "hypothetical/LVI-heating.dxf#Model",
+    "source_file": "hypothetical/LVI-heating.dxf",
+    "source_dataset": null,
+    "file_format": "dxf",
+    "page_index": 0,
+    "dxf_layout": "Model",
+    "diagram_type": "schematic",
+    "is_to_scale": false,
+    "route": "vector_parser",
+    "sheet_id": "VVS-101",
+    "level_id": "1",
+    "title": "Lämmitys periaatekaavio (heating schematic)",
+    "systems_shown": [
+      "heating_supply",
+      "heating_return"
+    ],
+    "languages": [
+      "fi"
+    ],
+    "regions": [],
+    "provenance": {
+      "extractor_id": "ext_global",
+      "confidence": 0.9,
+      "source_ref": null
+    }
+  },
+  "frame": {
+    "frame_key": "hypothetical/LVI-heating.dxf#0@2000x1400",
+    "width_px": 2000,
+    "height_px": 1400,
+    "render_dpi": null,
+    "source_units": "mm",
+    "source_to_px": [
+      0.5,
+      0,
+      0,
+      0,
+      -0.5,
+      1400
+    ]
+  },
+  "scale": {
+    "metres_per_px": null,
+    "source": "not_to_scale",
+    "confidence": 0.95,
+    "scale_text": "EI MITTAKAAVASSA",
+    "evidence_ids": [
+      "text_2"
+    ],
+    "revision": 1,
+    "provenance": {
+      "extractor_id": "ext_dxf",
+      "confidence": 0.95,
+      "source_ref": null
+    }
+  },
+  "metres_scale_revision": null,
+  "links": [],
+  "extractors": [
+    {
+      "id": "ext_global",
+      "kind": "global_pass",
+      "name": "layer + title-block rules",
+      "version": null,
+      "run_at": "2026-11-14T12:10:00Z",
+      "cost_usd": 0.0
+    },
+    {
+      "id": "ext_dxf",
+      "kind": "vector_parser",
+      "name": "ezdxf: LINE/LWPOLYLINE on pipe layers, INSERT blocks -> nodes, TEXT/MTEXT",
+      "version": null,
+      "run_at": "2026-11-14T12:10:01Z",
+      "cost_usd": 0.0
+    },
+    {
+      "id": "ext_code",
+      "kind": "geometry_code",
+      "name": "derive.py",
+      "version": "0.1",
+      "run_at": "2026-11-14T12:10:01Z",
+      "cost_usd": 0.0
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "boiler",
+      "subtype": "gas boiler",
+      "tag": "K1",
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        185,
+        685,
+        215,
+        715
+      ],
+      "center_px": [
+        200,
+        700
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "heating_supply",
+      "attributes": {},
+      "in_room_id": null,
+      "in_room_link_id": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "2F1"
+      },
+      "center_m": null,
+      "bbox_m": null
+    },
+    {
+      "id": "node_2",
+      "type": "pump",
+      "subtype": "circulation pump",
+      "tag": "P1",
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        385,
+        685,
+        415,
+        715
+      ],
+      "center_px": [
+        400,
+        700
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "heating_supply",
+      "attributes": {},
+      "in_room_id": null,
+      "in_room_link_id": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "2F4"
+      },
+      "center_m": null,
+      "bbox_m": null
+    },
+    {
+      "id": "node_3",
+      "type": "ball_valve",
+      "subtype": null,
+      "tag": null,
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        535,
+        685,
+        565,
+        715
+      ],
+      "center_px": [
+        550,
+        700
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "heating_supply",
+      "attributes": {},
+      "in_room_id": null,
+      "in_room_link_id": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "2F7"
+      },
+      "center_m": null,
+      "bbox_m": null
+    },
+    {
+      "id": "node_4",
+      "type": "tee",
+      "subtype": null,
+      "tag": null,
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        685,
+        685,
+        715,
+        715
+      ],
+      "center_px": [
+        700,
+        700
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "heating_supply",
+      "attributes": {},
+      "in_room_id": null,
+      "in_room_link_id": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "2FA"
+      },
+      "center_m": null,
+      "bbox_m": null
+    },
+    {
+      "id": "node_5",
+      "type": "balancing_valve",
+      "subtype": "radiator valve",
+      "tag": null,
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        685,
+        485,
+        715,
+        515
+      ],
+      "center_px": [
+        700,
+        500
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "heating_supply",
+      "attributes": {},
+      "in_room_id": null,
+      "in_room_link_id": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "2FD"
+      },
+      "center_m": null,
+      "bbox_m": null
+    },
+    {
+      "id": "node_6",
+      "type": "radiator",
+      "subtype": null,
+      "tag": "R1",
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        685,
+        335,
+        715,
+        365
+      ],
+      "center_px": [
+        700,
+        350
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "heating_supply",
+      "attributes": {},
+      "in_room_id": null,
+      "in_room_link_id": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "300"
+      },
+      "center_m": null,
+      "bbox_m": null
+    },
+    {
+      "id": "node_7",
+      "type": "balancing_valve",
+      "subtype": "radiator valve",
+      "tag": null,
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        985,
+        685,
+        1015,
+        715
+      ],
+      "center_px": [
+        1000,
+        700
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "heating_supply",
+      "attributes": {},
+      "in_room_id": null,
+      "in_room_link_id": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "303"
+      },
+      "center_m": null,
+      "bbox_m": null
+    },
+    {
+      "id": "node_8",
+      "type": "radiator",
+      "subtype": null,
+      "tag": "R2",
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        1135,
+        685,
+        1165,
+        715
+      ],
+      "center_px": [
+        1150,
+        700
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "heating_supply",
+      "attributes": {},
+      "in_room_id": null,
+      "in_room_link_id": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "306"
+      },
+      "center_m": null,
+      "bbox_m": null
+    },
+    {
+      "id": "node_9",
+      "type": "off_sheet_connector",
+      "subtype": "continues on VVS-102",
+      "tag": "A",
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        685,
+        935,
+        715,
+        965
+      ],
+      "center_px": [
+        700,
+        950
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "heating_supply",
+      "attributes": {},
+      "in_room_id": null,
+      "in_room_link_id": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "309"
+      },
+      "center_m": null,
+      "bbox_m": null
+    }
+  ],
+  "edges": [
+    {
+      "id": "pipe_1",
+      "ends": [
+        {
+          "node_id": "node_1",
+          "point_px": [
+            215,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_2",
+          "point_px": [
+            385,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          215,
+          700
+        ],
+        [
+          385,
+          700
+        ]
+      ],
+      "line_tag": "LV-1",
+      "line_tag_text_id": null,
+      "system": "heating_supply",
+      "system_raw": "LV",
+      "diameter": {
+        "value": {
+          "raw_text": "DN25",
+          "dn_mm": 25,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "label",
+        "text_id": null,
+        "confidence": 0.95
+      },
+      "material": "steel",
+      "insulation": null,
+      "line_style": "solid",
+      "layer": "P-HEAT-SUPPLY",
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "node_2"
+        ],
+        "confidence": 0.9
+      },
+      "length": {
+        "geometry_m": null,
+        "written_m": 1.2,
+        "written_text_id": "text_3",
+        "difference_pct": null,
+        "flag": "not_to_scale"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "40A"
+      },
+      "polyline_m": null
+    },
+    {
+      "id": "pipe_2",
+      "ends": [
+        {
+          "node_id": "node_2",
+          "point_px": [
+            415,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_3",
+          "point_px": [
+            535,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          415,
+          700
+        ],
+        [
+          535,
+          700
+        ]
+      ],
+      "line_tag": "LV-1",
+      "line_tag_text_id": null,
+      "system": "heating_supply",
+      "system_raw": "LV",
+      "diameter": {
+        "value": {
+          "raw_text": "DN25",
+          "dn_mm": 25,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "label",
+        "text_id": null,
+        "confidence": 0.95
+      },
+      "material": "steel",
+      "insulation": null,
+      "line_style": "solid",
+      "layer": "P-HEAT-SUPPLY",
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "node_2"
+        ],
+        "confidence": 0.9
+      },
+      "length": {
+        "geometry_m": null,
+        "written_m": 0.8,
+        "written_text_id": "text_4",
+        "difference_pct": null,
+        "flag": "not_to_scale"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "40B"
+      },
+      "polyline_m": null
+    },
+    {
+      "id": "pipe_3",
+      "ends": [
+        {
+          "node_id": "node_3",
+          "point_px": [
+            565,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_4",
+          "point_px": [
+            700,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          565,
+          700
+        ],
+        [
+          700,
+          700
+        ]
+      ],
+      "line_tag": "LV-1",
+      "line_tag_text_id": null,
+      "system": "heating_supply",
+      "system_raw": "LV",
+      "diameter": {
+        "value": {
+          "raw_text": "DN25",
+          "dn_mm": 25,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "label",
+        "text_id": null,
+        "confidence": 0.95
+      },
+      "material": "steel",
+      "insulation": null,
+      "line_style": "solid",
+      "layer": "P-HEAT-SUPPLY",
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "node_2"
+        ],
+        "confidence": 0.9
+      },
+      "length": {
+        "geometry_m": null,
+        "written_m": 2.5,
+        "written_text_id": "text_5",
+        "difference_pct": null,
+        "flag": "not_to_scale"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "40C"
+      },
+      "polyline_m": null
+    },
+    {
+      "id": "pipe_4",
+      "ends": [
+        {
+          "node_id": "node_4",
+          "point_px": [
+            700,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_5",
+          "point_px": [
+            700,
+            515
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          700,
+          700
+        ],
+        [
+          700,
+          515
+        ]
+      ],
+      "line_tag": "LV-2",
+      "line_tag_text_id": null,
+      "system": "heating_supply",
+      "system_raw": "LV",
+      "diameter": {
+        "value": {
+          "raw_text": "DN15",
+          "dn_mm": 15,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "label",
+        "text_id": null,
+        "confidence": 0.95
+      },
+      "material": "steel",
+      "insulation": null,
+      "line_style": "solid",
+      "layer": "P-HEAT-SUPPLY",
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "node_2"
+        ],
+        "confidence": 0.9
+      },
+      "length": {
+        "geometry_m": null,
+        "written_m": 3.1,
+        "written_text_id": "text_6",
+        "difference_pct": null,
+        "flag": "not_to_scale"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "40D"
+      },
+      "polyline_m": null
+    },
+    {
+      "id": "pipe_5",
+      "ends": [
+        {
+          "node_id": "node_5",
+          "point_px": [
+            700,
+            485
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_6",
+          "point_px": [
+            700,
+            365
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          700,
+          485
+        ],
+        [
+          700,
+          365
+        ]
+      ],
+      "line_tag": "LV-2",
+      "line_tag_text_id": null,
+      "system": "heating_supply",
+      "system_raw": "LV",
+      "diameter": {
+        "value": {
+          "raw_text": "DN15",
+          "dn_mm": 15,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "label",
+        "text_id": null,
+        "confidence": 0.95
+      },
+      "material": "steel",
+      "insulation": null,
+      "line_style": "solid",
+      "layer": "P-HEAT-SUPPLY",
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "node_2"
+        ],
+        "confidence": 0.9
+      },
+      "length": {
+        "geometry_m": null,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "not_to_scale"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "40E"
+      },
+      "polyline_m": null
+    },
+    {
+      "id": "pipe_6",
+      "ends": [
+        {
+          "node_id": "node_4",
+          "point_px": [
+            700,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_7",
+          "point_px": [
+            985,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          700,
+          700
+        ],
+        [
+          985,
+          700
+        ]
+      ],
+      "line_tag": "LV-3",
+      "line_tag_text_id": null,
+      "system": "heating_supply",
+      "system_raw": "LV",
+      "diameter": {
+        "value": {
+          "raw_text": "DN20",
+          "dn_mm": 20,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "label",
+        "text_id": null,
+        "confidence": 0.95
+      },
+      "material": "steel",
+      "insulation": null,
+      "line_style": "solid",
+      "layer": "P-HEAT-SUPPLY",
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "node_2"
+        ],
+        "confidence": 0.9
+      },
+      "length": {
+        "geometry_m": null,
+        "written_m": 6.4,
+        "written_text_id": "text_7",
+        "difference_pct": null,
+        "flag": "not_to_scale"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "40F"
+      },
+      "polyline_m": null
+    },
+    {
+      "id": "pipe_7",
+      "ends": [
+        {
+          "node_id": "node_7",
+          "point_px": [
+            1015,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_8",
+          "point_px": [
+            1135,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          1015,
+          700
+        ],
+        [
+          1135,
+          700
+        ]
+      ],
+      "line_tag": "LV-3",
+      "line_tag_text_id": null,
+      "system": "heating_supply",
+      "system_raw": "LV",
+      "diameter": {
+        "value": {
+          "raw_text": "DN20",
+          "dn_mm": 20,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "label",
+        "text_id": null,
+        "confidence": 0.95
+      },
+      "material": "steel",
+      "insulation": null,
+      "line_style": "solid",
+      "layer": "P-HEAT-SUPPLY",
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "node_2"
+        ],
+        "confidence": 0.9
+      },
+      "length": {
+        "geometry_m": null,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "not_to_scale"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "410"
+      },
+      "polyline_m": null
+    },
+    {
+      "id": "pipe_8",
+      "ends": [
+        {
+          "node_id": "node_4",
+          "point_px": [
+            700,
+            700
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_9",
+          "point_px": [
+            700,
+            935
+          ],
+          "port_index": null,
+          "snap": "vector_exact",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          700,
+          700
+        ],
+        [
+          700,
+          935
+        ]
+      ],
+      "line_tag": "LV-1",
+      "line_tag_text_id": null,
+      "system": "heating_supply",
+      "system_raw": "LV",
+      "diameter": {
+        "value": {
+          "raw_text": "DN25",
+          "dn_mm": 25,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "label",
+        "text_id": null,
+        "confidence": 0.95
+      },
+      "material": "steel",
+      "insulation": null,
+      "line_style": "solid",
+      "layer": "P-HEAT-SUPPLY",
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "node_2"
+        ],
+        "confidence": 0.9
+      },
+      "length": {
+        "geometry_m": null,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "not_to_scale"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "411"
+      },
+      "polyline_m": null
+    }
+  ],
+  "markers": [],
+  "texts": [
+    {
+      "id": "text_1",
+      "raw_text": "LÄMMITYS PERIAATEKAAVIO",
+      "bbox_px": [
+        1500,
+        1300,
+        1950,
+        1340
+      ],
+      "rotation_deg": 0,
+      "role": "title",
+      "value": null,
+      "attached_to": [],
+      "language": "fi",
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "500"
+      }
+    },
+    {
+      "id": "text_2",
+      "raw_text": "EI MITTAKAAVASSA",
+      "bbox_px": [
+        1500,
+        1345,
+        1800,
+        1375
+      ],
+      "rotation_deg": 0,
+      "role": "scale_note",
+      "value": null,
+      "attached_to": [],
+      "language": "fi",
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": "501"
+      }
+    },
+    {
+      "id": "text_3",
+      "raw_text": "L=1,2",
+      "bbox_px": [
+        305.0,
+        670.0,
+        370.0,
+        690.0
+      ],
+      "rotation_deg": 0,
+      "role": "length",
+      "value": {
+        "number": 1.2,
+        "unit": "m"
+      },
+      "attached_to": [
+        "pipe_1"
+      ],
+      "language": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": null
+      }
+    },
+    {
+      "id": "text_4",
+      "raw_text": "L=0,8",
+      "bbox_px": [
+        480.0,
+        670.0,
+        545.0,
+        690.0
+      ],
+      "rotation_deg": 0,
+      "role": "length",
+      "value": {
+        "number": 0.8,
+        "unit": "m"
+      },
+      "attached_to": [
+        "pipe_2"
+      ],
+      "language": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": null
+      }
+    },
+    {
+      "id": "text_5",
+      "raw_text": "L=2,5",
+      "bbox_px": [
+        637.5,
+        670.0,
+        702.5,
+        690.0
+      ],
+      "rotation_deg": 0,
+      "role": "length",
+      "value": {
+        "number": 2.5,
+        "unit": "m"
+      },
+      "attached_to": [
+        "pipe_3"
+      ],
+      "language": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": null
+      }
+    },
+    {
+      "id": "text_6",
+      "raw_text": "L=3,1",
+      "bbox_px": [
+        705.0,
+        577.5,
+        770.0,
+        597.5
+      ],
+      "rotation_deg": 0,
+      "role": "length",
+      "value": {
+        "number": 3.1,
+        "unit": "m"
+      },
+      "attached_to": [
+        "pipe_4"
+      ],
+      "language": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": null
+      }
+    },
+    {
+      "id": "text_7",
+      "raw_text": "L=6,4",
+      "bbox_px": [
+        847.5,
+        670.0,
+        912.5,
+        690.0
+      ],
+      "rotation_deg": 0,
+      "role": "length",
+      "value": {
+        "number": 6.4,
+        "unit": "m"
+      },
+      "attached_to": [
+        "pipe_6"
+      ],
+      "language": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 1.0,
+        "source_ref": null
+      }
+    }
+  ],
+  "relations": [
+    {
+      "id": "rel_1",
+      "kind": "continues_on",
+      "from_id": "node_9",
+      "to": {
+        "file_id": null,
+        "element_id": null,
+        "target_text": "sheet VVS-102, connector A"
+      },
+      "meaning": null,
+      "link_id": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 0.9,
+        "source_ref": null
+      }
+    },
+    {
+      "id": "rel_2",
+      "kind": "legend_meaning",
+      "from_id": "node_5",
+      "to": null,
+      "meaning": "block 'TRV' = thermostatic radiator valve",
+      "link_id": null,
+      "provenance": {
+        "extractor_id": "ext_dxf",
+        "confidence": 0.9,
+        "source_ref": null
+      }
+    }
+  ],
+  "coverage": [
+    {
+      "id": "cov_1",
+      "region": "page",
+      "category": "symbols",
+      "status": "analysed",
+      "confidence": 0.95,
+      "extractor_id": "ext_dxf",
+      "element_ids": [],
+      "note": "All INSERT blocks on P-* layers.",
+      "updated_at": null
+    },
+    {
+      "id": "cov_2",
+      "region": "page",
+      "category": "pipes",
+      "status": "analysed",
+      "confidence": 0.95,
+      "extractor_id": "ext_dxf",
+      "element_ids": [],
+      "note": "Return pipes (layer P-HEAT-RETURN) not drawn on this sheet.",
+      "updated_at": null
+    },
+    {
+      "id": "cov_3",
+      "region": "page",
+      "category": "lengths",
+      "status": "partial",
+      "confidence": 0.9,
+      "extractor_id": "ext_dxf",
+      "element_ids": [
+        "pipe_5",
+        "pipe_7",
+        "pipe_8"
+      ],
+      "note": "Not to scale: only written lengths count. 3 edges have no length label.",
+      "updated_at": null
+    },
+    {
+      "id": "cov_4",
+      "region": "page",
+      "category": "connectivity",
+      "status": "analysed",
+      "confidence": 0.95,
+      "extractor_id": "ext_dxf",
+      "element_ids": [],
+      "note": "Endpoints coincide exactly in the DXF.",
+      "updated_at": null
+    }
+  ],
+  "summary": {
+    "node_counts": {
+      "balancing_valve": 2,
+      "ball_valve": 1,
+      "boiler": 1,
+      "off_sheet_connector": 1,
+      "pump": 1,
+      "radiator": 2,
+      "tee": 1
+    },
+    "length_m_by_system_and_size": [
+      {
+        "system": "heating_supply",
+        "size": "DN15",
+        "edge_ids": [
+          "pipe_4",
+          "pipe_5"
+        ],
+        "length_m": 3.1,
+        "missing_length_edge_ids": [
+          "pipe_5"
+        ],
+        "length_basis": "written"
+      },
+      {
+        "system": "heating_supply",
+        "size": "DN20",
+        "edge_ids": [
+          "pipe_6",
+          "pipe_7"
+        ],
+        "length_m": 6.4,
+        "missing_length_edge_ids": [
+          "pipe_7"
+        ],
+        "length_basis": "written"
+      },
+      {
+        "system": "heating_supply",
+        "size": "DN25",
+        "edge_ids": [
+          "pipe_1",
+          "pipe_2",
+          "pipe_3",
+          "pipe_8"
+        ],
+        "length_m": 4.5,
+        "missing_length_edge_ids": [
+          "pipe_8"
+        ],
+        "length_basis": "written"
+      }
+    ],
+    "connected_components": 1,
+    "unsnapped_end_count": 0,
+    "computed_at": "2026-11-14T15:00:29Z"
+  },
+  "history": []
+}

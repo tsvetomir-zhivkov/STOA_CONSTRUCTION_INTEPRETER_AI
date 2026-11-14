@@ -1,0 +1,1931 @@
+{
+  "schema_version": "0.1",
+  "kind": "pipe_index",
+  "sheet": {
+    "id": "hypothetical/VVS-5815#0",
+    "source_file": "hypothetical/VVS-5815.png",
+    "source_dataset": null,
+    "file_format": "png",
+    "page_index": 0,
+    "dxf_layout": null,
+    "diagram_type": "pipe_plan",
+    "is_to_scale": true,
+    "route": "raster_pipeline",
+    "sheet_id": "VVS-1",
+    "level_id": null,
+    "title": "Vesijohdot (water supply)",
+    "systems_shown": [
+      "cold_water"
+    ],
+    "languages": [
+      "fi"
+    ],
+    "regions": [
+      {
+        "kind": "diagram_area",
+        "bbox_px": [
+          90,
+          120,
+          1010,
+          1380
+        ],
+        "provenance": {
+          "extractor_id": "ext_global",
+          "confidence": 0.9
+        }
+      }
+    ],
+    "provenance": {
+      "extractor_id": "ext_global",
+      "confidence": 0.9
+    }
+  },
+  "frame": {
+    "frame_key": "hypothetical/VVS-5815.png#0@1076x1448",
+    "width_px": 1076,
+    "height_px": 1448,
+    "render_dpi": null,
+    "source_units": "px",
+    "source_to_px": [
+      1,
+      0,
+      0,
+      0,
+      1,
+      0
+    ]
+  },
+  "scale": {
+    "metres_per_px": 0.01,
+    "source": "linked_drawing",
+    "confidence": 0.4,
+    "scale_text": null,
+    "evidence_ids": [
+      "link_1"
+    ],
+    "revision": 1,
+    "provenance": {
+      "extractor_id": "ext_link",
+      "confidence": 0.4,
+      "evidence_ids": [
+        "link_1"
+      ]
+    }
+  },
+  "metres_scale_revision": 1,
+  "links": [
+    {
+      "id": "link_1",
+      "drawing_id": "cubicasa5k/high_quality-5815",
+      "drawing_file": "../example_cubicasa_high_quality-5815.json",
+      "relation": "overlay_sheet",
+      "transform": [
+        0.5,
+        0,
+        0,
+        0,
+        0.5,
+        0
+      ],
+      "transform_method": "wall_registration",
+      "transform_residual_px": 1.8,
+      "provenance": {
+        "extractor_id": "ext_link",
+        "confidence": 0.8
+      }
+    }
+  ],
+  "extractors": [
+    {
+      "id": "ext_global",
+      "kind": "global_pass",
+      "name": "small vision LLM on downscaled page",
+      "version": null,
+      "run_at": "2026-11-14T12:00:00Z",
+      "cost_usd": 0.001
+    },
+    {
+      "id": "ext_det",
+      "kind": "symbol_detector",
+      "name": "YOLOv8 fine-tuned on pipe symbols (Jamieson et al. 2024 style classes)",
+      "version": null,
+      "run_at": "2026-11-14T12:00:02Z",
+      "cost_usd": 0.0
+    },
+    {
+      "id": "ext_ocr",
+      "kind": "ocr",
+      "name": "PaddleOCR",
+      "version": null,
+      "run_at": "2026-11-14T12:00:03Z",
+      "cost_usd": 0.0
+    },
+    {
+      "id": "ext_erase",
+      "kind": "symbol_text_eraser",
+      "name": "OpenCV: fill detected symbol and text boxes with white",
+      "version": null,
+      "run_at": "2026-11-14T12:00:03Z",
+      "cost_usd": 0.0
+    },
+    {
+      "id": "ext_trace",
+      "kind": "line_tracer",
+      "name": "OpenCV skeletonize + Hough + polyline merge",
+      "version": null,
+      "run_at": "2026-11-14T12:00:04Z",
+      "cost_usd": 0.0
+    },
+    {
+      "id": "ext_graph",
+      "kind": "graph_builder",
+      "name": "snap ends to nearest node (radius 10 px), split at crossings, propagate sizes",
+      "version": null,
+      "run_at": "2026-11-14T12:00:04Z",
+      "cost_usd": 0.0
+    },
+    {
+      "id": "ext_link",
+      "kind": "linker",
+      "name": "register pipe sheet to floor plan by wall lines; match fixtures",
+      "version": null,
+      "run_at": "2026-11-14T12:00:05Z",
+      "cost_usd": 0.0
+    },
+    {
+      "id": "ext_code",
+      "kind": "geometry_code",
+      "name": "derive.py",
+      "version": "0.1",
+      "run_at": "2026-11-14T12:00:05Z",
+      "cost_usd": 0.0
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "riser",
+      "subtype": "cold water riser from below (shaft)",
+      "tag": null,
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        860,
+        948,
+        884,
+        972
+      ],
+      "center_px": [
+        872,
+        960
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "cold_water",
+      "attributes": {},
+      "provenance": {
+        "extractor_id": "ext_det",
+        "confidence": 0.82,
+        "source_region_px": [
+          860,
+          948,
+          884,
+          972
+        ],
+        "evidence_ids": []
+      },
+      "center_m": [
+        8.72,
+        9.6
+      ],
+      "bbox_m": [
+        8.6,
+        9.48,
+        8.84,
+        9.72
+      ],
+      "in_room_id": "room_7",
+      "in_room_link_id": "link_1"
+    },
+    {
+      "id": "node_2",
+      "type": "ball_valve",
+      "subtype": "main shut-off",
+      "tag": null,
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        862,
+        900,
+        882,
+        920
+      ],
+      "center_px": [
+        872,
+        910
+      ],
+      "rotation_deg": 0,
+      "ports_px": [
+        [
+          872,
+          900
+        ],
+        [
+          872,
+          920
+        ]
+      ],
+      "nominal_size": null,
+      "system": "cold_water",
+      "attributes": {},
+      "provenance": {
+        "extractor_id": "ext_det",
+        "confidence": 0.88,
+        "source_region_px": [
+          862,
+          900,
+          882,
+          920
+        ],
+        "evidence_ids": []
+      },
+      "center_m": [
+        8.72,
+        9.1
+      ],
+      "bbox_m": [
+        8.62,
+        9.0,
+        8.82,
+        9.2
+      ],
+      "in_room_id": "room_7",
+      "in_room_link_id": "link_1"
+    },
+    {
+      "id": "node_3",
+      "type": "meter",
+      "subtype": "water meter",
+      "tag": null,
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        860,
+        848,
+        884,
+        872
+      ],
+      "center_px": [
+        872,
+        860
+      ],
+      "rotation_deg": 0,
+      "ports_px": [
+        [
+          872,
+          848
+        ],
+        [
+          872,
+          872
+        ]
+      ],
+      "nominal_size": null,
+      "system": "cold_water",
+      "attributes": {},
+      "provenance": {
+        "extractor_id": "ext_det",
+        "confidence": 0.79,
+        "source_region_px": [
+          860,
+          848,
+          884,
+          872
+        ],
+        "evidence_ids": []
+      },
+      "center_m": [
+        8.72,
+        8.6
+      ],
+      "bbox_m": [
+        8.6,
+        8.48,
+        8.84,
+        8.72
+      ],
+      "in_room_id": "room_7",
+      "in_room_link_id": "link_1"
+    },
+    {
+      "id": "node_4",
+      "type": "tee",
+      "subtype": "implicit from line crossing",
+      "tag": null,
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        866,
+        764,
+        878,
+        776
+      ],
+      "center_px": [
+        872,
+        770
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "cold_water",
+      "attributes": {},
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.9,
+        "source_region_px": [
+          866,
+          764,
+          878,
+          776
+        ],
+        "evidence_ids": []
+      },
+      "center_m": [
+        8.72,
+        7.7
+      ],
+      "bbox_m": [
+        8.66,
+        7.64,
+        8.78,
+        7.76
+      ],
+      "in_room_id": "room_6",
+      "in_room_link_id": "link_1"
+    },
+    {
+      "id": "node_5",
+      "type": "fixture",
+      "subtype": "bathtub",
+      "tag": null,
+      "tag_text_id": null,
+      "label": {
+        "raw_text": null,
+        "expanded": null,
+        "language": null,
+        "normalized": "bathtub",
+        "glossary_term_id": null
+      },
+      "bbox_px": [
+        886,
+        716,
+        956,
+        810
+      ],
+      "center_px": [
+        921.0,
+        763.0
+      ],
+      "rotation_deg": 0,
+      "ports_px": [
+        [
+          886,
+          770
+        ]
+      ],
+      "nominal_size": null,
+      "system": "cold_water",
+      "attributes": {},
+      "provenance": {
+        "extractor_id": "ext_link",
+        "confidence": 0.9,
+        "source_region_px": [
+          886,
+          716,
+          956,
+          810
+        ],
+        "evidence_ids": []
+      },
+      "center_m": [
+        9.21,
+        7.63
+      ],
+      "bbox_m": [
+        8.86,
+        7.16,
+        9.56,
+        8.1
+      ],
+      "in_room_id": "room_6",
+      "in_room_link_id": "link_1"
+    },
+    {
+      "id": "node_6",
+      "type": "tee",
+      "subtype": "implicit from line crossing",
+      "tag": null,
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        866,
+        684,
+        878,
+        696
+      ],
+      "center_px": [
+        872,
+        690
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "cold_water",
+      "attributes": {},
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.9,
+        "source_region_px": [
+          866,
+          684,
+          878,
+          696
+        ],
+        "evidence_ids": []
+      },
+      "center_m": [
+        8.72,
+        6.9
+      ],
+      "bbox_m": [
+        8.66,
+        6.84,
+        8.78,
+        6.96
+      ],
+      "in_room_id": "room_6",
+      "in_room_link_id": "link_1"
+    },
+    {
+      "id": "node_7",
+      "type": "fixture",
+      "subtype": "washbasin",
+      "tag": null,
+      "tag_text_id": null,
+      "label": {
+        "raw_text": null,
+        "expanded": null,
+        "language": null,
+        "normalized": "washbasin",
+        "glossary_term_id": null
+      },
+      "bbox_px": [
+        910,
+        666,
+        954,
+        712
+      ],
+      "center_px": [
+        932,
+        689.0
+      ],
+      "rotation_deg": 0,
+      "ports_px": [
+        [
+          910,
+          690
+        ]
+      ],
+      "nominal_size": null,
+      "system": "cold_water",
+      "attributes": {},
+      "provenance": {
+        "extractor_id": "ext_link",
+        "confidence": 0.9,
+        "source_region_px": [
+          910,
+          666,
+          954,
+          712
+        ],
+        "evidence_ids": []
+      },
+      "center_m": [
+        9.32,
+        6.89
+      ],
+      "bbox_m": [
+        9.1,
+        6.66,
+        9.54,
+        7.12
+      ],
+      "in_room_id": "room_6",
+      "in_room_link_id": "link_1"
+    },
+    {
+      "id": "node_8",
+      "type": "tee",
+      "subtype": "implicit from line crossing",
+      "tag": null,
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        866,
+        630,
+        878,
+        642
+      ],
+      "center_px": [
+        872,
+        636
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "cold_water",
+      "attributes": {},
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.9,
+        "source_region_px": [
+          866,
+          630,
+          878,
+          642
+        ],
+        "evidence_ids": []
+      },
+      "center_m": [
+        8.72,
+        6.36
+      ],
+      "bbox_m": [
+        8.66,
+        6.3,
+        8.78,
+        6.42
+      ],
+      "in_room_id": "room_6",
+      "in_room_link_id": "link_1"
+    },
+    {
+      "id": "node_9",
+      "type": "fixture",
+      "subtype": "wc",
+      "tag": null,
+      "tag_text_id": null,
+      "label": {
+        "raw_text": null,
+        "expanded": null,
+        "language": null,
+        "normalized": "toilet",
+        "glossary_term_id": null
+      },
+      "bbox_px": [
+        890,
+        614,
+        950,
+        664
+      ],
+      "center_px": [
+        920,
+        639.0
+      ],
+      "rotation_deg": 0,
+      "ports_px": [
+        [
+          890,
+          636
+        ]
+      ],
+      "nominal_size": null,
+      "system": "cold_water",
+      "attributes": {},
+      "provenance": {
+        "extractor_id": "ext_link",
+        "confidence": 0.9,
+        "source_region_px": [
+          890,
+          614,
+          950,
+          664
+        ],
+        "evidence_ids": []
+      },
+      "center_m": [
+        9.2,
+        6.39
+      ],
+      "bbox_m": [
+        8.9,
+        6.14,
+        9.5,
+        6.64
+      ],
+      "in_room_id": "room_6",
+      "in_room_link_id": "link_1"
+    },
+    {
+      "id": "node_10",
+      "type": "elbow",
+      "subtype": null,
+      "tag": null,
+      "tag_text_id": null,
+      "label": null,
+      "bbox_px": [
+        866,
+        534,
+        878,
+        546
+      ],
+      "center_px": [
+        872,
+        540
+      ],
+      "rotation_deg": 0,
+      "ports_px": [],
+      "nominal_size": null,
+      "system": "cold_water",
+      "attributes": {},
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.85,
+        "source_region_px": [
+          866,
+          534,
+          878,
+          546
+        ],
+        "evidence_ids": []
+      },
+      "center_m": [
+        8.72,
+        5.4
+      ],
+      "bbox_m": [
+        8.66,
+        5.34,
+        8.78,
+        5.46
+      ],
+      "in_room_id": "room_5",
+      "in_room_link_id": "link_1"
+    },
+    {
+      "id": "node_11",
+      "type": "fixture",
+      "subtype": "kitchen sink",
+      "tag": null,
+      "tag_text_id": null,
+      "label": {
+        "raw_text": null,
+        "expanded": null,
+        "language": null,
+        "normalized": "kitchen sink",
+        "glossary_term_id": null
+      },
+      "bbox_px": [
+        900,
+        516,
+        948,
+        560
+      ],
+      "center_px": [
+        924,
+        538
+      ],
+      "rotation_deg": 0,
+      "ports_px": [
+        [
+          900,
+          540
+        ]
+      ],
+      "nominal_size": null,
+      "system": "cold_water",
+      "attributes": {},
+      "provenance": {
+        "extractor_id": "ext_link",
+        "confidence": 0.9,
+        "source_region_px": [
+          900,
+          516,
+          948,
+          560
+        ],
+        "evidence_ids": []
+      },
+      "center_m": [
+        9.24,
+        5.38
+      ],
+      "bbox_m": [
+        9.0,
+        5.16,
+        9.48,
+        5.6
+      ],
+      "in_room_id": "room_5",
+      "in_room_link_id": "link_1"
+    }
+  ],
+  "edges": [
+    {
+      "id": "pipe_1",
+      "ends": [
+        {
+          "node_id": "node_1",
+          "point_px": [
+            872,
+            960
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_2",
+          "point_px": [
+            872,
+            910
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          872,
+          960
+        ],
+        [
+          872,
+          910
+        ]
+      ],
+      "line_tag": "KV-1",
+      "line_tag_text_id": "text_1",
+      "system": "cold_water",
+      "system_raw": "KV",
+      "diameter": {
+        "value": {
+          "raw_text": "Ø22",
+          "dn_mm": 20,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "label",
+        "text_id": "text_2",
+        "confidence": 0.85
+      },
+      "material": null,
+      "insulation": null,
+      "line_style": "solid",
+      "layer": null,
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "marker_1",
+          "node_1"
+        ],
+        "confidence": 0.8
+      },
+      "length": {
+        "geometry_m": 0.5,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "no_written_length"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.85,
+        "evidence_ids": []
+      },
+      "polyline_m": [
+        [
+          8.72,
+          9.6
+        ],
+        [
+          8.72,
+          9.1
+        ]
+      ]
+    },
+    {
+      "id": "pipe_2",
+      "ends": [
+        {
+          "node_id": "node_2",
+          "point_px": [
+            872,
+            910
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_3",
+          "point_px": [
+            872,
+            860
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          872,
+          910
+        ],
+        [
+          872,
+          860
+        ]
+      ],
+      "line_tag": "KV-1",
+      "line_tag_text_id": null,
+      "system": "cold_water",
+      "system_raw": "KV",
+      "diameter": {
+        "value": {
+          "raw_text": "Ø22",
+          "dn_mm": 20,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "propagated",
+        "text_id": null,
+        "confidence": 0.75
+      },
+      "material": null,
+      "insulation": null,
+      "line_style": "solid",
+      "layer": null,
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "marker_1",
+          "node_1"
+        ],
+        "confidence": 0.6
+      },
+      "length": {
+        "geometry_m": 0.5,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "no_written_length"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.8,
+        "evidence_ids": []
+      },
+      "polyline_m": [
+        [
+          8.72,
+          9.1
+        ],
+        [
+          8.72,
+          8.6
+        ]
+      ]
+    },
+    {
+      "id": "pipe_3",
+      "ends": [
+        {
+          "node_id": "node_3",
+          "point_px": [
+            872,
+            860
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_4",
+          "point_px": [
+            872,
+            770
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          872,
+          860
+        ],
+        [
+          872,
+          770
+        ]
+      ],
+      "line_tag": "KV-1",
+      "line_tag_text_id": null,
+      "system": "cold_water",
+      "system_raw": "KV",
+      "diameter": {
+        "value": {
+          "raw_text": "Ø22",
+          "dn_mm": 20,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "propagated",
+        "text_id": null,
+        "confidence": 0.7
+      },
+      "material": null,
+      "insulation": null,
+      "line_style": "solid",
+      "layer": null,
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "marker_1",
+          "node_1"
+        ],
+        "confidence": 0.6
+      },
+      "length": {
+        "geometry_m": 0.9,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "no_written_length"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.8,
+        "evidence_ids": []
+      },
+      "polyline_m": [
+        [
+          8.72,
+          8.6
+        ],
+        [
+          8.72,
+          7.7
+        ]
+      ]
+    },
+    {
+      "id": "pipe_4",
+      "ends": [
+        {
+          "node_id": "node_4",
+          "point_px": [
+            872,
+            770
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_5",
+          "point_px": [
+            886,
+            770
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          872,
+          770
+        ],
+        [
+          886,
+          770
+        ]
+      ],
+      "line_tag": null,
+      "line_tag_text_id": null,
+      "system": "cold_water",
+      "system_raw": "KV",
+      "diameter": {
+        "value": {
+          "raw_text": "Ø15",
+          "dn_mm": 12,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "label",
+        "text_id": "text_3",
+        "confidence": 0.8
+      },
+      "material": null,
+      "insulation": null,
+      "line_style": "solid",
+      "layer": null,
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "marker_1",
+          "node_1"
+        ],
+        "confidence": 0.6
+      },
+      "length": {
+        "geometry_m": 0.14,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "no_written_length"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.8,
+        "evidence_ids": []
+      },
+      "polyline_m": [
+        [
+          8.72,
+          7.7
+        ],
+        [
+          8.86,
+          7.7
+        ]
+      ]
+    },
+    {
+      "id": "pipe_5",
+      "ends": [
+        {
+          "node_id": "node_4",
+          "point_px": [
+            872,
+            770
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_6",
+          "point_px": [
+            872,
+            690
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          872,
+          770
+        ],
+        [
+          872,
+          690
+        ]
+      ],
+      "line_tag": null,
+      "line_tag_text_id": null,
+      "system": "cold_water",
+      "system_raw": "KV",
+      "diameter": {
+        "value": {
+          "raw_text": "Ø22",
+          "dn_mm": 20,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "propagated",
+        "text_id": null,
+        "confidence": 0.55
+      },
+      "material": null,
+      "insulation": null,
+      "line_style": "solid",
+      "layer": null,
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "marker_1",
+          "node_1"
+        ],
+        "confidence": 0.6
+      },
+      "length": {
+        "geometry_m": 0.8,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "no_written_length"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.75,
+        "evidence_ids": []
+      },
+      "polyline_m": [
+        [
+          8.72,
+          7.7
+        ],
+        [
+          8.72,
+          6.9
+        ]
+      ]
+    },
+    {
+      "id": "pipe_6",
+      "ends": [
+        {
+          "node_id": "node_6",
+          "point_px": [
+            872,
+            690
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_7",
+          "point_px": [
+            910,
+            690
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          872,
+          690
+        ],
+        [
+          910,
+          690
+        ]
+      ],
+      "line_tag": null,
+      "line_tag_text_id": null,
+      "system": "cold_water",
+      "system_raw": "KV",
+      "diameter": {
+        "value": {
+          "raw_text": "Ø15",
+          "dn_mm": 12,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "propagated",
+        "text_id": null,
+        "confidence": 0.5
+      },
+      "material": null,
+      "insulation": null,
+      "line_style": "solid",
+      "layer": null,
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "marker_1",
+          "node_1"
+        ],
+        "confidence": 0.6
+      },
+      "length": {
+        "geometry_m": 0.38,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "no_written_length"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.8,
+        "evidence_ids": []
+      },
+      "polyline_m": [
+        [
+          8.72,
+          6.9
+        ],
+        [
+          9.1,
+          6.9
+        ]
+      ]
+    },
+    {
+      "id": "pipe_7",
+      "ends": [
+        {
+          "node_id": "node_6",
+          "point_px": [
+            872,
+            690
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_8",
+          "point_px": [
+            872,
+            636
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          872,
+          690
+        ],
+        [
+          872,
+          636
+        ]
+      ],
+      "line_tag": null,
+      "line_tag_text_id": null,
+      "system": "cold_water",
+      "system_raw": "KV",
+      "diameter": {
+        "value": {
+          "raw_text": "Ø22",
+          "dn_mm": 20,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "propagated",
+        "text_id": null,
+        "confidence": 0.5
+      },
+      "material": null,
+      "insulation": null,
+      "line_style": "solid",
+      "layer": null,
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "marker_1",
+          "node_1"
+        ],
+        "confidence": 0.6
+      },
+      "length": {
+        "geometry_m": 0.54,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "no_written_length"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.75,
+        "evidence_ids": []
+      },
+      "polyline_m": [
+        [
+          8.72,
+          6.9
+        ],
+        [
+          8.72,
+          6.36
+        ]
+      ]
+    },
+    {
+      "id": "pipe_8",
+      "ends": [
+        {
+          "node_id": "node_8",
+          "point_px": [
+            872,
+            636
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_9",
+          "point_px": [
+            890,
+            636
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          872,
+          636
+        ],
+        [
+          890,
+          636
+        ]
+      ],
+      "line_tag": null,
+      "line_tag_text_id": null,
+      "system": "cold_water",
+      "system_raw": "KV",
+      "diameter": {
+        "value": {
+          "raw_text": "Ø15",
+          "dn_mm": 12,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "propagated",
+        "text_id": null,
+        "confidence": 0.5
+      },
+      "material": null,
+      "insulation": null,
+      "line_style": "solid",
+      "layer": null,
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "marker_1",
+          "node_1"
+        ],
+        "confidence": 0.6
+      },
+      "length": {
+        "geometry_m": 0.18,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "no_written_length"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.8,
+        "evidence_ids": []
+      },
+      "polyline_m": [
+        [
+          8.72,
+          6.36
+        ],
+        [
+          8.9,
+          6.36
+        ]
+      ]
+    },
+    {
+      "id": "pipe_9",
+      "ends": [
+        {
+          "node_id": "node_8",
+          "point_px": [
+            872,
+            636
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": "node_10",
+          "point_px": [
+            872,
+            540
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        }
+      ],
+      "polyline_px": [
+        [
+          872,
+          636
+        ],
+        [
+          872,
+          592
+        ],
+        [
+          872,
+          540
+        ]
+      ],
+      "line_tag": null,
+      "line_tag_text_id": null,
+      "system": "cold_water",
+      "system_raw": "KV",
+      "diameter": {
+        "value": {
+          "raw_text": "Ø15",
+          "dn_mm": 12,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "label",
+        "text_id": "text_4",
+        "confidence": 0.8
+      },
+      "material": null,
+      "insulation": null,
+      "line_style": "solid",
+      "layer": null,
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "marker_1",
+          "node_1"
+        ],
+        "confidence": 0.6
+      },
+      "length": {
+        "geometry_m": 0.96,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "no_written_length"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.8,
+        "evidence_ids": []
+      },
+      "polyline_m": [
+        [
+          8.72,
+          6.36
+        ],
+        [
+          8.72,
+          5.92
+        ],
+        [
+          8.72,
+          5.4
+        ]
+      ]
+    },
+    {
+      "id": "pipe_10",
+      "ends": [
+        {
+          "node_id": "node_10",
+          "point_px": [
+            872,
+            540
+          ],
+          "port_index": 0,
+          "snap": "snapped",
+          "snap_distance_px": 0
+        },
+        {
+          "node_id": null,
+          "point_px": [
+            888,
+            540
+          ],
+          "port_index": null,
+          "snap": "unsnapped",
+          "snap_distance_px": 12
+        }
+      ],
+      "polyline_px": [
+        [
+          872,
+          540
+        ],
+        [
+          888,
+          540
+        ]
+      ],
+      "line_tag": null,
+      "line_tag_text_id": null,
+      "system": "cold_water",
+      "system_raw": "KV",
+      "diameter": {
+        "value": {
+          "raw_text": "Ø15",
+          "dn_mm": 12,
+          "outer_mm": null,
+          "wall_mm": null
+        },
+        "source": "propagated",
+        "text_id": null,
+        "confidence": 0.6
+      },
+      "material": null,
+      "insulation": null,
+      "line_style": "solid",
+      "layer": null,
+      "flow": {
+        "direction": "start_to_end",
+        "evidence_ids": [
+          "marker_1",
+          "node_1"
+        ],
+        "confidence": 0.6
+      },
+      "length": {
+        "geometry_m": 0.16,
+        "written_m": null,
+        "written_text_id": null,
+        "difference_pct": null,
+        "flag": "no_written_length"
+      },
+      "elevation_m": null,
+      "provenance": {
+        "extractor_id": "ext_graph",
+        "confidence": 0.55,
+        "evidence_ids": []
+      },
+      "polyline_m": [
+        [
+          8.72,
+          5.4
+        ],
+        [
+          8.88,
+          5.4
+        ]
+      ]
+    }
+  ],
+  "markers": [
+    {
+      "id": "marker_1",
+      "type": "flow_arrow",
+      "bbox_px": [
+        862,
+        926,
+        882,
+        942
+      ],
+      "on_edge_id": "pipe_1",
+      "direction_px": [
+        0,
+        -1
+      ],
+      "text_id": null,
+      "provenance": {
+        "extractor_id": "ext_det",
+        "confidence": 0.71
+      }
+    }
+  ],
+  "texts": [
+    {
+      "id": "text_1",
+      "raw_text": "KV-1",
+      "bbox_px": [
+        880,
+        940,
+        912,
+        956
+      ],
+      "rotation_deg": 0,
+      "role": "line_tag",
+      "value": null,
+      "attached_to": [
+        "pipe_1"
+      ],
+      "language": "fi",
+      "provenance": {
+        "extractor_id": "ext_ocr",
+        "confidence": 0.83
+      }
+    },
+    {
+      "id": "text_2",
+      "raw_text": "Ø22",
+      "bbox_px": [
+        880,
+        924,
+        908,
+        938
+      ],
+      "rotation_deg": 0,
+      "role": "diameter",
+      "value": {
+        "number": 22,
+        "unit": "mm"
+      },
+      "attached_to": [
+        "pipe_1"
+      ],
+      "language": null,
+      "provenance": {
+        "extractor_id": "ext_ocr",
+        "confidence": 0.8
+      }
+    },
+    {
+      "id": "text_3",
+      "raw_text": "Ø15",
+      "bbox_px": [
+        874,
+        778,
+        902,
+        792
+      ],
+      "rotation_deg": 0,
+      "role": "diameter",
+      "value": {
+        "number": 15,
+        "unit": "mm"
+      },
+      "attached_to": [
+        "pipe_4"
+      ],
+      "language": null,
+      "provenance": {
+        "extractor_id": "ext_ocr",
+        "confidence": 0.74
+      }
+    },
+    {
+      "id": "text_4",
+      "raw_text": "Ø15",
+      "bbox_px": [
+        840,
+        576,
+        868,
+        590
+      ],
+      "rotation_deg": 0,
+      "role": "diameter",
+      "value": {
+        "number": 15,
+        "unit": "mm"
+      },
+      "attached_to": [
+        "pipe_9"
+      ],
+      "language": null,
+      "provenance": {
+        "extractor_id": "ext_ocr",
+        "confidence": 0.77
+      }
+    }
+  ],
+  "relations": [
+    {
+      "id": "rel_1",
+      "kind": "same_as",
+      "from_id": "node_5",
+      "to": {
+        "file_id": "cubicasa5k/high_quality-5815",
+        "element_id": "obj_5",
+        "target_text": null
+      },
+      "meaning": null,
+      "link_id": "link_1",
+      "provenance": {
+        "extractor_id": "ext_link",
+        "confidence": 0.85
+      }
+    },
+    {
+      "id": "rel_2",
+      "kind": "same_as",
+      "from_id": "node_7",
+      "to": {
+        "file_id": "cubicasa5k/high_quality-5815",
+        "element_id": "obj_4",
+        "target_text": null
+      },
+      "meaning": null,
+      "link_id": "link_1",
+      "provenance": {
+        "extractor_id": "ext_link",
+        "confidence": 0.85
+      }
+    },
+    {
+      "id": "rel_3",
+      "kind": "same_as",
+      "from_id": "node_9",
+      "to": {
+        "file_id": "cubicasa5k/high_quality-5815",
+        "element_id": "obj_3",
+        "target_text": null
+      },
+      "meaning": null,
+      "link_id": "link_1",
+      "provenance": {
+        "extractor_id": "ext_link",
+        "confidence": 0.85
+      }
+    },
+    {
+      "id": "rel_4",
+      "kind": "same_as",
+      "from_id": "node_11",
+      "to": {
+        "file_id": "cubicasa5k/high_quality-5815",
+        "element_id": "obj_2",
+        "target_text": null
+      },
+      "meaning": null,
+      "link_id": "link_1",
+      "provenance": {
+        "extractor_id": "ext_link",
+        "confidence": 0.85
+      }
+    }
+  ],
+  "coverage": [
+    {
+      "id": "cov_1",
+      "region": "page",
+      "category": "symbols",
+      "status": "analysed",
+      "confidence": 0.8,
+      "extractor_id": "ext_det",
+      "element_ids": [],
+      "note": "Detector classes: valves, pumps, meters, risers, flow arrows. Fixtures come from the linked floor plan.",
+      "updated_at": null
+    },
+    {
+      "id": "cov_2",
+      "region": "page",
+      "category": "pipes",
+      "status": "analysed",
+      "confidence": 0.75,
+      "extractor_id": "ext_trace",
+      "element_ids": [],
+      "note": null,
+      "updated_at": null
+    },
+    {
+      "id": "cov_3",
+      "region": [
+        860,
+        520,
+        912,
+        560
+      ],
+      "category": "connectivity",
+      "status": "partial",
+      "confidence": 0.3,
+      "extractor_id": "ext_graph",
+      "element_ids": [
+        "pipe_10"
+      ],
+      "note": "pipe_10 ends 12 px from the kitchen sink (snap radius 10 px). Probably connects to node_11; not assumed.",
+      "updated_at": null
+    },
+    {
+      "id": "cov_4",
+      "region": "page",
+      "category": "text",
+      "status": "analysed",
+      "confidence": 0.85,
+      "extractor_id": "ext_ocr",
+      "element_ids": [],
+      "note": null,
+      "updated_at": null
+    },
+    {
+      "id": "cov_5",
+      "region": "page",
+      "category": "diameters",
+      "status": "partial",
+      "confidence": 0.6,
+      "extractor_id": "ext_graph",
+      "element_ids": [],
+      "note": "3 labels; other sizes propagated along runs.",
+      "updated_at": null
+    },
+    {
+      "id": "cov_6",
+      "region": "page",
+      "category": "flow_direction",
+      "status": "partial",
+      "confidence": 0.6,
+      "extractor_id": "ext_graph",
+      "element_ids": [],
+      "note": "One flow arrow; rest inferred from the riser as the only source.",
+      "updated_at": null
+    },
+    {
+      "id": "cov_7",
+      "region": "page",
+      "category": "lengths",
+      "status": "partial",
+      "confidence": 0.4,
+      "extractor_id": "ext_code",
+      "element_ids": [],
+      "note": "No written lengths; geometry lengths use the floor plan's door-width scale estimate (confidence 0.4).",
+      "updated_at": null
+    },
+    {
+      "id": "cov_8",
+      "region": "page",
+      "category": "legend",
+      "status": "not_analysed",
+      "confidence": 0.9,
+      "extractor_id": "ext_global",
+      "element_ids": [],
+      "note": "No legend on this sheet.",
+      "updated_at": null
+    },
+    {
+      "id": "cov_9",
+      "region": "page",
+      "category": "link",
+      "status": "analysed",
+      "confidence": 0.8,
+      "extractor_id": "ext_link",
+      "element_ids": [
+        "link_1"
+      ],
+      "note": null,
+      "updated_at": null
+    }
+  ],
+  "summary": {
+    "node_counts": {
+      "ball_valve": 1,
+      "elbow": 1,
+      "fixture": 4,
+      "meter": 1,
+      "riser": 1,
+      "tee": 3
+    },
+    "length_m_by_system_and_size": [
+      {
+        "system": "cold_water",
+        "size": "Ø15",
+        "edge_ids": [
+          "pipe_4",
+          "pipe_6",
+          "pipe_8",
+          "pipe_9",
+          "pipe_10"
+        ],
+        "length_m": 1.82,
+        "missing_length_edge_ids": [],
+        "length_basis": "geometry"
+      },
+      {
+        "system": "cold_water",
+        "size": "Ø22",
+        "edge_ids": [
+          "pipe_1",
+          "pipe_2",
+          "pipe_3",
+          "pipe_5",
+          "pipe_7"
+        ],
+        "length_m": 3.24,
+        "missing_length_edge_ids": [],
+        "length_basis": "geometry"
+      }
+    ],
+    "connected_components": 2,
+    "unsnapped_end_count": 1,
+    "computed_at": "2026-11-14T15:00:29Z"
+  },
+  "history": []
+}

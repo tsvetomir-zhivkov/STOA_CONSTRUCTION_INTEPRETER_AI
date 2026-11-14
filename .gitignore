@@ -36,3 +36,10 @@ uv.lock
 
 # local debug overlay, never committed (k)
 overlay_9385_crop.png*
+
+# pipes: generated outputs and downloaded/derived data (hand-labelled data_pipes/real stays tracked)
+pipes/index_pipes/*
+!pipes/index_pipes/.gitkeep
+pipes/data_pipes/raw/
+pipes/data_pipes/ds/
+pipes/data_pipes/yolo/

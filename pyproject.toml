@@ -8,17 +8,23 @@ dependencies = [
     "numpy",
     "opencv-python-headless",
     "shapely>=2.1.2",
+    "networkx",
+    "ezdxf",
+    "scikit-image",
+    "sknw",
+    "ultralytics",
+    "sahi",
 ]
 
 [tool.ruff]
 line-length = 110
-extend-exclude = ["eval/fixtures"]
+extend-exclude = ["eval/fixtures", "pipes/schema"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["translator"]
+known-first-party = ["translator", "pipes"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
