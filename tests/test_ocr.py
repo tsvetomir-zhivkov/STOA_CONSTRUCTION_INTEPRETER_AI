@@ -496,3 +496,14 @@ def test_stray_single_letter_k_outside_rooms_makes_no_second_kitchen():
     assert sum(r["type"] == "kitchen" for r in out) == 2
     out, _ = ocr.name_rooms([], _texts(_item("K", 0.9, (300, 300, 305, 310))), "x.png")
     assert [r["type"] for r in out] == ["kitchen"]
+
+
+def test_bedrooms_count_labels_plus_uncovered_regions():
+    rooms = [
+        _room("b0", "Bedroom", "bedroom", (0, 0, 80, 80)),
+        _room("b1", "Bedroom", "bedroom", (100, 0, 180, 80)),  # unlabelled bedroom region
+        _room("b2", "Bedroom", "bedroom", (200, 0, 280, 80)),  # labelled VH: a walk-in closet, not a bedroom
+    ]
+    texts = _texts(_item("MH", 0.9, (30, 30, 40, 40)), _item("VH", 0.9, (230, 30, 240, 40)))
+    out, _ = ocr.name_rooms([dict(r) for r in rooms], texts, "x.png", label_priority=True)
+    assert sorted(r["id"] for r in out if r["type"] == "bedroom") == ["b0", "b1"]

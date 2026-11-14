@@ -46,6 +46,9 @@ LANG = "latin_PP-OCRv3_mobile_rec"  # PaddleOCR Latin-script recogniser (keeps Ã
 MIRROR_CONF_MARGIN = 0.05  # equal glossary hits: the flipped reading must be this much more confident
 LABEL_ONLY_CONF = 0.3  # confidence factor for a room made from a label that lies in no region
 SHARED_REGION_CONF = 0.6  # confidence factor for the second+ label in one region
+# Room types where unlabelled segmentation regions still count next to labelled rooms (agreed with k): when
+# only some bedrooms carry a label, count the labelled ones plus the Bedroom regions no label covers.
+SEG_ADDS_TO_LABELS = {"bedroom"}
 MERGE_GAP_PX = 4  # same-class room regions closer than this are one room
 BLOB_CLASSES_EXCLUDED = {"Background", "Outdoor", "Railing"}  # building mask = walls + indoor rooms
 BLOB_DILATE_FRAC = 0.01  # close small gaps in the building mask: 1% of the longest side
@@ -402,7 +405,12 @@ def name_rooms(
     if label_priority:  # count labelled rooms, not regions: unlabelled regions of a labelled type step back
         labelled = {r["type"] for r in out if r.get("text_ids") and r.get("status", "active") == "active"}
         for r in out:
-            if r.get("status", "active") == "active" and not r.get("text_ids") and r["type"] in labelled:
+            if (
+                r.get("status", "active") == "active"
+                and not r.get("text_ids")
+                and r["type"] in labelled
+                and r["type"] not in SEG_ADDS_TO_LABELS
+            ):
                 r["provenance"].setdefault("details", {})["seg_type"] = r["type"]
                 r["type"] = "unknown"
                 r["flags"] = sorted(set(r.get("flags", [])) | {"unlabelled_region"})
