@@ -165,6 +165,8 @@ def _run_extractor(doc: dict, r: dict, root: Path, file_path: Path) -> list[dict
             d["history"].extend(parts.pop("history"))
             for key, value in parts.items():
                 d[key] = value
+            if level is not None:
+                _map_ifc_to_page(d, file_path)
             out.append(d)
         if not out:
             doc["history"].append(
@@ -173,6 +175,24 @@ def _run_extractor(doc: dict, r: dict, root: Path, file_path: Path) -> list[dict
             return [doc]
         return out
     return [doc]
+
+
+def _map_ifc_to_page(doc: dict, file_path: Path) -> None:
+    """IFC storey -> pixels of the rendered plan page, through the plan's SVG sibling."""
+    svg = file_path.with_suffix(".svg")
+    if file_path.suffix.lower() != ".pdf" or not svg.exists():
+        doc["history"].append(
+            {"extractor": "align", "action": "skip", "note": "no PDF page with an SVG sibling"}
+        )
+        return
+    from translator import align
+
+    try:
+        summary = align.map_ifc_document(doc, file_path, svg, doc["drawing"].get("page_index") or 0)
+    except Exception as e:  # mapping is for highlighting only; never lose the extraction over it
+        summary = {"ok": False, "reason": f"alignment failed: {e}"}
+    note = ", ".join(f"{k}={v}" for k, v in summary.items())
+    doc["history"].append({"extractor": "align", "action": "affine_fit", "note": note})
 
 
 def _map_to_page(doc: dict, file_path: Path) -> None:
