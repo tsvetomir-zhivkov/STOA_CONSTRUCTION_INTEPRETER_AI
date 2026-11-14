@@ -102,7 +102,6 @@ def type_from_block(name: str) -> str:
     return "unknown"
 
 
-# a free pipe end with one of these texts nearby is an open end (off-sheet continuation), not a tracing gap
-CONTINUATION = re.compile(
-    r"JATKUU|CONTINU|FORTS|WEITER|(^|\s)TO\s|->|\bSHEET\b|\bBLAD\b|\bBLATT\b|\bLEHTI\b", re.I
-)
+# a free pipe end with one of these texts nearby is an open end (off-sheet continuation), not a tracing gap. The text
+# STARTS with TO/FROM (or says continues/jatkuu/->): a bare 'SHEET NO.' in a title block or a range '-148 to 68F' is not one.
+CONTINUATION = re.compile(r"JATKUU|CONTINU|FORTS|WEITER|->|^\s*(TO|FROM|FRA|TIL|VON|NACH|SIIRTYY)\s", re.I)

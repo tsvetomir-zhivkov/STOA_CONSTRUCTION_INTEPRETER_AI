@@ -19,6 +19,7 @@ import numpy as np
 
 from pipes import config as cfg
 from pipes import graph as gr
+from pipes.glossary_pipes import CONTINUATION
 from pipes.ingest.pid_dataset import gt_document
 from pipes.raster import equipment as eq
 from pipes.raster import erase as er
@@ -31,7 +32,7 @@ from pipes.write import finalize
 
 HERE = Path(__file__).parent.parent
 MIN_TEXT_SCORE = 0.3
-DOT_RADIUS_W = 2.5
+DOT_RADIUS_W = 2.5  # a dot must fill a disk of 2.5 w: dots under ~5 line widths across read as crossings
 DOT_SHARE = 0.8
 
 
@@ -64,10 +65,13 @@ def run_sheet(
     run: str = cfg.DETECTOR_RUN,
     conf_erase: float = cfg.CONF_ERASE,
     equipment: bool = True,
+    texts: list[dict] | None = None,
 ) -> dict:
     """conf = reported symbols (nodes); conf_erase = boxes erased before tracing (>= recall, not reported)."""
     split, sid = sheet_dir.parent.name, sheet_dir.name
-    sheet = sheet_dir / "sheet.jpg"
+    sheet = next(
+        (q for q in (sheet_dir / "sheet.png", sheet_dir / "sheet.jpg") if q.exists()), sheet_dir / "sheet.jpg"
+    )
     p = er.prep(sheet)
     H, W = p.shape
     w = p.w
@@ -75,7 +79,9 @@ def run_sheet(
     for s in syms_all:
         s["reported"] = mode == "gt" or s["score"] >= conf
     boxes_all = [s["bbox_px"] for s in syms_all]
-    texts = [t for t in ocr_run.load(split, sid) if t["score"] >= MIN_TEXT_SCORE]
+    texts = [
+        t for t in (ocr_run.load(split, sid) if texts is None else texts) if t["score"] >= MIN_TEXT_SCORE
+    ]
     tmask = er.text_mask((H, W), texts)
 
     # step 5: frames, title block and legend rectangles are removed before tracing
@@ -181,7 +187,12 @@ def assemble(sheet_dir, mode, conf, syms, port_list, texts, g, w, size, transfor
                 best = (f"node_{i + 1}", None, d)
         if best:
             return best
-        if min(pos[0], pos[1], W - pos[0], H - pos[1]) <= 3 * w:
+        near_text = any(
+            gr.rect_dist(pos, _bbox(t["poly"])) <= max(5 * w, 10)
+            for t in texts
+            if CONTINUATION.search(t["text"])
+        )  # 'JATKUU', 'TO ...', '->' beside the end: the pipe continues elsewhere
+        if near_text or min(pos[0], pos[1], W - pos[0], H - pos[1]) <= 3 * w:
             return (add_struct("open_end", pos), None, 0.0)
         return None
 

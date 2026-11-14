@@ -123,11 +123,18 @@ def find_frames(ink: np.ndarray, w: float, text: np.ndarray | None = None) -> li
 
 def _inner_h_lines(ink: np.ndarray, rect, w: float) -> int:
     x0, y0, x1, y1 = (int(v) for v in rect)
-    sub = ink[y0:y1, x0:x1].astype(np.uint8)
+    m = int(max(4, 2 * w)) + 2  # the frame's own top and bottom sides are not rows of the block
+    sub = ink[y0 + m : y1 - m, x0 + m : x1 - m].astype(np.uint8)
     if sub.size == 0:
         return 0
     L = max(10, int(0.5 * (x1 - x0)))
-    hm = cv2.morphologyEx(sub, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (L, 1)))
+    hm = cv2.morphologyEx(
+        sub,
+        cv2.MORPH_OPEN,
+        cv2.getStructuringElement(cv2.MORPH_RECT, (L, 1)),
+        borderType=cv2.BORDER_CONSTANT,
+        borderValue=0,
+    )  # outside the crop is empty: a line that reaches the crop edge is not made longer
     ys = np.where(hm.sum(axis=1) > 0)[0]
     return int(1 + (np.diff(ys) > max(3, 2 * w)).sum()) if len(ys) else 0
 
