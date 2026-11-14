@@ -135,7 +135,12 @@ def build(tmp_path: Path, schema="IFC4", unit="MILLI", name="model") -> Path:
     # walls: quantities on one, geometry only on the other
     w1 = m.element("IfcWall", eg, box=(4, 0.2, 3), at=(0, 5, 0))
     m.qto(w1, "Qto_WallBaseQuantities", Length=4.0 * k, NetSideArea=12.0, NetVolume=2.4)
+    pset = api.run("pset.add_pset", m.f, product=w1, name="Pset_WallCommon")
+    api.run("pset.edit_pset", m.f, pset=pset, properties={"FireRating": "EI60", "LoadBearing": True})
     m.element("IfcWall", eg, box=(6, 0.25, 3), at=(0, 7, 0))
+    # extra elements: kept for text questions, never counted by the structured rules
+    m.element("IfcCovering", eg, name="Floor tiles")
+    m.element("IfcBuildingElementProxy", eg, name="Kitchen block")
     m.element("IfcDoor", eg, OverallWidth=0.9 * k, OverallHeight=2.1 * k)
     m.element("IfcWindow", eg, OverallWidth=1.2 * k, OverallHeight=1.4 * k)
     slab = m.element("IfcSlab", eg, box=(5, 4, 0.2))
@@ -298,6 +303,63 @@ def test_probe_reads_ifc_documents(tmp_path):
     assert ask("What is the total net volume of all slabs on 'EG', in m³?") == pytest.approx(3.9)
     assert ask("How many columns are there in the model 'Test'?") == 2
     assert ask("How many stairs are shown on the floor plan of 'OG'?") == 1
+
+
+# ------------------------------------------------------------------ properties (text questions)
+
+
+def test_element_properties_carry_psets(tmp_path):
+    eg = _docs(build(tmp_path))["00-EG"]
+    wall = next(w for w in eg["walls"] if w["length_m"] == pytest.approx(4.0))
+    props = wall["properties"]
+    assert props["ifc_class"] == "IfcWall"
+    assert props["psets"]["Pset_WallCommon"] == {"FireRating": "EI60", "LoadBearing": True}
+    assert "Qto_WallBaseQuantities" in props["psets"]
+
+
+def test_extra_elements_are_other_and_not_counted(tmp_path):
+    eg = _docs(build(tmp_path))["00-EG"]
+    extras = sorted(
+        o["subtype"] for o in eg["objects"] if o["subtype"] in ("covering", "buildingelementproxy")
+    )
+    assert extras == ["buildingelementproxy", "covering"]
+    assert not any(o["flags"] for o in eg["objects"] if o["subtype"] == "covering")  # no no_geometry flag
+    assert len(probe._elements([eg], "sanitary")) == 1  # IFC4: the IfcSanitaryTerminal only
+    assert len(probe._elements([eg], "column")) == 0
+
+
+def test_level_properties_hold_project_and_units(tmp_path):
+    level = _docs(build(tmp_path))["00-EG"]["levels"][0]
+    props = level["properties"]
+    assert props["project"]["name"] == "Test"
+    assert props["units_to_si"]["LENGTHUNIT"] == pytest.approx(0.001)
+
+
+def test_cap_drops_largest_psets_first():
+    props = {
+        "ifc_class": "IfcWall",
+        "psets": {"small": {"a": 1}, "big": {f"k{i}": "x" * 50 for i in range(50)}},
+    }
+    capped = ifc.cap_properties(props, max_bytes=500)
+    assert list(capped["psets"]) == ["small"] and capped["psets_dropped"] == ["big"]
+
+
+def test_document_budget_slims_only_extra_elements():
+    big = {"ifc_class": "IfcFlowSegment", "psets": {"P": {f"k{i}": "x" * 100 for i in range(30)}}}
+    doc = {
+        "rooms": [],
+        "walls": [
+            {"id": "wall-1", "properties": {"ifc_class": "IfcWall", "psets": {"P": {"k": "x" * 3000}}}}
+        ],
+        "openings": [],
+        "objects": [{"id": f"element-{i}", "properties": json.loads(json.dumps(big))} for i in range(5)],
+    }
+    recs = [{"kind": "element", "global_id": str(i), "quantities": {"Length": 2.0}} for i in range(5)]
+    n = ifc.apply_document_budget(doc, recs, max_bytes=12_000)
+    assert n >= 1
+    slim = [o for o in doc["objects"] if o["properties"].get("slim")]
+    assert len(slim) == n and all(o["properties"]["quantities"] == {"Length": 2.0} for o in slim)
+    assert "psets" in doc["walls"][0]["properties"]  # structured elements are never slimmed
 
 
 # ------------------------------------------------------------------ real model

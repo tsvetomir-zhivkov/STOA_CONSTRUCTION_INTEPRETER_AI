@@ -37,11 +37,17 @@ from translator import glossary
 from translator.config import INDEX_DIR
 
 EXTRACTOR = "ifc"
-EXTRACTOR_VERSION = "1"
+EXTRACTOR_VERSION = "3"
 CACHE_DIR = INDEX_DIR / "_raw" / "ifc"
 Z_TOL = 1e-3  # m, triangles within this of the lowest z form the footprint
 AREA_TOL = 0.02  # written vs computed area: flag check_this above 2% (vector source)
 COORD_DECIMALS = 4
+PROPS_MAX_BYTES = 6000  # per element: the largest property sets are dropped beyond this
+STR_MAX = 200  # characters kept of one property value
+LIST_MAX = 20  # items kept of one list-valued property
+DOC_PROPS_MAX_BYTES = 2_000_000  # per document: extra elements are slimmed beyond this
+# IfcElement kinds that are never real building items (openings, voids, virtual boundaries)
+SKIP_ELEMENT_CLASSES = ("IfcFeatureElement", "IfcVirtualElement")
 
 OBJECT_KINDS = {"IfcSlab": "slab", "IfcColumn": "column", "IfcBeam": "beam"}
 SANITARY_WORDS = [  # (category, words in predefined type / type name / name), first hit wins
@@ -209,6 +215,132 @@ def _geometry(model, products) -> dict[int, tuple]:
     return out
 
 
+# ------------------------------------------------------------------ properties (free-text questions)
+
+
+def _clean_value(v):
+    if isinstance(v, bool) or v is None or isinstance(v, (int, float)):
+        return v
+    if isinstance(v, str):
+        return v if len(v) <= STR_MAX else v[:STR_MAX] + "..."
+    if isinstance(v, (list, tuple)):
+        items = [_clean_value(x) for x in v[:LIST_MAX] if not isinstance(x, (list, tuple, dict))]
+        return items + (["..."] if len(v) > LIST_MAX else [])
+    return str(v)[:STR_MAX]
+
+
+def _clean_psets(psets: dict) -> dict:
+    out = {}
+    for name, props in psets.items():
+        clean = {k: _clean_value(v) for k, v in props.items() if k != "id" and not isinstance(v, dict)}
+        if clean:
+            out[str(name)] = clean
+    return out
+
+
+def _materials(e, L: float):
+    try:
+        m = _ue().get_material(e, should_skip_usage=True)
+    except Exception:
+        return None
+    if m is None:
+        return None
+    if m.is_a("IfcMaterial"):
+        return [{"name": m.Name}]
+    if m.is_a("IfcMaterialLayerSet"):
+        return [
+            {
+                "name": ly.Material.Name if ly.Material else None,
+                "thickness_m": _r((ly.LayerThickness or 0) * L),
+            }
+            for ly in m.MaterialLayers
+        ]
+    if m.is_a("IfcMaterialList"):
+        return [{"name": x.Name} for x in m.Materials]
+    if m.is_a("IfcMaterialConstituentSet"):
+        return [{"name": c.Material.Name if c.Material else c.Name} for c in (m.MaterialConstituents or [])]
+    if m.is_a("IfcMaterialProfileSet"):
+        return [{"name": pr.Material.Name if pr.Material else pr.Name} for pr in (m.MaterialProfiles or [])]
+    return [{"name": getattr(m, "Name", None)}]
+
+
+def _systems(e) -> list[str] | None:
+    try:
+        import ifcopenshell.util.system as us
+
+        names = [s.Name for s in us.get_element_systems(e)]
+    except Exception:
+        return None
+    return names or None
+
+
+def cap_properties(props: dict, max_bytes: int = PROPS_MAX_BYTES) -> dict:
+    """Drop the largest property sets until the serialised properties fit in max_bytes."""
+    size = len(json.dumps(props, ensure_ascii=False))
+    psets = props.get("psets") or {}
+    dropped = []
+    while size > max_bytes and psets:
+        name = max(psets, key=lambda n: len(json.dumps(psets[n], ensure_ascii=False)))
+        del psets[name]
+        dropped.append(name)
+        size = len(json.dumps(props, ensure_ascii=False))
+    if dropped:
+        props["psets_dropped"] = dropped
+    return props
+
+
+def element_properties(e, L: float) -> dict:
+    """Raw IFC data for text questions: class, type, materials, systems and all property sets."""
+    ue = _ue()
+    t = ue.get_type(e)
+    props = {
+        "ifc_class": e.is_a(),
+        "name": e.Name,
+        "description": getattr(e, "Description", None),
+        "object_type": getattr(e, "ObjectType", None),
+        "predefined_type": str(getattr(e, "PredefinedType", None) or "") or None,
+        "tag": getattr(e, "Tag", None),
+        "type_name": t.Name if t else None,
+        "type_class": t.is_a() if t else None,
+        "materials": _materials(e, L),
+        "systems": _systems(e),
+        "psets": _clean_psets(ue.get_psets(e)),  # includes inherited type psets and quantities
+    }
+    props = {k: (v if k in ("psets", "materials") else _clean_value(v)) for k, v in props.items()}
+    return cap_properties({k: v for k, v in props.items() if v not in (None, [], {})})
+
+
+def model_context(model, L: float) -> dict:
+    """Project / site / building information, stored on every level document."""
+    ue = _ue()
+    out = {}
+    for key, cls in (("project", "IfcProject"), ("site", "IfcSite"), ("building", "IfcBuilding")):
+        items = list(model.by_type(cls))
+        if not items:
+            continue
+        e = items[0]
+        info = {
+            "name": e.Name,
+            "long_name": getattr(e, "LongName", None),
+            "description": e.Description,
+            "object_type": getattr(e, "ObjectType", None),
+            "global_id": e.GlobalId,
+        }
+        if cls == "IfcSite":
+            info["ref_latitude"] = _clean_value(e.RefLatitude)
+            info["ref_longitude"] = _clean_value(e.RefLongitude)
+            info["ref_elevation_m"] = _r(e.RefElevation * L if e.RefElevation is not None else None)
+        address = getattr(e, "BuildingAddress", None) or getattr(e, "SiteAddress", None)
+        if address is not None:
+            fields = ("AddressLines", "PostalCode", "Town", "Region", "Country")
+            info["address"] = {
+                k: _clean_value(getattr(address, k)) for k in fields if getattr(address, k, None)
+            }
+        info["psets"] = _clean_psets(ue.get_psets(e))
+        out[key] = cap_properties({k: v for k, v in info.items() if v not in (None, [], {})})
+    return out
+
+
 # ------------------------------------------------------------------ extraction to records
 
 
@@ -264,6 +396,7 @@ def extract_records(ifc_path: str | Path) -> dict:
             "name": e.Name,
             "storey": stv.GlobalId if stv else None,
             "has_geometry": e.id() in geo,
+            "props": element_properties(e, L),
         }
 
     records = []
@@ -336,11 +469,24 @@ def extract_records(ifc_path: str | Path) -> dict:
             r["outline"] = _outline(footprint_projected(*geo[e.id()]))
         records.append(r)
 
+    # every other building element, for text questions (no geometry, never counted by the rules above)
+    handled = {e.id() for e in spaces + doors + windows + walls + objs + sanitary + has("IfcStair")}
+    for e in has("IfcElement"):
+        if e.id() in handled or any(e.is_a(c) for c in SKIP_ELEMENT_CLASSES):
+            continue
+        r = base(e, "element")
+        r["geometry_skipped"] = True
+        r["quantities"] = _qtos(e)  # kept when the document budget slims this element
+        cls = e.is_a()
+        r["subtype"] = (cls[3:] if cls.startswith("Ifc") else cls).lower()
+        records.append(r)
+
     storeys = [
         {
             "global_id": s.GlobalId,
             "name": s.Name,
             "elevation": _r(s.Elevation * L if s.Elevation is not None else None),
+            "props": element_properties(s, L),
         }
         for s in sorted(has("IfcBuildingStorey"), key=lambda s: s.Elevation or 0.0)
     ]
@@ -349,6 +495,7 @@ def extract_records(ifc_path: str | Path) -> dict:
         "schema": model.schema,
         "units": sc,
         "sanitary_rule": sanitary_rule,
+        "context": model_context(model, L),
         "storeys": storeys,
         "records": records,
     }
@@ -369,7 +516,7 @@ def _prov(r: dict, read_from: str, **details) -> dict:
 
 
 def _flags(r: dict) -> list[str]:
-    return [] if r.get("has_geometry") else ["no_geometry"]
+    return [] if r.get("has_geometry") or r.get("geometry_skipped") else ["no_geometry"]
 
 
 def _room(r: dict, level_id: str | None, read_from: str) -> dict:
@@ -412,6 +559,7 @@ def _room(r: dict, level_id: str | None, read_from: str) -> dict:
         ),
         "status": "active",
         "flags": flags,
+        "properties": r.get("props") or {"ifc_class": r["ifc_class"]},
     }
 
 
@@ -430,7 +578,7 @@ def _entity(r: dict, level_id, read_from) -> dict:
         ),
         "status": "active",
         "flags": _flags(r),
-        "properties": {"ifc_class": r["ifc_class"], "name": r.get("name")},
+        "properties": r.get("props") or {"ifc_class": r["ifc_class"], "name": r.get("name")},
     }
     if kind in ("door", "window"):
         return {
@@ -456,6 +604,8 @@ def _entity(r: dict, level_id, read_from) -> dict:
         }
     if kind == "stair":
         category, subtype = "stair", None
+    elif kind == "element":
+        category, subtype = "other", r["subtype"]
     elif kind == "sanitary":
         cat = r.get("sanitary_category", "other")
         category, subtype = (cat, None) if cat != "other" else ("other", "sanitary")
@@ -470,6 +620,34 @@ def _entity(r: dict, level_id, read_from) -> dict:
         "polygon_m": r.get("outline"),
         "net_volume_m3": r.get("net_volume"),
     }
+
+
+def apply_document_budget(doc: dict, recs: list[dict], max_bytes: int = DOC_PROPS_MAX_BYTES) -> int:
+    """Keep a document's properties under max_bytes by slimming the extra elements, largest first.
+
+    Slim properties keep class, name, type, materials and systems, and replace the property sets by
+    the element's numeric quantities. Elements used by the structured rules are never slimmed.
+    """
+    quantities = {
+        f"element-{r['global_id']}": r.get("quantities") or {} for r in recs if r["kind"] == "element"
+    }
+    extras = [o for o in doc["objects"] if o["id"] in quantities]
+    sizes = {o["id"]: len(json.dumps(o["properties"], ensure_ascii=False)) for o in extras}
+    total = sum(
+        len(json.dumps(e.get("properties", {}), ensure_ascii=False))
+        for k in ("rooms", "walls", "openings", "objects")
+        for e in doc[k]
+    )
+    n = 0
+    for o in sorted(extras, key=lambda o: -sizes[o["id"]]):
+        if total <= max_bytes:
+            break
+        keep = {k: v for k, v in o["properties"].items() if k not in ("psets", "psets_dropped")}
+        keep.update(quantities=quantities[o["id"]], slim=True)
+        total -= sizes[o["id"]] - len(json.dumps(keep, ensure_ascii=False))
+        o["properties"] = keep
+        n += 1
+    return n
 
 
 def documents(data: dict, read_from: str, level_name: str | None = None) -> list[dict]:
@@ -504,6 +682,13 @@ def documents(data: dict, read_from: str, level_name: str | None = None) -> list
                         "confidence": 1.0,
                         "provenance": {"extractor": EXTRACTOR, "source_ref": gid, "file": read_from},
                         "status": "active",
+                        # storey data plus project / site / building info (no top-level slot for it)
+                        "properties": {
+                            "storey": s.get("props") or {},
+                            **data.get("context", {}),
+                            "units_to_si": data.get("units"),
+                            "note": "property set values are in model units; multiply by units_to_si",
+                        },
                     }
                 ]
                 if s
@@ -515,9 +700,10 @@ def documents(data: dict, read_from: str, level_name: str | None = None) -> list
             "objects": [
                 _entity(r, level_id, read_from)
                 for r in recs
-                if r["kind"] in ("stair", "sanitary", *OBJECT_KINDS.values())
+                if r["kind"] in ("stair", "sanitary", "element", *OBJECT_KINDS.values())
             ],
         }
+        slimmed = apply_document_budget(doc, recs)
         n = {k: len(doc[k]) for k in ("rooms", "walls", "openings", "objects")}
         doc["coverage"] = [
             {
@@ -544,7 +730,8 @@ def documents(data: dict, read_from: str, level_name: str | None = None) -> list
                 "extractor": EXTRACTOR,
                 "action": "extract",
                 "note": f"{data['schema']}, storey {s['name'] if s else '(none)'}: {n}; "
-                f"sanitary rule: {data['sanitary_rule']}",
+                f"sanitary rule: {data['sanitary_rule']}; {slimmed} extra elements slimmed to fit "
+                f"{DOC_PROPS_MAX_BYTES // 1_000_000} MB",
             }
         ]
         out.append(doc)
