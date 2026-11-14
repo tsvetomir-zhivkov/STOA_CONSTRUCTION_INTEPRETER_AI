@@ -24,7 +24,7 @@ from tools import (
 
 load_dotenv()
 
-MODEL = os.getenv("GEMINI_MODEL", "gemini-4-hydrogen")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 SYSTEM_INSTRUCTION = """You are a construction drawing assistant for engineers.
 Use deterministic tools for drawing facts, counts, measurements, and geometry.
 The drawing index uses schema v0.2; ignore superseded entities.
@@ -157,7 +157,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
             automatic_function_calling=types.AutomaticFunctionCallingConfig(
                 maximum_remote_calls=12,
             ),
-            thinking_config=types.ThinkingConfig(thinking_level="HIGH"),
+            thinking_config=types.ThinkingConfig(thinking_level="MEDIUM"),
             temperature=0,
         ),
     )
