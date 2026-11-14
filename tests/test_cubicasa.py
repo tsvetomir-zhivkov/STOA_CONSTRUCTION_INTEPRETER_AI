@@ -148,7 +148,11 @@ def test_translate_all_writes_a_schema_valid_document(plan_with_raw):
     (doc,) = translate_all(str(path), str(root))  # validated inside translate_all
     assert doc["drawing"]["route"] == "raster"
     assert doc["drawing"]["image"]["width_px"] == 300
-    assert len(doc["openings"]) == 3 and len(doc["rooms"]) == 3
+    seg_rooms = [r for r in doc["rooms"] if r["provenance"]["extractor"] != "prior"]
+    assert len(doc["openings"]) == 3 and len(seg_rooms) == 3
+    # no kitchen detected: the kitchen prior assumes one (no geometry); the Bath region equals the prior
+    (assumed,) = [r for r in doc["rooms"] if r["provenance"]["extractor"] == "prior"]
+    assert assumed["type"] == "kitchen" and assumed["polygon_px"] is None
     ask = lambda q: probe.answer([doc], "cubicasa5k", q)[1]  # noqa: E731
     assert ask("How many windows are shown on this floor plan?") == 2
     assert ask("How many toilet bowls (WC seats) are drawn on this floor plan?") == 1

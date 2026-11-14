@@ -302,10 +302,12 @@ def write_documents(
     min_room_px: int = MIN_ROOM_PX,
     ocr_params: dict | None = None,
     index_dir: Path | None = None,
+    fuse_params: dict | None = None,
 ) -> list[Path]:
     """Translate and write index/cubicasa5k/<name>.json for every image that has a raw file (dev only).
 
-    ocr_params go to translator.extract.ocr.fuse (merge, label_priority); index_dir defaults to index/.
+    ocr_params go to translator.extract.ocr.fuse (merge, label_priority), fuse_params to
+    translator.fuse.fuse_raster (priors, grid); index_dir defaults to index/.
     """
     from translator import translate_all
     from translator.config import INDEX_DIR
@@ -320,13 +322,16 @@ def write_documents(
         if path in hold:  # never touch a held-out image, even if a raw file exists
             continue
         params = {"min_icon_px": min_icon_px, "min_room_px": min_room_px}
-        for doc in translate_all(path, cubicasa_params=params, ocr_params=ocr_params):
+        for doc in translate_all(
+            path, cubicasa_params=params, ocr_params=ocr_params, fuse_params=fuse_params
+        ):
             out.append(write_drawing(doc, index_dir or INDEX_DIR))
     return out
 
 
 if __name__ == "__main__":
-    # python -m translator.extract.cubicasa [--min-icon-px N] [--merge] [--no-label-priority] [--index DIR]
+    # python -m translator.extract.cubicasa [--min-icon-px N] [--merge] [--no-label-priority] [--no-priors]
+    #                                       [--index DIR]
     import argparse
 
     ap = argparse.ArgumentParser(
@@ -338,6 +343,7 @@ if __name__ == "__main__":
     ap.add_argument(
         "--no-label-priority", action="store_true", help="count segmentation regions even next to labels"
     )
+    ap.add_argument("--no-priors", action="store_true", help="no kitchen/bathroom count priors (default on)")
     ap.add_argument("--index", help="index directory to write to (default: index/)")
     args = ap.parse_args()
     written = write_documents(
@@ -345,5 +351,6 @@ if __name__ == "__main__":
         min_room_px=args.min_room_px,
         ocr_params={"merge": args.merge, "label_priority": not args.no_label_priority},
         index_dir=Path(args.index) if args.index else None,
+        fuse_params={"priors": not args.no_priors},
     )
     print(f"wrote {len(written)} documents")

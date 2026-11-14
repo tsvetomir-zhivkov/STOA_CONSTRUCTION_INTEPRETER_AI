@@ -214,3 +214,53 @@ index copy. Each image has an EN and an FI question, so 2 questions = 1 image. D
   Most errors are not size: 20 worst each, checked on overlays:
   - windows: merged 6, missed 6, false positive 6, fragmented 2;
   - doors: false-positive fragments 11, missed 4, open doorway/stair edge read as door 3, scope unclear 2.
+
+## Step 8 (fusion, scale, coverage, priors), 2026-11-14, branch step-7-ocr, dev only
+- **Pipeline:** `translate_all` → raster CubiCasa plans → `translator.fuse.fuse_raster`:
+  `ocr.fuse` (settings unchanged: merge=False, label_priority, kitchen_fallback, rotation=False,
+  floors_rule="max") → `dedupe_document` → `apply_priors` → `scale.estimate` → `coverage.build`.
+  Every document is still validated in `translate_all` and again in `store.write_drawing`.
+  New `fuse_params` argument (`priors`, `grid`); CLI `python -m translator.extract.cubicasa --no-priors`.
+- **Duplicates:** same category with IoU > 0.5 → the lower-confidence element becomes superseded
+  (`superseded_by`, flag `duplicate`); nothing is deleted. Categories: openings by kind, objects by
+  category, rooms by type, texts by folded text. On dev: 0 duplicates, because segmentation components of
+  one class never overlap. It matters once vlm_check adds elements (step 9).
+- **Scale:**
+  - Order: vector_units kept > scale note (only with a known dpi) > door width (median door long side =
+    0.85 m, confidence 0.2) > none (confidence 0). Dimension lines are not implemented.
+  - Dev: 190 door_width, 3 none. Scale notes were found as text in 3 images, but CubiCasa PNGs have no dpi.
+  - No areas are computed from it.
+- **Coverage:**
+  - rooms, doors, windows, fixtures, text: a page record plus 16 cells (4x4 grid).
+  - Confidence = mean confidence of active elements. A cell is partial when its mean is below 0.5.
+  - An empty cell inherits the page status and confidence (note "no elements found").
+  - floors, shower, walls, kitchens and bathrooms records are kept as written: floors stays partial at 0.3
+    on disagreement, shower stays not_analysed. 90 records per CubiCasa document.
+- **Priors** (kitchens and bathrooms only, approved by k):
+  - Dev majorities live in `fuse.PRIORS`: kitchens 1 (93.8%), bathrooms 1 (87.2%).
+  - Detected 0 → assume the majority. Equal → keep.
+  - Different → keep only with ≥ 2 independent strong signals: labels (not TK) in distinct segmentation
+    regions; label-only rooms and a second label in the same region do not count. Otherwise fall back:
+    add assumed rooms, or step the weakest back to type unknown (flag prior_stepped_back).
+  - Assumed room: polygon_px null, flags ["assumed_prior"], confidence 0.2, provenance prior /
+    `prior:<template>`. Coverage record 'kitchens' / 'bathrooms' is partial, note
+    "prior: assumed N, not read from the drawing ...".
+- **Dev scores** (clean index copy, `eval/score.py --split dev`):
+
+  | | kitchens | bathrooms | other CubiCasa templates | CubiCasa | TOTAL |
+  |---|---|---|---|---|---|
+  | before step 8 | 87.7 | 66.0 | — | 60.2 | 78.0 |
+  | step 8, priors off | 87.7 | 66.0 | unchanged | 60.2 | 78.0 |
+  | step 8, priors on (default) | 92.3 | 87.2 | unchanged | 61.7 | 78.9 |
+
+  - Kitchens (130 images): the prior fired on 11.
+    - Zero branch: 8 images, 6 gained, 1 lost (high_quality-698, true answer 0).
+    - Fallback: 3 images, 2 gained, 1 lost (hqa-12077: 2 real kitchens, `kk` + `k` in the same region).
+    - Kept on strong signals: 2 images, both wrong. hqa-12617 has the misread summary "JH+KK 3S'2 ws";
+      hqa-6001 has a second "K" (OCR 0.38) on the entry region.
+  - Bathrooms (94 images): the prior fired on 32.
+    - Fallback: 23 images, 19 gained.
+    - Zero branch: 9 images, 5 gained, 4 lost (true answer 0: hqa-1886, 3660, 5640, 9405).
+    - Kept on strong signals: 2 images, 1 right (14341, Badrum ×2), 1 wrong (14494: `k/pH` shared label).
+  - Kitchens stay below the majority baseline (92.3 vs 95/93.8). Possible next fix, not applied: a strong
+    signal needs OCR confidence ≥ 0.5 and is not a '+' summary. It would fix the 2 kept kitchen images.

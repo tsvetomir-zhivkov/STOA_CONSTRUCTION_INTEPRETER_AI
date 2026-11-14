@@ -366,8 +366,12 @@ def test_translate_all_names_rooms_and_writes_texts(plan):
     ]
     _write_ocr(raw_dir, items)
     (doc,) = translate_all(str(path), str(root))  # schema-validated inside
-    types = sorted(r["type"] for r in doc["rooms"] if r.get("status", "active") == "active")
-    assert types == ["balcony", "bedroom", "sauna"]
+    act = [r for r in doc["rooms"] if r.get("status", "active") == "active"]
+    assert sorted(r["type"] for r in act if r["provenance"]["extractor"] != "prior") == [
+        "balcony", "bedroom", "sauna",
+    ]  # fmt: skip
+    # none read: the kitchen and bathroom priors assume one each, without geometry
+    assert sorted(r["type"] for r in act if "assumed_prior" in r["flags"]) == ["bathroom", "kitchen"]
     assert {t["role"] for t in doc["texts"]} == {"room_label", "area"}
     assert all(t["provenance"]["extractor"] == "ocr" for t in doc["texts"])
     cov = {c["category"]: c for c in doc["coverage"]}

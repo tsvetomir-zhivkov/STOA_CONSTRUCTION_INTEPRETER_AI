@@ -71,12 +71,16 @@ def translate(path: str, data: str | None = None, part: str | None = None) -> di
 
 
 def translate_all(
-    path: str, data: str | None = None, cubicasa_params: dict | None = None, ocr_params: dict | None = None
+    path: str,
+    data: str | None = None,
+    cubicasa_params: dict | None = None,
+    ocr_params: dict | None = None,
+    fuse_params: dict | None = None,
 ) -> list[dict]:
     """Every document for one file: one per page, or one per storey for an IFC model. Validated.
 
-    cubicasa_params go to translator.extract.cubicasa.to_parts, ocr_params to translator.extract.ocr.fuse
-    (raster CubiCasa plans only).
+    Raster CubiCasa plans only: cubicasa_params go to translator.extract.cubicasa.to_parts, ocr_params to
+    translator.extract.ocr.fuse, fuse_params (priors, grid) to translator.fuse.fuse_raster.
     """
     from translator import router
     from translator.config import data_root
@@ -124,7 +128,7 @@ def translate_all(
         ],
         "history": [{"extractor": "router", "action": "route", "note": note}],
     }
-    docs = _run_extractor(doc, r, root, file_path, cubicasa_params, ocr_params)
+    docs = _run_extractor(doc, r, root, file_path, cubicasa_params, ocr_params, fuse_params)
     for d in docs:
         validate(d, where=f"{r['file']} {d['drawing'].get('part') or ''}".strip())
     return docs
@@ -141,6 +145,7 @@ def _run_extractor(
     file_path: Path,
     cubicasa_params: dict | None = None,
     ocr_params: dict | None = None,
+    fuse_params: dict | None = None,
 ) -> list[dict]:
     """Fill the document(s) from the extractor for this route, if one exists yet."""
     if r["route"] == "dxf":
@@ -188,7 +193,9 @@ def _run_extractor(
             return [doc]
         return out
     if r["route"] == "raster" and r.get("source") == "cubicasa5k":
-        # CubiCasa5K segmentation + OCR from their raw GPU results (modal_app.py); never calls the GPU
+        # CubiCasa5K segmentation + OCR from their raw GPU results (modal_app.py); never calls the GPU,
+        # then fusion, priors, scale and coverage (translator.fuse.fuse_raster)
+        from translator import fuse
         from translator.extract import cubicasa, ocr
 
         raw = cubicasa.load_raw(file_path.stem)
@@ -213,7 +220,7 @@ def _run_extractor(
             raw["height_px"],
         ):
             raise ValueError(f"{r['file']}: raw OCR size differs from the image")
-        ocr.fuse(doc, raw, ocr_raw, r["read_from"], **(ocr_params or {}))
+        fuse.fuse_raster(doc, raw, ocr_raw, r["read_from"], **(ocr_params or {}), **(fuse_params or {}))
         return [doc]
     return [doc]
 
