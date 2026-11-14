@@ -103,8 +103,15 @@ def _elements(docs, element):
     if element == "room":
         return _all(docs, "rooms")
     if element == "sanitary":
-        return _objects(docs, "toilet", "sink", "shower", "bathtub", "sanitary_other")
-    return _objects(docs, element)
+        return _objects(docs, "toilet", "sink", "shower", "bathtub") + _other(docs, "sanitary")
+    if element == "stair":
+        return _objects(docs, "stair")
+    return _other(docs, element)  # column, beam: no schema category, stored as other + subtype
+
+
+def _other(docs, subtype):
+    """Objects without their own schema category: category 'other', subtype = the IFC kind."""
+    return [o for o in _all(docs, "objects") if o.get("category") == "other" and o.get("subtype") == subtype]
 
 
 # ---------------------------------------------------------------- answer functions
@@ -177,14 +184,14 @@ def ifc_room_area(docs, m):
     return None
 
 
-def _level_sum(collection, field, category=None):
+def _level_sum(collection, field, subtype=None):
     def fn(docs, m):
         ids = _level_ids(docs, m.group(1))
         if not ids:
             return None
         items = _on_level(_all(docs, collection), ids)
-        if category:
-            items = [x for x in items if x.get("category") == category]
+        if subtype:
+            items = [x for x in items if x.get("category") == "other" and x.get("subtype") == subtype]
         if field == "area":
             return _sum(_area(x) for x in items)
         return _sum(x.get(field) for x in items)
@@ -446,7 +453,7 @@ INTENTS: list[Intent] = [
             r"nettovolumen af alle dæk og plader på " + Q + r" i m",
             r"Netto-Volumen aller Decken und Bodenplatten im Geschoss " + Q + r" in m",
         ),
-        _level_sum("objects", "net_volume_m3", category="slab"),
+        _level_sum("objects", "net_volume_m3", subtype="slab"),
     ),
     Intent(
         "ifc_count_level",
@@ -483,11 +490,19 @@ def classify(source: str, question: str):
     return None, None
 
 
-def answer(docs: list[dict], source: str, question: str):
-    """Return (intent_name or None, value or None)."""
+# Questions about the whole model may be asked on a rendered plan of one storey: those use every
+# document of the model that plan was read from (same drawing.read_from, drawing.file = the model).
+MODEL_WIDE = {"ifc_count_model"}
+
+
+def answer(docs: list[dict], source: str, question: str, related: list[dict] | None = None):
+    """Return (intent_name or None, value or None). related = documents sharing drawing.read_from."""
     intent, m = classify(source, question)
     if intent is None:
         return None, None
+    if intent.name in MODEL_WIDE and related:
+        model_docs = [d for d in related if d["drawing"]["file"] == d["drawing"]["read_from"]]
+        docs = model_docs or docs
     if not docs:
         return intent.name, None
     return intent.name, intent.answer(docs, m)

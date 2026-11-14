@@ -66,6 +66,10 @@ def is_correct(qtype: str, expected, got) -> bool:
 
 
 def score(questions: list[dict], index: dict, holdout: set[str], which: str = "dev") -> pd.DataFrame:
+    by_read_from: dict[str, list[dict]] = defaultdict(list)
+    for file_docs in index.values():
+        for d in file_docs:
+            by_read_from[d["drawing"]["read_from"]].append(d)
     rows = []
     for q in questions:
         path = q["path"]
@@ -77,7 +81,8 @@ def score(questions: list[dict], index: dict, holdout: set[str], which: str = "d
             rows.append(dict(q, source=source, intent="(text, not scored)", status="text", got=None))
             continue
         docs = index.get(path, [])
-        intent, got = probe.answer(docs, source, q["question"])
+        related = [d for rf in {d["drawing"]["read_from"] for d in docs} for d in by_read_from.get(rf, [])]
+        intent, got = probe.answer(docs, source, q["question"], related)
         if intent is None:
             status, intent = "no_template", "(no template)"
         elif not docs:

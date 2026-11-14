@@ -10,7 +10,7 @@ import argparse
 import json
 import sys
 
-from translator import translate
+from translator import translate_all
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -38,15 +38,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.write:
         for p in paths:
-            json.dump(translate(p, args.data), sys.stdout, ensure_ascii=False, indent=1)
-            print()
+            for doc in translate_all(p, args.data):
+                json.dump(doc, sys.stdout, ensure_ascii=False, indent=1)
+                print()
         return 0
 
     from translator.store import write_drawing
 
     for p in paths:
-        out = write_drawing(translate(p, args.data))
-        print(f"{p} -> {out}")
+        for doc in translate_all(p, args.data):
+            out = write_drawing(doc)
+            print(f"{p} -> {out}")
     return 0
 
 

@@ -50,12 +50,28 @@ def _page_image(r: dict, file_path: Path) -> tuple[dict | None, int | None, int 
     return None, None, None
 
 
-def translate(path: str, data: str | None = None) -> dict:
-    """Translate one drawing file into a schema v0.2 document (validated, not written).
+def translate(path: str, data: str | None = None, part: str | None = None) -> dict:
+    """Translate one drawing file into one schema v0.2 document (validated, not written).
 
-    Step 2: only the router runs. The document records drawing.route / read_from and
-    marks every category not_analysed; extractors (steps 3+) fill the rest.
+    Most files give one document. A file that gives several (an IFC model: one per storey) needs
+    part=<drawing.part>, or use translate_all(path).
     """
+    docs = translate_all(path, data)
+    if part is not None:
+        hits = [d for d in docs if d["drawing"].get("part") == part]
+        if not hits:
+            raise KeyError(f"{path}: no part {part!r}; parts are {[d['drawing'].get('part') for d in docs]}")
+        return hits[0]
+    if len(docs) > 1:
+        parts = [d["drawing"].get("part") for d in docs]
+        raise ValueError(
+            f"{path} gives {len(docs)} documents (parts {parts}); pass part= or use translate_all()"
+        )
+    return docs[0]
+
+
+def translate_all(path: str, data: str | None = None) -> list[dict]:
+    """Every document for one file: one per page, or one per storey for an IFC model. Validated."""
     from translator import router
     from translator.config import data_root
     from translator.store import validate
@@ -102,25 +118,61 @@ def translate(path: str, data: str | None = None) -> dict:
         ],
         "history": [{"extractor": "router", "action": "route", "note": note}],
     }
-    _run_extractor(doc, r, root, file_path)
-    validate(doc, where=r["file"])
-    return doc
+    docs = _run_extractor(doc, r, root, file_path)
+    for d in docs:
+        validate(d, where=f"{r['file']} {d['drawing'].get('part') or ''}".strip())
+    return docs
 
 
-def _run_extractor(doc: dict, r: dict, root: Path, file_path: Path) -> None:
-    """Fill the document from the extractor for this route, if one exists yet."""
+def _abs(root: Path, p: str) -> Path:
+    return Path(p) if Path(p).is_absolute() else root / p
+
+
+def _run_extractor(doc: dict, r: dict, root: Path, file_path: Path) -> list[dict]:
+    """Fill the document(s) from the extractor for this route, if one exists yet."""
     if r["route"] == "dxf":
         from translator.extract import swiss_dxf
 
-        dxf = root / r["read_from"] if not Path(r["read_from"]).is_absolute() else Path(r["read_from"])
+        dxf = _abs(root, r["read_from"])
         if not swiss_dxf.is_swiss_dxf(dxf):
-            return
+            return [doc]
         parts = swiss_dxf.extract(dxf, read_from=r["read_from"])
         doc["drawing"]["scale"] = parts.pop("scale")
         doc["history"].extend(parts.pop("history"))
         for key, value in parts.items():
             doc[key] = value
         _map_to_page(doc, file_path)
+        return [doc]
+    if r["route"] == "ifc":
+        import copy
+
+        from translator.extract import ifc
+
+        data = ifc.extract_records(_abs(root, r["read_from"]))
+        # a rendered plan of one storey gets that storey; the model itself gets every storey
+        level = r.get("level") if file_path.suffix.lower() != ".ifc" else None
+        out = []
+        for parts in ifc.documents(data, r["read_from"], level_name=level):
+            d = copy.deepcopy(doc)
+            part = parts.pop("part")
+            d["drawing"]["part"] = part if level is None else None
+            d["drawing"]["scale"] = {
+                "m_per_px": None,
+                "source": "vector_units",
+                "confidence": 1.0,
+                "note": f"IFC model units converted to metres ({data['schema']})",
+            }
+            d["history"].extend(parts.pop("history"))
+            for key, value in parts.items():
+                d[key] = value
+            out.append(d)
+        if not out:
+            doc["history"].append(
+                {"extractor": "ifc", "action": "skip", "note": f"no storey named {level!r}"}
+            )
+            return [doc]
+        return out
+    return [doc]
 
 
 def _map_to_page(doc: dict, file_path: Path) -> None:
