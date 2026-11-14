@@ -30,6 +30,7 @@ from pathlib import Path
 
 import networkx as nx
 
+from pipes.config import MEASURED_RECALL
 from pipes.tags import normalise
 
 STRUCTURAL = {"tee", "junction", "elbow", "cross", "open_end"}
@@ -224,6 +225,13 @@ class PipeIndex:
         types = dict(Counter(self.nodes[i]["type"] for i in ids))
         if set(types) == {"unknown"}:
             caveats.append("the detector is single-class: symbols are counted but not typed")
+        if any(
+            c.get("extractor_id") == "ext_det" for c in self.doc["coverage"] if c["category"] == "symbols"
+        ):
+            caveats.append(
+                f"symbols come from a detector that found about {MEASURED_RECALL:.0%} of the annotated symbols on "
+                "the test sheets: a count can be too low (it is not exhaustive)"
+            )
         return self._result(
             "count_symbols",
             {"count": len(ids), "by_type": types, "type_filter": type, "tag_filter": tag,
