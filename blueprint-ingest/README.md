@@ -4,7 +4,7 @@
 
 Entry-point **filter + vector extractor + schema mapper** for the Stoa blueprint pipeline (Node.js 22+, ESM). Fully deterministic and offline: no network calls, no model calls, same input -> same output.
 
-It decides, per file, whether a drawing can be read **deterministically as vector data** (IFC, DXF, SVG, text-rich PDF) or must go to the **existing vision agent** (photos, scans, scanned PDFs). Vector sources are turned into the project's JSON schema **v0.2** (`schema/blueprint.schema.json`, one document per page or per IFC storey).
+It decides, per file, whether a drawing can be read **deterministically as vector data** (IFC, DXF, SVG, text-rich PDF) or must go to the **existing vision agent** (photos, scans, scanned PDFs). Vector sources are turned into the building schema **v0.3** (`schema/building.schema.v0.3.json`; one document per IFC building or per drawing page). `--schema 0.2` still writes the previous drawing schema v0.2 (`schema/blueprint.schema.json`), identical to 0.2.2 output apart from timestamps and `translator_version`. The schema reference is [docs/schema-v0.3.md](../docs/schema-v0.3.md), and [docs/schema-v0.3-dependency-map.md](../docs/schema-v0.3-dependency-map.md) lists what reads and writes it.
 
 ## Architecture
 
@@ -51,7 +51,9 @@ node src/index.js sheet.pdf           --out out/sheet.json     # multi-page: out
 node src/index.js model.ifc --out out/building.json           # all levels, one building
 node src/index.js photo.jpg                                    # -> routed_to_vision_agent (nothing written)
 node src/index.js scan.pdf --file data/swiss_dwellings/scan.pdf --source swiss_dwellings  # set drawing.file / drawing.source explicitly
-node src/index.js --validate-only out/plan.json
+node src/index.js model.ifc --schema 0.2 --out out/plan.v02.json   # the previous schema, for comparison
+node src/index.js --validate-only out/plan.json                # v0.2 or v0.3 (from schema_version); v0.3 also checks every id reference
+node scripts/sync-schema.mjs                                   # copy the v0.3 schema + IFC discipline table to translator/schema/
 ```
 
 ```js
@@ -156,10 +158,40 @@ Two ways to connect your agent:
 
 Contract for the agent: write (or merge into) `outputJsonPath` following `schemaPath` (schema v0.2), set `drawing.route = "raster"` or `"vlm"`, give every entity `id` / `confidence` / `provenance: { extractor, source_ref }`, keep pixels of the original page image as source of truth, and if the file exists merge with `mergeDocuments()` from `src/mappers/merge.js` (supersede, never delete). Unchanged behaviour of this repo: it never builds that agent and never embeds the schema into data files.
 
+## Changes in 0.3.0 (schema v0.3)
+
+- **Schema v0.3**: a superset of v0.2, built in [docs/schema-v0.3.md](../docs/schema-v0.3.md). It adds `project` (application, declared units), `site`, `building`, `sources`, `element_types`, `materials`, `material_layer_sets`, `systems`, `schedules`, `relationships` and `statistics`. Every measured field has a `quantities` record (explicit, calculated, inferred or not available, with its method and source).
+- **One compatibility layer** (`src/schema/`):
+  - `v03.js` has the migration, quantity records, the relationship validator, schedules and statistics.
+  - `versions.js` picks the validator by `schema_version`.
+  - `lift.js` turns a bundle into v0.3.
+  - Writes pass the schema check **and** the reference check, or nothing is written.
+- **IFC** (`src/extractors/ifcSemantics.js`) reads:
+  - project and application metadata, and units with prefixes and conversion-based units (an undeclared unit is `inferred`, with the reason)
+  - quantities with their units, types and type psets
+  - materials and layer sets (thicknesses converted)
+  - systems, zones and groups
+  - space boundaries, coverings and room finishes, classifications
+  - aggregation, nesting and path connections, IfcMapConversion
+- **IFC elements**:
+  - Every class in `src/schema/ifcClasses.js` is read. The v0.2 count-only classes (slab, roof, covering, footing, plate, member), elements without a plan footprint (flag `no_plan_geometry`) and objects beyond the v0.2 cap are kept in v0.3.
+  - Products the extractor cannot read are named and counted in coverage `ifc_classes`.
+  - Explicit values win over geometry: `OverallWidth` and `OverallHeight`, wall `Width` / `Length`, space `NetFloorArea` / `NetVolume`, layer-set thickness. `storage/metres.js` never overwrites them.
+- **DXF** declares its length unit from `$INSUNITS`.
+- **Merge** handles the v0.3 collections. An existing v0.2 file is migrated in memory before a v0.3 merge, and a v0.3 file is never merged into as v0.2.
+
 ## Project layout
 
 ```
+<<<<<<< HEAD
 schema/blueprint.schema.json        frozen v0.2 migration contract; v0.3 lives in ../translator/schema/
+=======
+schema/building.schema.v0.3.json    the building schema v0.3 (default output), validated with Ajv 2020-12 + src/schema/v03.js reference check
+schema/blueprint.schema.json        the drawing schema v0.2 (--schema 0.2)
+src/schema/{v03,versions,lift,ifcClasses}.js   v0.2 <-> v0.3 layer, validators by version, bundle -> v0.3, IFC class tables
+src/extractors/ifcSemantics.js      IFC project / units / types / materials / systems / relations for v0.3
+scripts/sync-schema.mjs             copies the v0.3 schema + discipline table to translator/schema/ (--check in the tests)
+>>>>>>> 19fec63 (Phase 6: consumers read v0.3)
 src/index.js                        processBlueprint() + CLI
 src/classifier/blueprintClassifier.js
 src/extractors/{ifcExtractor,pdfExtractor,cadExtractor}.js  (+ ifc/stepParser.js, cad/dxfParser.js, cad/xml.js, pdfCommon.js, bundle.js, textRoles.js)
@@ -182,3 +214,6 @@ test/                               node:test, fixtures generated in code (no bi
 * SVG has no intrinsic real-world scale: without a `1:n` note `drawing.scale.m_per_px` is `null` and no metre value is reported. Arcs in paths are approximated by their end points.
 * PDF: scale from a `1:n` note assumes the page is at true print size (confidence 0.6, warning attached); verify with a dimension.
 * Binary DWG and binary DXF are rejected with a clear reason (convert to ASCII DXF or IFC).
+* v0.3, IFC: elements of classes outside `ifcClasses.js` are not read (they are named in coverage `ifc_classes`). Pset values have no declared unit and stay raw. IFC schedule objects are not read; schedules are derived from types or marks. `mark` is `IfcElement.Tag` as written (ArchiCAD writes an id there, not a schedule mark).
+* IFC, pre-existing (unchanged, so `--schema 0.2` stays identical): opening `properties.sill_height_m` / `head_height_m` include the site elevation when the storey elevations are relative to the building (esplanades: 14.3 m).
+* `resbim-388_model.ifc` (2.5 KB) has no plan elements, so no document is produced (as before).

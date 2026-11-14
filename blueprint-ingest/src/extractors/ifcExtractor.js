@@ -806,7 +806,7 @@ function elementV03(model, sem, reg, r, fp, keyAll) {
   const measures = quantityMeasures(rawQuantities, QUANTITY_FIELDS[bucket]);
 
   if (bucket === 'door' || bucket === 'window') {
-    const cls = r.ent.type.replace('IFC', 'Ifc');
+    const cls = r.ent.type;
     const w = Number(unwrap(r.ent.args[9])), h = Number(unwrap(r.ent.args[8]));
     if (Number.isFinite(w) && w > 0) measures.width_m = measure(round(w * lenM, 6), 'm', sem.units.length.status === 'explicit' ? 'explicit' : 'inferred', `${cls}.OverallWidth`, `${cls}.OverallWidth (${lenUnit})`, { value: w, unit: lenUnit });
     if (Number.isFinite(h) && h > 0) measures.height_m = measure(round(h * lenM, 6), 'm', sem.units.length.status === 'explicit' ? 'explicit' : 'inferred', `${cls}.OverallHeight`, `${cls}.OverallHeight (${lenUnit})`, { value: h, unit: lenUnit });

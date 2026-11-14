@@ -883,7 +883,8 @@ export class BlueprintScene {
       const keep = (list, kindKey) => list.filter((e) => {
         if (!isActive(e)) return true;
         s.match.elements++;
-        const el = e.provenance?.source_ref ? byGuid.get(e.provenance.source_ref) : null;
+        const gid = e.global_id ?? e.provenance?.source_ref; // v0.3 has global_id; v0.2 keeps the raw GUID in source_ref
+        const el = gid ? byGuid.get(gid) : null;
         if (el) { el.json = e; el.jsonSource = s; el.jsonKind = kindKey; s.match.withMesh++; return false; } // web-ifc draws it
         s.match.withoutMesh++;
         if (kindKey === 'rooms') s.match.roomsNoMesh++;
@@ -1083,7 +1084,7 @@ export class BlueprintScene {
     if (!e) return null;
     if (e.kind === 'ifc') return describeIfc(e.el, e.source, this.unitCheck);
     const u = e.meshes[0].userData;
-    const info = describe(u, e.model.kindOf(u.element), e.model.source?.doc?.drawing?.file, twinsOf(e.model.source, u.element), this.unitCheck);
+    const info = describe(u, e.model.kindOf(u.element), e.model.source?.doc?.drawing?.file, twinsOf(e.model.source, u.element), this.unitCheck, e.model.source?.doc);
     info.source = e.model.source?.name;
     info.geometry = 'JSON polygons, extruded (heights are conventions)';
     return info;
@@ -1477,11 +1478,56 @@ const num = (v) => (Number.isInteger(v) ? String(v) : String(Math.round(v * 1000
 /** top-level fields that are not measurements of the element */
 const NOT_SHOWN = new Set(['confidence']);
 
-/** every numeric field the element actually has (top level, then properties.*), never a null or a default */
+/**
+ * every numeric field the element actually has (top level, then properties.*), never a null or a default. Schema v0.3:
+ * each measured field says how it was obtained (explicit / calculated / inferred, with the method); an inferred value is
+ * shown in the assumption colour. IFC quantities not bound to a field are listed with their unit.
+ */
 function numericRows(el) {
   const rows = [];
-  for (const [k, v] of Object.entries(el)) if (typeof v === 'number' && Number.isFinite(v) && !NOT_SHOWN.has(k)) rows.push([k, num(v)]);
+  const q = el.quantities ?? {};
+  const how = (r) => (r ? ` — ${r.status.replace('_', ' ')}${r.method ? `: ${r.method}` : ''}` : '');
+  for (const [k, v] of Object.entries(el)) if (typeof v === 'number' && Number.isFinite(v) && !NOT_SHOWN.has(k)) rows.push([k, `${num(v)}${how(q[k])}`, q[k]?.status === 'inferred' ? 'assumed' : null]);
   for (const [k, v] of Object.entries(el.properties ?? {})) if (typeof v === 'number' && Number.isFinite(v)) rows.push([`properties.${k}`, num(v)]);
+  for (const [k, r] of Object.entries(q)) {
+    if (k in el || r.value == null) continue;
+    rows.push([`quantity ${k}`, `${num(r.value)} ${r.unit ?? ''}${r.raw && r.raw.unit && r.raw.value !== r.value ? ` (file: ${num(r.raw.value)} ${r.raw.unit})` : ''} — ${r.status.replace('_', ' ')}`.trim(), r.status === 'inferred' ? 'assumed' : null]);
+  }
+  return rows;
+}
+
+const v03Index = new WeakMap();
+/** id -> element over the v0.3 collections of a document (cached per document) */
+function v03ById(doc) {
+  if (v03Index.has(doc)) return v03Index.get(doc);
+  const m = new Map();
+  for (const k of ['element_types', 'materials', 'material_layer_sets', 'systems', 'walls', 'objects', 'rooms', 'openings']) for (const e of asArray(doc[k])) m.set(e.id, e);
+  v03Index.set(doc, m);
+  return m;
+}
+
+/** schema v0.3 rows: class, type, mark, materials and layers, systems, finishes, the file's declared units. Only what the file holds. */
+function v03Rows(el, doc) {
+  if (!doc || doc.schema_version !== '0.3') return [];
+  const rows = [];
+  const push = (k, v, t = null) => { if (v !== null && v !== undefined && v !== '') rows.push([k, String(v), t]); };
+  const by = v03ById(doc);
+  push('ifc_class', el.ifc_class);
+  push('GlobalId', el.global_id);
+  const t = el.type_id ? by.get(el.type_id) : null;
+  if (t) push('type', `${[t.name, t.predefined_type, t.ifc_class].filter(Boolean).join(' · ')} (${asArray(t.instance_ids).length} instances)`);
+  push('mark', el.mark);
+  push('operation', el.operation);
+  const set = el.material_layer_set_id ? by.get(el.material_layer_set_id) : null;
+  if (set) {
+    const parts = asArray(set.layers).map((l) => `${by.get(l.material_id)?.name ?? 'unnamed'}${Number.isFinite(l.thickness_m) ? ` ${num(l.thickness_m)} m` : ''}`);
+    push(set.kind === 'layer_set' ? 'material layers' : `materials (${String(set.kind).replace('_', ' ')})`, `${parts.join(' + ')}${Number.isFinite(set.total_thickness_m) ? ` = ${num(set.total_thickness_m)} m` : ''}`);
+  } else if (asArray(el.material_ids).length) push('materials', el.material_ids.map((m) => by.get(m)?.name ?? m).join(', '));
+  if (asArray(el.system_ids).length) push('systems', el.system_ids.map((sid) => { const sy = by.get(sid); return sy ? `${sy.name ?? sid} (${sy.kind})` : sid; }).join(', '));
+  for (const [k, f] of Object.entries(el.finishes ?? {})) if (f) push(`finish ${k}`, f.status === 'not_available' ? 'not in the file' : `${f.value} (${f.source})`);
+  if (asArray(el.boundary_element_ids).length) push('bounded by', `${el.boundary_element_ids.length} elements (space boundaries)`);
+  const u = doc.project?.units;
+  if (u) push('file units', ['length', 'area', 'volume'].map((k) => `${k} ${u[k]?.unit ?? 'not declared'}${u[k]?.status && u[k].status !== 'explicit' ? ` (${u[k].status.replace('_', ' ')})` : ''}`).join(', '), ['length', 'area', 'volume'].some((k) => u[k]?.status === 'inferred') ? 'assumed' : null);
   return rows;
 }
 
@@ -1515,7 +1561,7 @@ function psetRows(psets, unitCheck = []) {
   return rows;
 }
 
-function describe(u, kindKey, file, twins = [], unitCheck = []) {
+function describe(u, kindKey, file, twins = [], unitCheck = [], doc = null) {
   const el = u.element;
   const rows = [];
   const notes = [];
@@ -1559,7 +1605,8 @@ function describe(u, kindKey, file, twins = [], unitCheck = []) {
   }
   rows.push(...numericRows(el));
   layer();
-  if (el.properties?.ifc_type) { push('ifc_type', el.properties.ifc_type); push('GlobalId', el.provenance?.source_ref); }
+  if (el.properties?.ifc_type && !el.ifc_class) { push('ifc_type', el.properties.ifc_type); push('GlobalId', el.provenance?.source_ref); }
+  rows.push(...v03Rows(el, doc));
   rows.push(...provenanceRows(el));
   if (el.properties?.psets) rows.push(...psetRows(el.properties.psets, unitCheck));
 
@@ -1605,7 +1652,7 @@ function describeIfc(el, src, unitCheck = []) {
   if (j) { push('id', j.id); push('kind', el.jsonKind?.replace(/s$/, '')); push('type', j.type); push('category', j.category); push('opening kind', j.kind); }
   push('ifc_type', el.ifcType); push('GlobalId', el.globalId); push('expressID', el.expressID); push('name', el.name); push('object type', el.objectType);
   push('measured size (x × y × z)', `${num(el.dims.x)} × ${num(el.dims.z)} × ${num(el.dims.y)} m (from the real geometry)`);
-  if (j) { rows.push(...numericRows(j)); rows.push(...provenanceRows(j)); if (j.properties?.psets) rows.push(...psetRows(j.properties.psets, unitCheck)); }
+  if (j) { rows.push(...numericRows(j)); rows.push(...v03Rows(j, el.jsonSource?.doc).filter(([k]) => k !== 'ifc_class' && k !== 'GlobalId')); rows.push(...provenanceRows(j)); if (j.properties?.psets) rows.push(...psetRows(j.properties.psets, unitCheck)); }
   const notes = ['geometry: real 3D solid read with web-ifc; nothing vertical is assumed'];
   if (!j) notes.push('not in any loaded drawing JSON: no confidence, flags or coverage for it (load the matching JSON to add its meaning)');
   return {

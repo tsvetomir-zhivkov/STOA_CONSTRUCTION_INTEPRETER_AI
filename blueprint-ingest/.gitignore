@@ -6,5 +6,6 @@ bsc/
 ko/
 out3/
 out/samples/
+out/samples-v0.2/
 out/clinic.*.json
 reports/

@@ -23,6 +23,17 @@ Geometry comes from two sources, and both end up in one scene.
 - web-ifc already returns **Y-up** geometry, so the IFC group is *not* rotated. A −90° rotation would lay the building on its side.
 - The scene origin is fixed by the first file loaded. Georeferenced models (esplanades sits 538 km east and 6 591 km north) keep full precision, because every vertex is shifted in double precision before it becomes float32.
 
+**Schema versions.** v0.2 and v0.3 files both load: v0.3 is a superset ([docs/schema-v0.3.md](../docs/schema-v0.3.md)).
+
+- The GlobalId link uses `global_id` when the file has it, else `provenance.source_ref`.
+- Elements without plan geometry (`polygon_px: null`, flag `no_plan_geometry`) are counted but not drawn.
+- For a v0.3 file, the inspector also shows:
+  - `ifc_class` and the type (name, predefined type, instance count)
+  - `mark` and `operation`
+  - the material layers with their thicknesses, the systems and the room finishes
+  - the file's declared units
+  - for every measured value, how it was obtained (explicit, calculated or inferred, with the method). An inferred value is shown in the assumption colour.
+
 **Levels.** Each storey sits at its `elevation_m`. JSON levels and IFC storeys with the same name merge into one level, so nothing is stacked twice. A file without an elevation goes to 0 m, and the Levels panel says so.
 
 ## Setup and run
