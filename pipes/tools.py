@@ -326,12 +326,8 @@ class PipeIndex:
 # ---------------------------------------------------------------- CLI
 
 
-def main(argv: list[str] | None = None) -> int:
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
-    ap = argparse.ArgumentParser(prog="python -m pipes.tools", description=__doc__)
-    ap.add_argument("pipe_json")
-    sub = ap.add_subparsers(dest="tool", required=True)
+def add_tool_args(sub) -> None:
+    """The tool sub-commands, shared with pipes.demo."""
     c = sub.add_parser("count_symbols")
     c.add_argument("--region", nargs=4, type=float, metavar=("X0", "Y0", "X1", "Y1"))
     c.add_argument("--type")
@@ -342,15 +338,26 @@ def main(argv: list[str] | None = None) -> int:
     ln = sub.add_parser("pipe_length")
     ln.add_argument("--edge")
     ln.add_argument("--tag")
+
+
+def call(idx: PipeIndex, a: argparse.Namespace) -> dict:
+    if a.tool == "count_symbols":
+        return idx.count_symbols(a.region, a.type)
+    if a.tool == "connected_to":
+        return idx.connected_to(a.node)
+    if a.tool == "path_between":
+        return idx.path_between(a.a, a.b)
+    return idx.pipe_length(a.edge, a.tag)
+
+
+def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    ap = argparse.ArgumentParser(prog="python -m pipes.tools", description=__doc__)
+    ap.add_argument("pipe_json")
+    add_tool_args(ap.add_subparsers(dest="tool", required=True))
     a = ap.parse_args(argv)
-    idx = PipeIndex.load(a.pipe_json)
-    res = {
-        "count_symbols": lambda: idx.count_symbols(a.region, a.type) if a.tool == "count_symbols" else None,
-        "connected_to": lambda: idx.connected_to(a.node) if a.tool == "connected_to" else None,
-        "path_between": lambda: idx.path_between(a.a, a.b) if a.tool == "path_between" else None,
-        "pipe_length": lambda: idx.pipe_length(a.edge, a.tag) if a.tool == "pipe_length" else None,
-    }[a.tool]()
-    print(json.dumps(res, indent=1, ensure_ascii=False))
+    print(json.dumps(call(PipeIndex.load(a.pipe_json), a), indent=1, ensure_ascii=False))
     return 0
 
 
