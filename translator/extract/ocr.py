@@ -31,7 +31,7 @@ from translator import glossary
 
 EXTRACTOR = "ocr"
 RAW_DIR_NAME = "ocr"
-LANG = "fi"  # PaddleOCR Latin-script recogniser (keeps ä/ö/å); never the English model
+LANG = "latin_PP-OCRv3_mobile_rec"  # PaddleOCR Latin-script recogniser (keeps ä/ö/å); never English
 
 MIRROR_CONF_MARGIN = 0.05  # equal glossary hits: the flipped reading must be this much more confident
 LABEL_ONLY_CONF = 0.3  # confidence factor for a room made from a label that lies in no region

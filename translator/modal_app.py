@@ -69,8 +69,12 @@ image = (
 PADDLE_INDEX = "https://www.paddlepaddle.org.cn/packages/stable/cu118/"
 OCR_PIP = ["paddleocr==3.0.3"]
 OCR_DEPS = ["paddlex[ocr]==3.0.3", "PyYAML>=6", "typing-extensions>=4.12"]
+# PaddleOCR 3.0.3 has no "fi" in its Latin language list (lang="fi" raises "No models are available"), so the
+# models are named: the Latin-script recogniser (keeps ä/ö/å; never the English model) and the
+# language-independent PP-OCRv5 server text detector.
 OCR_KW = {
-    "lang": "fi",  # Latin-script recogniser: keeps ä/ö/å (the English model drops them)
+    "text_detection_model_name": "PP-OCRv5_server_det",
+    "text_recognition_model_name": "latin_PP-OCRv3_mobile_rec",
     "use_doc_orientation_classify": False,
     "use_doc_unwarping": False,
     "use_textline_orientation": True,  # labels drawn upside down / rotated
@@ -84,10 +88,7 @@ ocr_image = (
     .run_commands("pip freeze > /pip-freeze.txt")
     .env({"PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK": "True"})
     # download the models at build time, so containers start without network fetches
-    .run_commands(
-        "python -c \"from paddleocr import PaddleOCR; PaddleOCR(device='cpu', lang='fi', "
-        'use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=True)"'
-    )
+    .run_commands(f"python -c \"from paddleocr import PaddleOCR; PaddleOCR(device='cpu', **{OCR_KW!r})\"")
     .add_local_python_source("translator")
 )
 
@@ -221,7 +222,8 @@ class Ocr:
             "python": sys.version.split()[0],
             "params": OCR_KW,
             "models": names,
-            "rec_model": next((n for n in names if n.endswith("_rec")), OCR_KW["lang"]),
+            "rec_model": OCR_KW["text_recognition_model_name"],
+            "det_model": OCR_KW["text_detection_model_name"],
         }
         print("PaddleOCR loaded:", self.info)
 
