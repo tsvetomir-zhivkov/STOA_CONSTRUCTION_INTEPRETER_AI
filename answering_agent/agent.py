@@ -24,7 +24,7 @@ from tools import (
 
 load_dotenv()
 
-MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-4-hydrogen")
 SYSTEM_INSTRUCTION = """You are a construction drawing assistant for engineers.
 Use deterministic tools for drawing facts, counts, measurements, and geometry.
 The drawing index uses schema v0.2; ignore superseded entities.
@@ -47,7 +47,10 @@ COVERAGE AND GAP DETECTION:
 - For a verified absence, cite the coverage reference rather than making up
   an entity ID. Do not confuse lack of evidence with evidence of absence.
 - Do not infer room access from touching polygons.
-
+ASSUMED VALUES:
+- If a tool marks an entity as assumed_prior, disclose that its information is assumed, not verified from the drawing.
+- For counts and measurements, disclose if any contributing entities are assumed.
+- Never present assumed information as a confirmed fact.
 RESPONSE STYLE:
 - Answer directly, naturally, and concisely; 1-3 sentences for simple questions.
 - Do not expose JSON keys, coordinates, raw provenance, or tool implementation.
@@ -79,6 +82,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
     def query_entities_tool(collection: str, field: str = "", value: str = "", limit: int = 50) -> dict:
         """Search active drawing entities. Collections: levels, units, rooms, walls,
         openings, objects, texts, edges. Optional exact-match field/value filter.
+        Results include ALL flags, assumption flags, and coverage notes.
         Use room 'type' (e.g. bedroom, living, wc, entry), opening 'kind'
         (door, window, doorway), or object 'category'.
         """
@@ -95,6 +99,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         Operations: count, sum, min, max, average. For numeric operations,
         choose a measurement such as area_m2, width_m, height_m or length_m.
         Missing numeric values are excluded and reported separately.
+        Results list flagged contributors; assumed entities are NOT verified facts.
         """
         return aggregate(drawing_data, collection, operation, measure, field, value)
 
@@ -117,6 +122,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         fireplace, stairs, text. Region is an optional pixel bounding box
         [left, top, right, bottom]; omit for the whole page. Only
         absence_verified=true allows a negative claim about that scope.
+        Read coverage_notes and partial_coverage_notes before answering.
         """
         return check_coverage(drawing_data, category, region)
 
@@ -126,6 +132,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         region. Supply supporting entity IDs if available. Returns
         supported_entities, verified_absence, or gap. A gap means further
         extraction is needed; no image fallback is currently available.
+        Returned entity evidence can itself be flagged as assumed.
         """
         return detect_gap(drawing_data, category, entity_ids, region)
 
@@ -147,7 +154,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
             automatic_function_calling=types.AutomaticFunctionCallingConfig(
                 maximum_remote_calls=12,
             ),
-            thinking_config=types.ThinkingConfig(thinking_level="MEDIUM"),
+            thinking_config=types.ThinkingConfig(thinking_level="LOW"),
             temperature=0,
         ),
     )
