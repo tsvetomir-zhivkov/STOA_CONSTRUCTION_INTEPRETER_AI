@@ -18,18 +18,35 @@ def _active(item: dict) -> bool:
     return item.get("status", "active") == "active"
 
 
+def _assumed_prior(item: dict) -> bool:
+    """Only the assumed_prior flag affects the answer. Ignore other flags."""
+    flags = item.get("flags") or []
+    return isinstance(flags, list) and "assumed_prior" in flags
+
+
+def _assumed_ids(items: list[dict]) -> list[str]:
+    return [item["id"] for item in items if _assumed_prior(item)]
+
+
 def _brief(item: dict, collection: str) -> dict:
-    fields = ("id", "name", "label", "number", "type", "kind", "category", "room_id", "room_ids", "unit_id", "level_id", "area_m2", "width_m", "confidence", "flags")
+    """Return short entity facts; omit polygons, provenance and unrelated flags."""
+    fields = ("id", "name", "label", "number", "type", "kind", "category", "room_id", "room_ids", "unit_id", "level_id", "area_m2", "width_m", "confidence")
     out = {k: item[k] for k in fields if k in item}
     out["collection"] = collection
-    out["provenance"] = item.get("provenance")
+    if _assumed_prior(item):
+        out["assumed_prior"] = True
     return out
 
 
 def _coverage(data: dict, category: str) -> dict:
     """Page-wide coverage only; partial regional coverage is not proof of absence."""
     matches = [c for c in data.get("coverage", []) if c.get("region") == "page" and c.get("category") == category]
-    return {"records": matches, "absence_verified": bool(matches) and any(c.get("status") == "analysed" and c.get("confidence", 0) >= 0.8 for c in matches) and not any(c.get("status") != "analysed" for c in matches)}
+    verified = (bool(matches)
+                and any(c.get("status") == "analysed" and c.get("confidence", 0) >= 0.8 for c in matches)
+                and not any(c.get("status") != "analysed" for c in matches))
+    # Keep relevant partial-coverage notes, but omit repeated full records.
+    records = [{k: c[k] for k in ("status", "note") if k in c} for c in matches]
+    return {"records": records, "absence_verified": verified}
 
 
 def query_entities(data: dict, collection: str, field: str = "", value: str = "", limit: int = 50) -> dict:
@@ -43,7 +60,7 @@ def query_entities(data: dict, collection: str, field: str = "", value: str = ""
         items = [x for x in items if str(x.get(field, "")).casefold() == str(value).casefold()]
     limit = max(1, min(int(limit), 100))
     category = {"rooms": "rooms", "walls": "walls", "openings": "doors" if field == "kind" and value == "door" else "windows" if field == "kind" and value == "window" else "openings", "objects": "fixtures", "texts": "text"}.get(collection, collection)
-    return {"matches": [_brief(x, collection) for x in items[:limit]], "match_count": len(items), "truncated": len(items) > limit, "coverage": _coverage(data, category), "note": "A zero match count is not proof that the feature is absent unless relevant coverage establishes it."}
+    return {"matches": [_brief(x, collection) for x in items[:limit]], "match_count": len(items), "truncated": len(items) > limit, "coverage": _coverage(data, category)}
 
 
 def get_entity(data: dict, entity_id: str) -> dict:
@@ -65,14 +82,15 @@ def aggregate(data: dict, collection: str, operation: str, measure: str = "area_
         return {"error": "Unsupported filter"}
     items = [x for x in data.get(collection, []) if _active(x) and (not field or str(x.get(field, "")).casefold() == str(value).casefold())]
     if operation == "count":
-        return {"result": len(items), "entity_ids": [x["id"] for x in items], "coverage": _coverage(data, collection)}
+        return {"result": len(items), "entity_ids": [x["id"] for x in items], "assumed_prior_ids": _assumed_ids(items), "coverage": _coverage(data, collection)}
     known = [(x["id"], x.get(measure)) for x in items if isinstance(x.get(measure), (int, float)) and not isinstance(x.get(measure), bool) and isfinite(x[measure])]
     unknown = [x["id"] for x in items if x["id"] not in {i for i, _ in known}]
     if not known:
-        return {"result": None, "error": "No numeric values available", "missing_entity_ids": unknown}
+        return {"result": None, "error": "No numeric values available", "missing_entity_ids": unknown, "assumed_prior_ids": _assumed_ids(items)}
     values = [v for _, v in known]
     result = {"sum": sum(values), "min": min(values), "max": max(values), "average": sum(values) / len(values)}[operation]
-    return {"result": result, "measure": measure, "operation": operation, "entity_ids": [i for i, _ in known], "missing_entity_ids": unknown, "complete_for_indexed_matches": not unknown, "note": "Missing measurements are excluded, not treated as zero."}
+    contributing_ids = {i for i, _ in known}
+    return {"result": result, "measure": measure, "operation": operation, "entity_ids": [i for i, _ in known], "assumed_prior_ids": _assumed_ids([x for x in items if x["id"] in contributing_ids]), "missing_entity_ids": unknown, "complete_for_indexed_matches": not unknown, "note": "Missing measurements are excluded, not treated as zero."}
 
 
 def _polygon(item: dict):
@@ -111,7 +129,7 @@ def geometry_operation(data: dict, first_id: str, second_id: str, operation: str
         result = pa.distance(pb)
     else:
         result = getattr(pa, operation)(pb)
-    return {"operation": operation, "result": result, "unit": ua if operation == "distance" else None, "entity_ids": [first_id, second_id], "note": "Polygon distance is boundary-to-boundary; touching polygons do not necessarily have a doorway."}
+    return {"operation": operation, "result": result, "unit": ua if operation == "distance" else None, "entity_ids": [first_id, second_id], "assumed_prior_ids": _assumed_ids([a, b]), "note": "Polygon distance is boundary-to-boundary; touching polygons do not necessarily have a doorway."}
 
 
 def connected_rooms(data: dict, room_id: str, kind: str = "door") -> dict:
@@ -119,7 +137,9 @@ def connected_rooms(data: dict, room_id: str, kind: str = "door") -> dict:
     if kind not in ("door", "doorway", "window"):
         return {"error": "kind must be door, doorway or window"}
     openings = [o for o in data.get("openings", []) if _active(o) and o.get("kind") == kind and room_id in (o.get("room_ids") or [])]
-    return {"room_id": room_id, "kind": kind, "connections": [{"opening_id": o["id"], "room_ids": [r for r in o.get("room_ids", []) if r != room_id]} for o in openings], "note": "Only explicitly indexed opening-room relationships are returned; absence is not proof of no connection.", "coverage": _coverage(data, "doors" if kind == "door" else "windows" if kind == "window" else "openings")}
+    referenced_room_ids = {room_id} | {rid for o in openings for rid in (o.get("room_ids") or [])}
+    rooms = [r for r in data.get("rooms", []) if _active(r) and r.get("id") in referenced_room_ids]
+    return {"room_id": room_id, "kind": kind, "connections": [{"opening_id": o["id"], "room_ids": [r for r in o.get("room_ids", []) if r != room_id]} for o in openings], "assumed_prior_ids": _assumed_ids(rooms + openings), "note": "Only explicitly indexed opening-room relationships are returned; absence is not proof of no connection.", "coverage": _coverage(data, "doors" if kind == "door" else "windows" if kind == "window" else "openings")}
 
 
 def query_rooms(data: dict, room_type: str, operation: str) -> dict:
@@ -190,7 +210,7 @@ def check_coverage(data: dict, category: str, region: list[float] | None = None)
         "status": "analysed" if verified else "gap",
         "absence_verified": verified,
         "coverage_references": [f"coverage[{i}]" for i, _ in matches],
-        "coverage_records": [dict(index=i, **rec) for i, rec in matches],
+        "coverage_records": [{"index": i, **{k: rec[k] for k in ("status", "note", "confidence") if k in rec}} for i, rec in matches],
         "reason": ("Relevant area and category reliably analysed" if verified else
                    "No complete, reliable, non-conflicting coverage for this category and region"),
     }
@@ -221,6 +241,7 @@ def detect_gap(data: dict, category: str, entity_ids: list[str] | None = None,
     return {
         "outcome": outcome, "needs_fallback": outcome == "gap",
         "valid_entity_ids": valid, "invalid_entity_ids": invalid,
+        "assumed_prior_ids": _assumed_ids([get_entity(data, i)["entity"] for i in valid]),
         "coverage": coverage,
         "note": ("Entity citations establish that indexed entities exist, not that a claim "
                  "about them is correct. Validate measurements and relations using tools."),

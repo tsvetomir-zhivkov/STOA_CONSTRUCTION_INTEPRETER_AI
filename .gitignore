@@ -10,3 +10,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.tmp
+uv.lock
+.python-version
+#schema and example json file
+drawing.schema.json
+sample_drawing.json
