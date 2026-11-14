@@ -52,8 +52,15 @@ def train(
 
 
 @app.function(image=image, gpu="T4", volumes={"/data": vol}, timeout=1800, scaledown_window=60)
-def detect(sheets: dict[str, bytes], conf: float = 0.25, run: str = "dev") -> dict:
-    """Tiled inference on whole sheets. Returns raw per-tile boxes in ORIGINAL page pixels (no merging)."""
+def detect(
+    sheets: dict[str, bytes],
+    conf: float = 0.25,
+    run: str = "dev",
+    whole_imgsz: int = 1280,
+    tile_imgsz: int = 640,
+) -> dict:
+    """Two passes per sheet, raw boxes in ORIGINAL page pixels (no merging): 640 px tiles (pass=tile) and the
+    whole sheet at imgsz=whole_imgsz (pass=whole, 0 = skip), which sees big equipment the tiles cut."""
     import io
     import time
 
@@ -73,39 +80,66 @@ def detect(sheets: dict[str, bytes], conf: float = 0.25, run: str = "dev") -> di
         for y0 in origins(H):
             for x0 in origins(W):
                 tile = im.crop((x0, y0, x0 + w, y0 + h))
-                r = model.predict(tile, imgsz=TILE, conf=conf, verbose=False)[0]
+                r = model.predict(tile, imgsz=tile_imgsz, conf=conf, verbose=False)[0]
                 for (a, b, c, d), s in zip(r.boxes.xyxy.tolist(), r.boxes.conf.tolist(), strict=True):
-                    dets.append({"bbox_px": [a + x0, b + y0, c + x0, d + y0], "score": s, "tile": [x0, y0]})
-        out[sid] = {"width": W, "height": H, "dets": dets}
+                    dets.append(
+                        {
+                            "bbox_px": [a + x0, b + y0, c + x0, d + y0],
+                            "score": s,
+                            "tile": [x0, y0],
+                            "pass": "tile",
+                        }
+                    )
+        if whole_imgsz:
+            r = model.predict(im, imgsz=whole_imgsz, conf=conf, verbose=False)[0]
+            for (a, b, c, d), s in zip(r.boxes.xyxy.tolist(), r.boxes.conf.tolist(), strict=True):
+                dets.append({"bbox_px": [a, b, c, d], "score": s, "tile": None, "pass": "whole"})
+        out[sid] = {"width": W, "height": H, "dets": dets, "whole_imgsz": whole_imgsz}
     secs = time.time() - t0
     return {"sheets": out, "seconds": secs, "cost_usd": secs * T4_USD_PER_S}
 
 
 @app.local_entrypoint()
 def train_main(
-    epochs: int = 40, model: str = "yolo11s.pt", data: str = "yolo_dev", name: str = "dev", patience: int = 15
+    epochs: int = 40,
+    model: str = "yolo11s.pt",
+    data: str = "yolo_dev",
+    name: str = "dev",
+    patience: int = 15,
+    imgsz: int = 640,
+    batch: int = 16,
 ):
     import json
 
-    print(json.dumps(train.remote(epochs=epochs, model=model, data=data, name=name, patience=patience)))
+    print(
+        json.dumps(
+            train.remote(
+                epochs=epochs, model=model, data=data, name=name, patience=patience, imgsz=imgsz, batch=batch
+            )
+        )
+    )
 
 
 @app.local_entrypoint()
-def detect_main(split: str = "test", conf: float = 0.05, run: str = "dev"):
-    """Detect on data_pipes/dev/<split>; raw tile detections -> index_pipes/_raw/dev_<split>/<id>.det.json."""
+def detect_main(
+    root: str = "data_pipes/ds/test",
+    conf: float = 0.05,
+    run: str = "dev",
+    whole_imgsz: int = 1280,
+    tile_imgsz: int = 640,
+):
+    """Detect on every <root>/<id>/sheet.jpg (root relative to pipes/); raw -> index_pipes/_raw/<set>_<run>/."""
     import json
     from pathlib import Path
 
     here = Path(__file__).parent
-    sheets = {
-        p.name: (p / "sheet.jpg").read_bytes()
-        for p in sorted((here / "data_pipes/dev" / split).iterdir())
-        if p.is_dir()
-    }
-    res = detect.remote(sheets, conf, run)
-    raw = here / "index_pipes" / "_raw" / (f"dev_{split}" if run == "dev" else f"dev_{split}_{run}")
+    base = here / root
+    sheets = {p.name: (p / "sheet.jpg").read_bytes() for p in sorted(base.iterdir()) if p.is_dir()}
+    res = detect.remote(sheets, conf, run, whole_imgsz, tile_imgsz)
+    raw = here / "index_pipes" / "_raw" / f"{base.parent.name}_{base.name}_{run}"
     raw.mkdir(parents=True, exist_ok=True)
     for sid, d in res["sheets"].items():
         d["model"] = f"yolo11s single-class symbol, run {run}"
+        d["cost_usd"] = res["cost_usd"] / len(sheets)
         (raw / f"{sid}.det.json").write_text(json.dumps(d), encoding="utf-8")
     print(f"{len(sheets)} sheets, {res['seconds']:.1f} s GPU, ${res['cost_usd']:.4f}; raw in {raw}")

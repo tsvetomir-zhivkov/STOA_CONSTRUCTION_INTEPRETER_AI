@@ -33,16 +33,39 @@ def contained(a, b, frac: float = 0.8) -> bool:
     return area > 0 and ix * iy / area >= frac
 
 
-def merge(dets: list[dict], conf: float = DEFAULT_CONF, iou_thr: float = MERGE_IOU) -> list[dict]:
-    """Greedy NMS over the tile detections, highest score first; clipped duplicates are absorbed."""
+def area(b) -> float:
+    return max(b[2] - b[0], 0) * max(b[3] - b[1], 0)
+
+
+def merge(
+    dets: list[dict],
+    conf: float = DEFAULT_CONF,
+    iou_thr: float = MERGE_IOU,
+    passes: tuple[str, ...] | None = None,
+) -> list[dict]:
+    """Greedy NMS over raw detections (tile and/or whole-sheet pass), highest score first.
+
+    A box is dropped when it overlaps a kept box (IoU) or is mostly inside one (clipped tile fragment). A larger
+    box that mostly contains kept boxes of similar confidence REPLACES them: a whole-sheet box of a big machine
+    wins over the fragments the 640 px tiles cut it into.
+    """
     keep: list[dict] = []
-    for d in sorted((d for d in dets if d["score"] >= conf), key=lambda d: -d["score"]):
-        if any(
-            iou(d["bbox_px"], k["bbox_px"]) > iou_thr or contained(d["bbox_px"], k["bbox_px"]) for k in keep
-        ):
+    pool = (d for d in dets if d["score"] >= conf and (passes is None or d.get("pass", "tile") in passes))
+    for d in sorted(pool, key=lambda d: -d["score"]):
+        b = d["bbox_px"]
+        if any(iou(b, k["bbox_px"]) > iou_thr or contained(b, k["bbox_px"]) for k in keep):
             continue
         keep.append(d)
-    return keep
+    # replacement pass: big boxes that contain kept boxes (>= 2x area) take over when nearly as confident
+    out = []
+    for k in keep:
+        inner = [
+            o for o in keep
+            if o is not k and area(o["bbox_px"]) * 2 <= area(k["bbox_px"]) and contained(o["bbox_px"], k["bbox_px"])
+        ]  # fmt: skip
+        out.append((k, inner))
+    dropped = {id(o) for k, inner in out for o in inner if k["score"] >= 0.6 * o["score"]}
+    return [k for k in keep if id(k) not in dropped]
 
 
 def pred_document(sid: str, split: str, raw: dict, conf: float = DEFAULT_CONF) -> dict:

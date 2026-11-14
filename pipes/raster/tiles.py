@@ -52,6 +52,7 @@ def build_yolo_dataset(
     splits=("train", "val"),
     augment: int = 0,
     yaml_path: str = "/data/yolo_dev",
+    whole: bool = False,
 ) -> dict:
     """dev/<split>/<id>/{sheet.jpg,yolo.txt} -> out/{images,labels}/<split>/<id>_<x>_<y>.{jpg,txt} + yaml."""
     rng = random.Random(seed)
@@ -68,6 +69,21 @@ def build_yolo_dataset(
             im = Image.open(d / "sheet.jpg").convert("RGB")
             W, H = im.size
             boxes = read_boxes(d / "yolo.txt")
+            if whole and boxes:  # the whole sheet too (trained at a larger imgsz), plus augmented copies
+                extra = variants(im, boxes, augment, rng) if sp == "train" and augment else []
+                for name, wim, wbx in [("whole", im, boxes), *extra]:
+                    ww, wh = wim.size
+                    stem = d.name + ("_whole" if name == "whole" else f"_whole_{name}")
+                    wim.save(out / "images" / sp / f"{stem}.jpg", quality=95)
+                    (out / "labels" / sp / f"{stem}.txt").write_text(
+                        "".join(
+                            f"0 {(b[0] + b[2]) / 2 / ww:.6f} {(b[1] + b[3]) / 2 / wh:.6f} "
+                            f"{(b[2] - b[0]) / ww:.6f} {(b[3] - b[1]) / wh:.6f}\n"
+                            for b in wbx
+                        )
+                    )
+                    n_tiles += 1
+                    n_boxes += len(wbx)
             for y0 in origins(H):
                 for x0 in origins(W):
                     w, h = min(TILE, W), min(TILE, H)
@@ -100,6 +116,6 @@ def build_yolo_dataset(
                             n_boxes += len(abx)
         stats[sp] = {"tiles": n_tiles, "boxes": n_boxes}
     (out / "pipes.yaml").write_text(
-        "path: /data/yolo_dev\ntrain: images/train\nval: images/val\nnames:\n  0: symbol\n", encoding="utf-8"
+        f"path: {yaml_path}\ntrain: images/train\nval: images/val\nnames:\n  0: symbol\n", encoding="utf-8"
     )
     return stats

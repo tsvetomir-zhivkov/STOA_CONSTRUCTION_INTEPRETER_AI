@@ -40,3 +40,20 @@ def test_dev_ground_truth_validates():
     for f in files:
         doc = json.loads(f.read_text(encoding="utf-8"))
         assert doc["edges"] == [] or doc["coverage"][1]["status"] == "analysed"
+
+
+def test_yolo_yaml_points_at_the_dataset_it_was_built_for(tmp_path):
+    """Regression: the yaml once always said /data/yolo_dev, so a 'full' run trained on the dev tiles."""
+    from PIL import Image
+
+    from pipes.raster.tiles import build_yolo_dataset
+
+    for sp in ("train", "val"):
+        d = tmp_path / "src" / sp / "1"
+        d.mkdir(parents=True)
+        Image.new("RGB", (700, 500), "white").save(d / "sheet.jpg")
+        (d / "yolo.txt").write_text("0 100 100 150 150\n")
+    out = tmp_path / "out"
+    build_yolo_dataset(tmp_path / "src", out, yaml_path="/data/somewhere_else", whole=True)
+    assert (out / "pipes.yaml").read_text().startswith("path: /data/somewhere_else\n")
+    assert (out / "images/train/1_whole.jpg").exists()

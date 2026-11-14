@@ -1,7 +1,7 @@
 """Scan route, skeleton tracer variant (plan step 8): prep -> erase symbols + text -> skeleton -> graph -> JSON.
 
   python -m pipes.raster.pipeline pipes/data_pipes/dev/test --boxes gt            # oracle symbol boxes
-  python -m pipes.raster.pipeline pipes/data_pipes/dev/test --boxes det --conf 0.5  # detector boxes (raw cache)
+  python -m pipes.raster.pipeline pipes/data_pipes/dev/test --boxes det --conf 0.5 --conf-erase 0.25
 
 Symbol boxes: gt = the sheet's gt.pipe.json nodes, det = raw detections in index_pipes/_raw/dev_<split>/ merged
 at --conf. OCR text comes from the raw OCR cache (ocr_run). Writes index_pipes/<split>_trace_<boxes>/<id>.pipe.json
@@ -19,6 +19,7 @@ import numpy as np
 
 from pipes import graph as gr
 from pipes.ingest.pid_dataset import gt_document
+from pipes.raster import equipment as eq
 from pipes.raster import erase as er
 from pipes.raster import ocr_run
 from pipes.raster import regions as rg
@@ -46,7 +47,7 @@ def symbol_boxes(sheet_dir: Path, mode: str, conf: float, run: str = "dev") -> l
     if mode == "gt":
         doc = json.loads((sheet_dir / "gt.pipe.json").read_text(encoding="utf-8"))
         return [{"bbox_px": n["bbox_px"], "score": 1.0} for n in doc["nodes"]]
-    raw_dir = f"dev_{split}" if run == "dev" else f"dev_{split}_{run}"
+    raw_dir = f"ds_{split}_{run}"
     raw = json.loads((HERE / "index_pipes/_raw" / raw_dir / f"{sid}.det.json").read_text(encoding="utf-8"))
     return [
         {"bbox_px": [round(v, 2) for v in d["bbox_px"]], "score": d["score"]}
@@ -54,30 +55,45 @@ def symbol_boxes(sheet_dir: Path, mode: str, conf: float, run: str = "dev") -> l
     ]
 
 
-def run_sheet(sheet_dir: Path, mode: str = "gt", conf: float = 0.5, run: str = "dev") -> dict:
+def run_sheet(
+    sheet_dir: Path,
+    mode: str = "gt",
+    conf: float = 0.5,
+    run: str = "dev",
+    conf_erase: float = 0.25,
+    equipment: bool = True,
+) -> dict:
+    """conf = reported symbols (nodes); conf_erase = boxes erased before tracing (>= recall, not reported)."""
     split, sid = sheet_dir.parent.name, sheet_dir.name
     sheet = sheet_dir / "sheet.jpg"
     p = er.prep(sheet)
     H, W = p.shape
     w = p.w
-    syms = symbol_boxes(sheet_dir, mode, conf, run)
-    boxes = [s["bbox_px"] for s in syms]
+    syms_all = symbol_boxes(sheet_dir, mode, min(conf_erase, conf), run)
+    for s in syms_all:
+        s["reported"] = mode == "gt" or s["score"] >= conf
+    boxes_all = [s["bbox_px"] for s in syms_all]
     texts = [t for t in ocr_run.load(split, sid) if t["score"] >= MIN_TEXT_SCORE]
     tmask = er.text_mask((H, W), texts)
 
     # step 5: frames, title block and legend rectangles are removed before tracing
     frames = rg.find_frames(p.ink, w, tmask)
-    regions = rg.classify(p.ink, w, frames, boxes, texts, tmask)
+    regions = rg.classify(p.ink, w, frames, boxes_all, texts, tmask)
     rmask = rg.mask((H, W), regions, w) if regions else None
     # stroke width from the pipes alone: the page-wide median is inflated by text and symbol outlines
-    pipes_only = p.ink & ~tmask & ~er.box_mask((H, W), boxes)
+    pipes_only = p.ink & ~tmask & ~er.box_mask((H, W), boxes_all)
     if rmask is not None:
         pipes_only &= ~rmask
     if pipes_only.sum() > 200:
         w = er.stroke_width(pipes_only)
-    ink_no_text = p.ink & ~tmask
-    port_list = er.ports(ink_no_text, w, boxes)
-    clean = er.erase(p.ink, w, boxes, tmask, rmask)
+    # large closed contours that pipes attach to: equipment nodes, not traced outlines
+    found = []
+    if equipment:
+        found = eq.find_equipment(er.erase(p.ink, w, boxes_all, tmask, rmask), w, boxes_all, rmask)
+    boxes_erase = boxes_all + [f["bbox_px"] for f in found]
+    syms = [s for s in syms_all if s["reported"]] + [{**f, "reported": True} for f in found]
+    port_list = er.ports(p.ink & ~tmask, w, [s["bbox_px"] for s in syms])
+    clean = er.erase(p.ink, w, boxes_erase, tmask, rmask)
 
     # junction dots: dark share in a disk on the UN-erased ink
     yy, xx = np.mgrid[0:H, 0:W] if H * W < 4e6 else (None, None)
@@ -105,7 +121,8 @@ def run_sheet(sheet_dir: Path, mode: str = "gt", conf: float = 0.5, run: str = "
     n_stitch = gr.stitch(g, w, tmask)
 
     return assemble(sheet_dir, mode, conf, syms, port_list, texts, g, w, (W, H), p.transforms,
-                    {"spurs_pruned": n_spurs, "stitched": n_stitch, "regions": len(regions), **bstats},
+                    {"spurs_pruned": n_spurs, "stitched": n_stitch, "regions": len(regions), "equipment": len(found),
+                     "low_conf_erased": sum(not s["reported"] for s in syms_all), **bstats},
                     regions)  # fmt: skip
 
 
@@ -120,6 +137,10 @@ def assemble(sheet_dir, mode, conf, syms, port_list, texts, g, w, size, transfor
         n["ports_px"] = port_list[int(n["id"].split("_")[1]) - 1]
         n["provenance"]["extractor_id"] = sym_ext
         n["provenance"]["confidence"] = round(float(s["score"]), 4)
+        if s.get("ext"):  # derived by the tracer from a closed contour, not by the detector
+            n["provenance"]["extractor_id"] = s["ext"]
+            n["subtype"] = "equipment"
+            n["attributes"] = {"cls_raw": "symbol", "origin": s["origin"]}
     nodes = doc["nodes"]
     nid = n_syms
 
@@ -210,7 +231,10 @@ def assemble(sheet_dir, mode, conf, syms, port_list, texts, g, w, size, transfor
     cov[0].update(
         extractor_id=sym_ext,
         confidence=round(float(np.mean([s["score"] for s in syms])) if syms else 0.0, 4),
-        note="oracle boxes (dataset annotation)" if mode == "gt" else f"detector, conf >= {conf}",
+        note="oracle boxes (dataset annotation)"
+        if mode == "gt"
+        else f"detector, reported at conf >= {conf}; {stats['low_conf_erased']} lower-confidence boxes erased "
+        f"for tracing, not reported; {stats['equipment']} equipment nodes from closed contours",
     )
     cov[1].update(
         status="analysed", confidence=round(mean_e, 4), extractor_id="ext_graph",
@@ -271,7 +295,10 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m pipes.raster.pipeline", description=__doc__)
     ap.add_argument("root", help="e.g. pipes/data_pipes/dev/test")
     ap.add_argument("--boxes", choices=["gt", "det"], default="gt")
-    ap.add_argument("--conf", type=float, default=0.5)
+    ap.add_argument("--conf", type=float, default=0.5, help="reported symbols")
+    ap.add_argument("--conf-erase", type=float, default=0.25, help="boxes erased before tracing")
+    ap.add_argument("--no-equipment", action="store_true", help="skip closed-contour equipment nodes")
+    ap.add_argument("--tag", default="", help="suffix for the output folder")
     ap.add_argument("--run", default="dev", help="Modal training run whose detections to use (dev, full)")
     ap.add_argument("--overlay", action="store_true")
     a = ap.parse_args(argv)
@@ -279,10 +306,10 @@ def main(argv: list[str] | None = None) -> int:
 
     root = Path(a.root)
     suffix = "" if a.run == "dev" or a.boxes == "gt" else f"_{a.run}"
-    out = HERE / "index_pipes" / f"{root.name}_trace_{a.boxes}{suffix}"
+    out = HERE / "index_pipes" / f"{root.name}_trace_{a.boxes}{suffix}{a.tag}"
     out.mkdir(parents=True, exist_ok=True)
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
-        doc = run_sheet(d, a.boxes, a.conf, a.run)
+        doc = run_sheet(d, a.boxes, a.conf, a.run, a.conf_erase, not a.no_equipment)
         dbg = doc.pop("_debug")
         (out / f"{d.name}.pipe.json").write_text(
             json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8"
