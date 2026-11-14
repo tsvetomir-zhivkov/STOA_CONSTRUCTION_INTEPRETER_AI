@@ -50,13 +50,15 @@ def _page_image(r: dict, file_path: Path) -> tuple[dict | None, int | None, int 
     return None, None, None
 
 
-def translate(path: str, data: str | None = None, part: str | None = None) -> dict:
+def translate(
+    path: str, data: str | None = None, part: str | None = None, allow_holdout: bool = False
+) -> dict:
     """Translate one drawing file into one schema v0.2 document (validated, not written).
 
     Most files give one document. A file that gives several (an IFC model: one per storey) needs
-    part=<drawing.part>, or use translate_all(path).
+    part=<drawing.part>, or use translate_all(path). Hold-out files are refused unless allow_holdout=True.
     """
-    docs = translate_all(path, data)
+    docs = translate_all(path, data, allow_holdout=allow_holdout)
     if part is not None:
         hits = [d for d in docs if d["drawing"].get("part") == part]
         if not hits:
@@ -76,8 +78,12 @@ def translate_all(
     cubicasa_params: dict | None = None,
     ocr_params: dict | None = None,
     fuse_params: dict | None = None,
+    allow_holdout: bool = False,
 ) -> list[dict]:
     """Every document for one file: one per page, or one per storey for an IFC model. Validated.
+
+    Hold-out files (eval/holdout_files.txt) are refused (HoldoutError) by the same filename guard as
+    translator/vlm, before any file is read; allow_holdout=True overrides it with a warning.
 
     Raster CubiCasa plans only: cubicasa_params go to translator.extract.cubicasa.to_parts, ocr_params to
     translator.extract.ocr.fuse, fuse_params (priors, grid) to translator.fuse.fuse_raster.
@@ -85,7 +91,16 @@ def translate_all(
     from translator import router
     from translator.config import data_root
     from translator.store import validate
+    from translator.vlm.base import HoldoutError, default_guard
 
+    try:
+        default_guard().check_source(path)  # names only: nothing is read before this
+    except HoldoutError:
+        if not allow_holdout:
+            raise
+        import warnings
+
+        warnings.warn(f"allow_holdout=True: translating hold-out file {path}", stacklevel=2)
     root = data_root(data)
     r = router.route(path, root)
     file_path = router._resolve(path, root)

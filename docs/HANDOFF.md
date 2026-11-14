@@ -43,8 +43,11 @@ with a coverage note giving the reason.
 - `translate(path) -> dict` (one document; an IFC model needs `part=`), `translate_all(path) -> list[dict]`
   (one per page / storey), both validated. Raster options: `cubicasa_params`, `ocr_params`, `fuse_params`
   (`priors`, `vlm`, `vlm_enabled`, `vlm_runs`, `shower_prior`, `grid`).
-- CLI: `python -m translator <path> [...] [--write] [--source NAME] [--data ROOT]`. **Warning:** `--source`
-  translates every questions.jsonl file of that source, hold-out files included (see the disclosure in 5).
+- CLI: `python -m translator <path> [...] [--write] [--source NAME] [--data ROOT] [--allow-holdout]`.
+- **Hold-out guard in the library and the CLI** (same filename guard as `translator/vlm`: normalised path,
+  basename, stem against `eval/holdout_files.txt`; nothing is read before it runs): `translate()` /
+  `translate_all()` raise `HoldoutError` unless `allow_holdout=True` (warning); the CLI refuses an explicit
+  hold-out path (exit 2), `--source` skips hold-out files, `--allow-holdout` overrides with a warning.
 - Rebuild the CubiCasa dev documents from cached raw files (dev only, no GPU, no API):
   `python -m translator.extract.cubicasa [--min-icon-px N] [--no-priors] [--index DIR]`.
 - Environment:
@@ -110,7 +113,11 @@ Raster room counting (`translator/extract/ocr.py`, `translator/fuse.py`):
 - **VLM model:** `gemini-3.8-flash` (stable; 2.5 Flash deprecated); prices $0.75 / $3.75 per 1M tokens (thinking
   billed as output), through 2026-12-31, doubling from 2027-01-01 (`translator/vlm/config.py`).
 - **Hold-out rules:** never open, score, OCR or send a file in `eval/holdout_files.txt`; dev only;
-  never `--split holdout/all`. Disclosed exceptions in section 5.
+  never `--split holdout/all`. Enforced by the filename guard in `translate()`, `translate_all()`, the CLI and
+  every VLM client. Disclosed exceptions in section 5.
+- **Batch-run policy:** the handoff index = dev files plus any organiser-supplied files, **never our own
+  hold-out files**. `index/debug_jpg_test/` (the approved 5006 test) must never be copied into the handoff
+  index.
 - **.gitignore rebuilt** after the merge 3fb2b30 had cut it to 4 lines: union of ours and the teammate's
   (data/, questions.jsonl, .env, *.pkl, caches, index/* with `!index/.gitkeep`, .modal.toml, uv.lock,
   .python-version, root copies `/drawing.schema.json` and `/sample_drawing.json`); the teammate's ".end" was read
@@ -171,12 +178,15 @@ Disclosures (also in docs/EVAL_TABLE.md):
 - The dev shower score mixes two prompts (80 pages e1, ~103 the original prompt; re-running was over budget).
 - Principled fixes found while reading dev failures: sauna fallback; H / huone generic.
 - high_quality_architectural-5006: a one-off raster test on a hold-out image (approved by k), outputs in
-  `index/debug_jpg_test/`, never scored.
+  `index/debug_jpg_test/` (kept), never scored; its contents must never be copied into the handoff index.
 - Hold-out hash code: an early VLM guard read the hold-out files' bytes to hash them (in memory only, two
   smoke-test processes); no hash was written anywhere; removed; the guard now uses names only.
-- **`index/` holds documents for 13 Swiss and 1 ifc_bench hold-out files**, produced by `python -m translator
-  --source` in Steps 3-4 (`--source` does not filter the hold-out). They were never scored or tuned on;
-  `eval/score.py` scores dev only. Found while writing this hand-off.
+- **Hold-out documents in index/ (removed):** 1 hold-out IFC model (`ac20_arc`, ifc_bench), 5 storey
+  documents; 13 Swiss floors; translated in Steps 3-4 (`python -m translator --source`) before the guard
+  existed; never scored or tuned on; deleted on 2026-11-15 together with the raw cache
+  `index/_raw/ifc/ac20_arc.json` (19 files; a filename-only sweep of `index/` found nothing else apart from
+  the kept 5006 test). The guard is now in the CLI and the library. Dev totals unchanged after the deletion
+  (85.6% all, 85.9% scoreable).
 - Swiss: 10 dev questions fail on two floors (no written areas; a numbered room without a name is summed);
   cause known, not fixed (a rule would fit 2 floors).
 
@@ -195,13 +205,11 @@ Disclosures (also in docs/EVAL_TABLE.md):
 - VLM: gate 5 (low-confidence windows/doors) and the 82 prior-fired kitchen/bathroom tasks are deferred; e1 on
   the remaining ~103 shower pages not run. **Remaining VLM budget ≈ $0.12** (cap $1.50 reached otherwise).
 - Blueprint-or-noise gate (teammate, interface in section 1).
-- `--source` in the CLI should skip hold-out files before the Step-12 batch run (or the batch run must decide
-  explicitly that the deliverable index includes them).
 
 ## 7. Freeze checklist (Step 12)
 
-- [ ] Batch-run the translator over every file the organisers give (decide hold-out handling first, see 6);
-      cache to `index/`; VLM from cache only.
+- [ ] Batch-run the translator over the dev files plus every file the organisers give (never our own hold-out
+      files; the guard refuses them by default; never copy `index/debug_*`); VLM from cache only.
 - [ ] README: the route table (section 1) and the eval table (`docs/EVAL_TABLE.md`), how to run.
 - [ ] 3 overlay PNGs from the JSON for the demo: one Swiss, one IFC plan, one CubiCasa.
 - [ ] Regenerate `docs/EVAL_TABLE.md`; checks pass; working tree clean.
