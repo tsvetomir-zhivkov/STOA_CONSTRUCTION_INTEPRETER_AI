@@ -297,10 +297,18 @@ def to_parts(
 
 
 def write_documents(
-    names: list[str] | None = None, min_icon_px: int = MIN_ICON_PX, min_room_px: int = MIN_ROOM_PX
+    names: list[str] | None = None,
+    min_icon_px: int = MIN_ICON_PX,
+    min_room_px: int = MIN_ROOM_PX,
+    ocr_params: dict | None = None,
+    index_dir: Path | None = None,
 ) -> list[Path]:
-    """Translate and write index/cubicasa5k/<name>.json for every image that has a raw file (dev only)."""
+    """Translate and write index/cubicasa5k/<name>.json for every image that has a raw file (dev only).
+
+    ocr_params go to translator.extract.ocr.fuse (merge, label_priority); index_dir defaults to index/.
+    """
     from translator import translate_all
+    from translator.config import INDEX_DIR
     from translator.store import write_drawing
 
     hold = holdout_files()
@@ -311,21 +319,29 @@ def write_documents(
         path = f"data/cubicasa5k/{name}.png"
         if path in hold:  # never touch a held-out image, even if a raw file exists
             continue
-        for doc in translate_all(
-            path, cubicasa_params={"min_icon_px": min_icon_px, "min_room_px": min_room_px}
-        ):
-            out.append(write_drawing(doc))
+        params = {"min_icon_px": min_icon_px, "min_room_px": min_room_px}
+        for doc in translate_all(path, cubicasa_params=params, ocr_params=ocr_params):
+            out.append(write_drawing(doc, index_dir or INDEX_DIR))
     return out
 
 
-if __name__ == "__main__":  # python -m translator.extract.cubicasa [--min-icon-px N] [--min-room-px N]
+if __name__ == "__main__":
+    # python -m translator.extract.cubicasa [--min-icon-px N] [--no-merge] [--label-priority] [--index DIR]
     import argparse
 
     ap = argparse.ArgumentParser(
-        description="Write CubiCasa documents from the raw segmentation files (dev only)."
+        description="Write CubiCasa documents from the raw segmentation and OCR files (dev only)."
     )
     ap.add_argument("--min-icon-px", type=int, default=MIN_ICON_PX)
     ap.add_argument("--min-room-px", type=int, default=MIN_ROOM_PX)
+    ap.add_argument("--no-merge", action="store_true", help="do not merge same-class room regions")
+    ap.add_argument("--label-priority", action="store_true", help="count labelled rooms, not regions")
+    ap.add_argument("--index", help="index directory to write to (default: index/)")
     args = ap.parse_args()
-    written = write_documents(min_icon_px=args.min_icon_px, min_room_px=args.min_room_px)
-    print(f"wrote {len(written)} documents to {raw_dir().parent.parent / 'cubicasa5k'}")
+    written = write_documents(
+        min_icon_px=args.min_icon_px,
+        min_room_px=args.min_room_px,
+        ocr_params={"merge": not args.no_merge, "label_priority": args.label_priority},
+        index_dir=Path(args.index) if args.index else None,
+    )
+    print(f"wrote {len(written)} documents")
