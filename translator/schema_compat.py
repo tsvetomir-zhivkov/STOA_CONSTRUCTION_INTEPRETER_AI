@@ -1,0 +1,443 @@
+"""Schema v0.2 / v0.3 compatibility for the Python side.
+
+This is the Python mirror of blueprint-ingest/src/schema/v03.js; both must produce the same v0.3 document from the
+same v0.2 one (checked by blueprint-ingest/test/schema-v03.test.js through eval/check_schema_compat.py).
+
+    load_document(path)        -> v0.3 dict (a v0.2 file is validated, then migrated in memory; the file is untouched)
+    migrate_v02_to_v03(doc)    -> v0.3 dict; maps fields only, nothing is guessed
+    validate_document(doc)     -> raises SchemaError; picks the schema from schema_version, v0.3 also checks references
+    validate_relationships(doc)-> list of error strings
+
+index/ stays schema v0.2 (the hand-off contract in CLAUDE.md); v0.3 copies go to index_v03/ (translator/to_v03.py).
+"""
+
+from __future__ import annotations
+
+import copy
+import json
+import math
+import re
+from datetime import datetime, timezone
+from functools import lru_cache
+from pathlib import Path
+
+import jsonschema
+
+SCHEMA_DIR = Path(__file__).resolve().parent / "schema"
+SCHEMA_FILES = {"0.2": SCHEMA_DIR / "drawing.schema.json", "0.3": SCHEMA_DIR / "building.schema.v0.3.json"}
+
+ENTITY_COLLECTIONS = ["levels", "units", "rooms", "walls", "openings", "objects", "texts", "edges",
+                      "element_types", "materials", "material_layer_sets", "systems"]
+ID_COLLECTIONS = ENTITY_COLLECTIONS + ["schedules", "relationships", "statistics", "sources"]
+
+_GUID = re.compile(r"^[0-9A-Za-z_$]{22}$")
+_ROUTE_FORMAT = {"ifc": "ifc", "dxf": "dxf", "svg": "svg", "vector_pdf": "pdf", "raster": "raster", "vlm": "raster", "none": "other"}
+
+# discipline: blueprint-ingest/src/schema/ifcClasses.js is the source; scripts/sync-schema.mjs writes this copy
+_CATEGORY_DISCIPLINE = {
+    "toilet": "mep", "sink": "mep", "shower": "mep", "bathtub": "mep", "radiator": "mep",
+    "stair": "architectural", "elevator": "architectural", "sauna_bench": "furnishing", "closet": "furnishing",
+    "stove": "furnishing", "fridge": "furnishing", "washing_machine": "furnishing", "other": "other",
+}
+_IFC_DISCIPLINE: dict[str, str] = json.loads((SCHEMA_DIR / "ifc_disciplines.json").read_text(encoding="utf-8"))
+
+
+class SchemaError(ValueError):
+    """A document does not match its schema, or one of its id references does not resolve."""
+
+
+def discipline_of(ifc_class: str | None, category: str | None) -> str:
+    if ifc_class and str(ifc_class).upper() in _IFC_DISCIPLINE:
+        return _IFC_DISCIPLINE[str(ifc_class).upper()]
+    return _CATEGORY_DISCIPLINE.get(category or "other", "other")
+
+
+def detect_version(doc) -> str | None:
+    if not isinstance(doc, dict):
+        return None
+    v = doc.get("schema_version")
+    return str(v) if v not in (None, "") else None
+
+
+def unknown_unit(source: str = "not recorded in the source document") -> dict:
+    return {"unit": None, "to_si": None, "status": "not_available", "source": source}
+
+
+# ------------------------------------------------------------------------------------------------ validation
+
+
+@lru_cache(maxsize=None)
+def _validator(version: str) -> jsonschema.Draft202012Validator:
+    schema = json.loads(SCHEMA_FILES[version].read_text(encoding="utf-8"))
+    jsonschema.Draft202012Validator.check_schema(schema)
+    return jsonschema.Draft202012Validator(schema)
+
+
+def validate_document(doc: dict, where: str = "<doc>") -> str:
+    """Validate against the schema named by doc['schema_version']; v0.3 also checks references. Returns the version."""
+    version = detect_version(doc)
+    if version not in SCHEMA_FILES:
+        raise SchemaError(f"{where}: unsupported schema_version {doc.get('schema_version')!r} (supported: {', '.join(SCHEMA_FILES)})")
+    errors = sorted(_validator(version).iter_errors(doc), key=lambda e: list(e.absolute_path))
+    lines = []
+    for e in errors[:20]:
+        path = "/".join(str(p) for p in e.absolute_path) or "<root>"
+        lines.append(f"  {path}: {e.message[:300]}")
+    if not errors and version == "0.3":
+        lines = [f"  {m}" for m in validate_relationships(doc)[:20]]
+    if lines:
+        raise SchemaError("\n".join([f"{where}: schema {version}: {len(lines)} error(s) shown"] + lines))
+    return version
+
+
+def _same(a, b) -> bool:
+    if a is None and b is None:
+        return True
+    if isinstance(a, bool) or isinstance(b, bool) or not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+        return False
+    return abs(a - b) <= 1e-9 + 1e-6 * max(abs(a), abs(b))
+
+
+def validate_relationships(doc: dict) -> list[str]:
+    errors: list[str] = []
+    where: dict[str, str] = {}
+    for coll in ID_COLLECTIONS:
+        for i, e in enumerate(doc.get(coll) or []):
+            eid = (e or {}).get("id")
+            if eid is None:
+                continue
+            if eid in where:
+                errors.append(f'duplicate id "{eid}" in {coll}[{i}] (also in {where[eid]})')
+            else:
+                where[eid] = coll
+    for s in (doc.get("site"), doc.get("building")):
+        if s and s.get("id"):
+            if s["id"] in where:
+                errors.append(f'duplicate id "{s["id"]}" (site/building)')
+            else:
+                where[s["id"]] = "site/building"
+
+    def ref(path, rid, colls=None):
+        if rid is None:
+            return
+        c = where.get(rid)
+        if c is None:
+            errors.append(f'{path}: "{rid}" does not exist')
+        elif colls and c not in colls:
+            errors.append(f'{path}: "{rid}" is in {c}, expected {"|".join(colls)}')
+
+    def refs(path, arr, colls=None):
+        if isinstance(arr, list):
+            for k, rid in enumerate(arr):
+                ref(f"{path}[{k}]", rid, colls)
+
+    for coll in ENTITY_COLLECTIONS:
+        for i, e in enumerate(doc.get(coll) or []):
+            p = f"{coll}[{i}]"
+            ref(f"{p}.level_id", e.get("level_id"), ["levels"])
+            ref(f"{p}.superseded_by", e.get("superseded_by"), [coll])
+            ref(f"{p}.unit_id", e.get("unit_id"), ["units"])
+            ref(f"{p}.parent_room_id", e.get("parent_room_id"), ["rooms"])
+            ref(f"{p}.room_id", e.get("room_id"), ["rooms"])
+            refs(f"{p}.room_ids", e.get("room_ids"), ["rooms"])
+            ref(f"{p}.wall_id", e.get("wall_id"), ["walls"])
+            ref(f"{p}.type_id", e.get("type_id"), ["element_types"])
+            refs(f"{p}.system_ids", e.get("system_ids"), ["systems"])
+            refs(f"{p}.material_ids", e.get("material_ids"), ["materials"])
+            ref(f"{p}.material_layer_set_id", e.get("material_layer_set_id"), ["material_layer_sets"])
+            ref(f"{p}.host_id", e.get("host_id"))
+            refs(f"{p}.text_ids", e.get("text_ids"), ["texts"])
+            refs(f"{p}.boundary_element_ids", e.get("boundary_element_ids"))
+            refs(f"{p}.instance_ids", e.get("instance_ids"))
+            refs(f"{p}.member_ids", e.get("member_ids"))
+            if coll == "edges":
+                ref(f"{p}.from_id", e.get("from_id"))
+            for k, f in (e.get("finishes") or {}).items():
+                refs(f"{p}.finishes.{k}.covering_ids", (f or {}).get("covering_ids"), ["objects"])
+                refs(f"{p}.finishes.{k}.material_ids", (f or {}).get("material_ids"), ["materials"])
+            for k, layer in enumerate(e.get("layers") or []):
+                ref(f"{p}.layers[{k}].material_id", layer.get("material_id"), ["materials"])
+            for k, q in (e.get("quantities") or {}).items():
+                if k not in e:
+                    continue
+                bad = e[k] is not None if q.get("status") == "not_available" else not _same(q.get("value"), e[k])
+                if bad:
+                    errors.append(f"{p}.quantities.{k}: value {q.get('value')} ({q.get('status')}) disagrees with {k} = {e[k]}")
+    for i, s in enumerate(doc.get("schedules") or []):
+        for j, en in enumerate(s.get("entries") or []):
+            ref(f"schedules[{i}].entries[{j}].type_id", en.get("type_id"), ["element_types"])
+            refs(f"schedules[{i}].entries[{j}].instance_ids", en.get("instance_ids"))
+    for i, r in enumerate(doc.get("relationships") or []):
+        ref(f"relationships[{i}].from_id", r.get("from_id"))
+        ref(f"relationships[{i}].to_id", r.get("to_id"))
+    for i, s in enumerate(doc.get("statistics") or []):
+        ref(f"statistics[{i}].scope.level_id", (s.get("scope") or {}).get("level_id"), ["levels"])
+    return errors
+
+
+# ------------------------------------------------------------------------------------------------ migration
+
+# field -> (unit, default method for a code-derived value, default source); mirrors MEASURES in v03.js
+_MEASURES = {
+    "rooms": {
+        "area_written_m2": ("m2", "written area", None),
+        "area_computed_m2": ("m2", "polygon area (holes subtracted) x m_per_px^2", "polygon_px"),
+        "area_m2": ("m2", None, None),
+        "height_m": ("m", None, None),
+        "volume_m3": ("m3", "area_m2 x height_m", "area_m2, height_m"),
+    },
+    "walls": {
+        "length_m": ("m", "axis polyline length x m_per_px", "polyline_px"),
+        "thickness_m": ("m", "thickness_px x m_per_px (footprint / paired face lines)", "properties.thickness_px"),
+        "height_m": ("m", None, None),
+        "net_side_area_m2": ("m2", None, None),
+        "net_volume_m3": ("m3", None, None),
+    },
+    "openings": {
+        "width_m": ("m", "width_px x m_per_px", "properties.width_px"),
+        "height_m": ("m", None, None),
+    },
+    "objects": {
+        "area_m2": ("m2", "footprint polygon area x m_per_px^2", "polygon_px"),
+        "net_volume_m3": ("m3", None, None),
+    },
+    "units": {"area_m2": ("m2", "polygon area x m_per_px^2", "polygon_px")},
+    "levels": {
+        "elevation_m": ("m", None, None),
+        "height_m": ("m", "distance to the next storey up", "levels[].elevation_m"),
+    },
+}
+
+
+def _is_num(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def _default_quantity(coll, field, e, v, unit, method, source, migrated):
+    def rec(status, m, s):
+        return {"value": v, "unit": unit, "status": status, "method": m, "source": s}
+
+    if coll == "rooms" and field == "area_written_m2":
+        m = "IFC quantity" if (e.get("provenance") or {}).get("extractor") == "vector_ifc" else "written area on the drawing"
+        return rec("explicit", m, (e.get("properties") or {}).get("area_written_text_id") or "area_written_m2")
+    if coll == "rooms" and field == "area_m2":
+        if e.get("area_written_m2") is not None and _same(e.get("area_written_m2"), v):
+            base = (e.get("quantities") or {}).get("area_written_m2") or rec("explicit", "written area", "area_written_m2")
+            return {**base, "value": v}
+        return rec("calculated", _MEASURES["rooms"]["area_computed_m2"][1], "polygon_px")
+    if coll == "levels" and field == "elevation_m":
+        return rec("calculated" if migrated else "explicit", "migrated from v0.2 (origin not recorded)" if migrated else "storey elevation", "levels[].elevation_m")
+    if method:
+        return rec("calculated", method, source)
+    return rec("calculated", "migrated from v0.2 (origin not recorded)" if migrated else "derived by the extractor", f"{coll}[].{field}")
+
+
+def sync_quantities(doc: dict, origin: str = "migrated") -> dict:
+    migrated = origin == "migrated"
+    for coll, fields in _MEASURES.items():
+        for e in doc.get(coll) or []:
+            q = e.setdefault("quantities", {})
+            for field, (unit, method, source) in fields.items():
+                v = e.get(field)
+                cur = q.get(field)
+                if cur and cur.get("status") == "explicit":
+                    if _is_num(cur.get("value")):
+                        e[field] = cur["value"]
+                    continue
+                if not _is_num(v):
+                    q.pop(field, None)
+                    continue
+                if cur and cur.get("status") != "not_available" and _same(cur.get("value"), v):
+                    continue
+                q[field] = _default_quantity(coll, field, e, v, unit, method, source, migrated)
+            if not q:
+                del e["quantities"]
+    return doc
+
+
+def _active(e) -> bool:
+    return (e.get("status") or "active") == "active"
+
+
+def _common(vals):
+    return vals[0] if vals and all(v is not None and _same(v, vals[0]) for v in vals) else None
+
+
+def build_schedules(doc: dict) -> list[dict]:
+    types = {t["id"]: t for t in doc.get("element_types") or []}
+    out = []
+    for kind in ("door", "window"):
+        inst = [o for o in doc.get("openings") or [] if _active(o) and o.get("kind") == kind]
+        if not inst:
+            continue
+        by_type = any(o.get("type_id") for o in inst)
+        by_mark = not by_type and any(o.get("mark") for o in inst)
+        if not by_type and not by_mark:
+            continue
+        groups: dict[str, list] = {}
+        for o in inst:
+            k = (o.get("type_id") or "") if by_type else (o.get("mark") or "")
+            groups.setdefault(k, []).append(o)
+        entries = []
+        for k, lst in groups.items():
+            t = types.get(k) if by_type and k else None
+            entries.append({
+                "mark": t.get("tag") if t else (k if by_mark and k else None),
+                "type_id": t["id"] if t else None,
+                "name": t.get("name") if t else None,
+                "instance_ids": [o["id"] for o in lst],
+                "count": len(lst),
+                "width_m": (t or {}).get("width_m") if (t or {}).get("width_m") is not None else _common([o.get("width_m") for o in lst]),
+                "height_m": (t or {}).get("height_m") if (t or {}).get("height_m") is not None else _common([o.get("height_m") for o in lst]),
+            })
+        entries.sort(key=lambda en: (-en["count"], str(en["name"] if en["name"] is not None else en["mark"])))
+        out.append({
+            "id": f"schedule_{kind}", "name": f"{kind} schedule", "kind": kind, "status": "calculated",
+            "method": "instances grouped by type_id; width/height from the type, else the value all instances share" if by_type else "instances grouped by mark",
+            "source": "element_types (IfcRelDefinesByType)" if by_type else "openings[].mark", "entries": entries,
+        })
+    return out
+
+
+def build_statistics(doc: dict) -> list[dict]:
+    stats: list[dict] = []
+
+    def cov(cat):
+        return next((c for c in doc.get("coverage") or [] if c.get("category") == cat), None)
+
+    def cov_exact(cat):
+        c = cov(cat)
+        return bool(c) and c.get("status") == "analysed" and not re.search(r"cap", c.get("note") or "", re.I)
+
+    def add(name, value, unit, status, method, source, exact, scope=None, **extra):
+        s = {"id": f"stat_{len(stats) + 1}", "name": name, "value": value, "unit": unit, "status": status, "method": method, "source": source, "exact": exact}
+        if scope:
+            s["scope"] = scope
+        s.update(extra)
+        stats.append(s)
+
+    def count(name, coll, flt, cov_cat, scope):
+        n = sum(1 for e in doc.get(coll) or [] if _active(e) and flt(e))
+        add(name, n, "count", "calculated", "count of active entities", coll, cov_exact(cov_cat), scope)
+
+    count("count.levels", "levels", lambda e: True, "levels", {"collection": "levels"})
+    count("count.rooms", "rooms", lambda e: True, "rooms", {"collection": "rooms"})
+    count("count.walls", "walls", lambda e: True, "walls", {"collection": "walls"})
+    count("count.openings.door", "openings", lambda o: o.get("kind") == "door", "doors", {"collection": "openings", "category": "door"})
+    count("count.openings.window", "openings", lambda o: o.get("kind") == "window", "windows", {"collection": "openings", "category": "window"})
+    for c in sorted({o.get("category") for o in doc.get("objects") or [] if _active(o)}):
+        count(f"count.objects.{c}", "objects", lambda o, c=c: o.get("category") == c, "stairs" if c == "stair" else "fixtures", {"collection": "objects", "category": c})
+    geo = ["rooms", "walls", "openings", "objects"]
+    classes = sorted({e["ifc_class"] for k in geo for e in doc.get(k) or [] if _active(e) and e.get("ifc_class")})
+    for cls in classes:
+        n = sum(1 for k in geo for e in doc.get(k) or [] if _active(e) and e.get("ifc_class") == cls)
+        add(f"count.ifc_class.{cls}", n, "count", "calculated", "count of active entities with this ifc_class", "rooms, walls, openings, objects", cov_exact("ifc_classes"), {"ifc_class": cls})
+
+    def total(name, coll, field, unit, scope, flt=lambda e: True):
+        items = [e for e in doc.get(coll) or [] if _active(e) and flt(e)]
+        vals = [e.get(field) for e in items if _is_num(e.get(field))]
+        missing = len(items) - len(vals)
+        all_explicit = bool(items) and missing == 0 and all(((e.get("quantities") or {}).get(field) or {}).get("status") == "explicit" for e in items)
+        value = _js_round(sum(vals) * 1000) / 1000 if vals else None
+        status = "not_available" if value is None else ("explicit" if all_explicit else "calculated")
+        add(name, value, unit, status, f"sum of {coll}[].{field}", f"{coll}[].{field}", all_explicit, scope, inputs=len(items), missing=missing)
+
+    total("sum.rooms.area_m2", "rooms", "area_m2", "m2", {"collection": "rooms"})
+    total("sum.walls.length_m", "walls", "length_m", "m", {"collection": "walls"})
+    levels = doc.get("levels") or []
+    if len(levels) >= 2:
+        for lv in [x for x in levels if _active(x)]:
+            total("sum.rooms.area_m2", "rooms", "area_m2", "m2", {"collection": "rooms", "level_id": lv["id"]}, lambda r, lid=lv["id"]: r.get("level_id") == lid)
+    for s in stats:
+        if s["status"] == "explicit":
+            s["status"] = "calculated"
+            s["method"] += " (all inputs explicit)"
+    return stats
+
+
+def _js_round(x: float) -> float:
+    """Math.round semantics (half up), so sums match the Node layer exactly."""
+    return math.floor(x + 0.5)
+
+
+def migrate_v02_to_v03(v02: dict, now: str | None = None, note: str | None = None) -> dict:
+    if detect_version(v02) == "0.3":
+        return copy.deepcopy(v02)
+    if detect_version(v02) != "0.2":
+        raise SchemaError(f"migrate_v02_to_v03: expected schema_version 0.2, got {v02.get('schema_version')!r}")
+    d = copy.deepcopy(v02)
+    now = now or datetime.now(timezone.utc).isoformat()
+    drawing = d.get("drawing") or {}
+    route = drawing.get("route") or "none"
+    is_ifc = route == "ifc"
+    length = unknown_unit("v0.2 records that vector units were used, not which unit") if (drawing.get("scale") or {}).get("source") == "vector_units" else unknown_unit()
+    out = {
+        "schema_version": "0.3",
+        "project": {"name": None, "global_id": None, "schema_identifier": None, "application": None,
+                    "units": {"length": length, "area": unknown_unit(), "volume": unknown_unit(), "angle": unknown_unit()}},
+        "site": None,
+        "building": None,
+        "drawing": d.get("drawing"),
+        "sources": [{"id": "source_1", "file": drawing.get("read_from") or drawing.get("file") or "unknown", "role": "primary",
+                     "format": _ROUTE_FORMAT.get(route, "other"), "schema_identifier": None, "size_bytes": None, "sha256": None, "georeference": None}],
+    }
+    for k in ("levels", "units", "rooms", "walls", "openings", "objects"):
+        out[k] = d.get(k) or []
+    for k in ("element_types", "materials", "material_layer_sets", "systems", "schedules", "relationships"):
+        out[k] = []
+    for k in ("texts", "edges", "coverage", "history"):
+        out[k] = d.get(k) or []
+
+    for k in ("levels", "units", "rooms", "walls", "openings", "objects", "texts", "edges"):
+        for e in out[k]:
+            ifc_type = (e.get("properties") or {}).get("ifc_type")
+            if e.get("global_id") is None:
+                sref = str((e.get("provenance") or {}).get("source_ref") or "")
+                e["global_id"] = sref if is_ifc and _GUID.match(sref) else None
+            if e.get("ifc_class") is None:
+                e["ifc_class"] = str(ifc_type).upper() if ifc_type else None
+            e.setdefault("classifications", [])
+    for lv in out["levels"]:
+        if "long_name" not in lv:
+            lv["long_name"] = (lv.get("properties") or {}).get("long_name")
+    for w in out["walls"]:
+        for f, dv in (("type_id", None), ("material_layer_set_id", None), ("material_ids", [])):
+            if w.get(f) is None:
+                w[f] = copy.copy(dv)
+    for o in out["openings"]:
+        for f, dv in (("type_id", None), ("mark", None), ("operation", None), ("material_ids", [])):
+            if o.get(f) is None:
+                o[f] = copy.copy(dv)
+    for o in out["objects"]:
+        if o.get("discipline") is None:
+            o["discipline"] = discipline_of(o.get("ifc_class"), o.get("category"))
+        for f, dv in (("type_id", None), ("system_ids", []), ("material_ids", []), ("material_layer_set_id", None), ("host_id", None)):
+            if o.get(f) is None:
+                o[f] = copy.copy(dv)
+    for r in out["rooms"]:
+        if r.get("boundary_element_ids") is None:
+            r["boundary_element_ids"] = []
+    for cat in ("materials", "element_types", "systems", "schedules", "relationships"):
+        if not any(c.get("category") == cat for c in out["coverage"]):
+            out["coverage"].append({"category": cat, "region": "page", "status": "not_analysed", "extractor": "schema_migration", "confidence": 0,
+                                    "note": "not present in the v0.2 source document"})
+    out["history"].append({"at": now, "extractor": "schema_migration", "action": "migrate",
+                           "note": note or "schema v0.2 -> v0.3: fields mapped, nothing inferred; v0.3-only data (materials, types, systems, declared units) not available"})
+    sync_quantities(out, "migrated")
+    out["schedules"] = build_schedules(out)
+    out["statistics"] = build_statistics(out)
+    return out
+
+
+def as_v03(doc: dict, now: str | None = None) -> dict:
+    return doc if detect_version(doc) == "0.3" else migrate_v02_to_v03(doc, now=now)
+
+
+def load_document(path, now: str | None = None) -> dict:
+    """Read and validate a v0.2 or v0.3 file; always returns v0.3."""
+    doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    validate_document(doc, where=str(path))
+    out = as_v03(doc, now=now)
+    if out is not doc:
+        validate_document(out, where=f"{path} (migrated)")
+    return out

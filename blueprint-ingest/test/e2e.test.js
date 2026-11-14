@@ -5,14 +5,15 @@ import os from 'node:os';
 import path from 'node:path';
 import { processBlueprint } from '../src/index.js';
 import { loadConfig } from '../src/config.js';
-import { createValidator } from '../src/storage/jsonStore.js';
+import { createVersionedValidator } from '../src/schema/versions.js';
 import { UnsupportedFormatError } from '../src/util/errors.js';
 import { silentLogger } from '../src/util/logger.js';
 import { writeFixtures } from './helpers/fixtures.js';
 
 const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'bi-e2e-'));
 const fx = await writeFixtures(dir);
-const { validate } = await createValidator(loadConfig({}).schemaPath);
+const versioned = await createVersionedValidator();
+const validate = (d) => { const r = versioned.validate(d); if (!r.valid) console.error(versioned.describe(r).slice(0, 10)); return r; };
 const run = (input, out) => processBlueprint({ inputFilePath: input, outputJsonPath: path.join(dir, 'out', out), env: { CORRECTIONS_FILE: path.join(dir, 'no-corrections.json') }, logger: silentLogger });
 const read = async (p) => JSON.parse(await fs.readFile(p, 'utf8'));
 

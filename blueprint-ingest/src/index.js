@@ -25,7 +25,8 @@ import { extractDxf, extractSvg } from './extractors/cadExtractor.js';
 import { mapToSchema } from './mappers/schemaMapper.js';
 import { loadCorrections } from './mappers/corrections.js';
 import { routeToVisionAgent } from './agents/visionAgentAdapter.js';
-import { createValidator, describeErrors } from './storage/jsonStore.js';
+import { describeErrors } from './storage/jsonStore.js';
+import { createVersionedValidator } from './schema/versions.js';
 
 /**
  * @typedef {Object} ProcessOptions
@@ -126,18 +127,19 @@ async function main(argv) {
       file: { type: 'string' },
       source: { type: 'string' },
       'validate-only': { type: 'boolean', default: false },
+      schema: { type: 'string' },
       quiet: { type: 'boolean', short: 'q', default: false },
       help: { type: 'boolean', short: 'h', default: false },
     },
   });
   if (values.help || !positionals.length) {
-    process.stdout.write('Usage: blueprint-ingest <input> [--out out.json] [--mode auto|create|merge] [--frame-mismatch error|sibling|reproject] [--levels "A,B"] [--file data/<source>/x.pdf] [--source <source>]\n       blueprint-ingest --validate-only <file.json>\n');
+    process.stdout.write('Usage: blueprint-ingest <input> [--out out.json] [--mode auto|create|merge] [--frame-mismatch error|sibling|reproject] [--levels "A,B"] [--file data/<source>/x.pdf] [--source <source>] [--schema 0.3|0.2]\n       blueprint-ingest --validate-only <file.json>   (schema 0.2 or 0.3, picked from schema_version; 0.3 also checks every id reference)\n');
     return values.help ? 0 : 1;
   }
   if (values['validate-only']) {
-    const { validate } = await createValidator(loadConfig().schemaPath);
-    const r = validate(JSON.parse(await fs.readFile(positionals[0], 'utf8')));
-    process.stdout.write(r.valid ? 'valid\n' : `INVALID\n${describeErrors(r.errors).join('\n')}\n`);
+    const v = await createVersionedValidator();
+    const r = v.validate(JSON.parse(await fs.readFile(positionals[0], 'utf8')));
+    process.stdout.write(r.valid ? `valid (schema ${r.version})\n` : `INVALID (schema ${r.version ?? '?'})\n${v.describe(r).slice(0, 50).join('\n')}\n`);
     return r.valid ? 0 : 1;
   }
   if (!['auto', 'create', 'merge'].includes(values.mode)) throw new PipelineError(`--mode must be auto|create|merge`, 'BAD_ARGS');
@@ -149,7 +151,7 @@ async function main(argv) {
     levels: values.levels?.split(',').map((s) => s.trim()).filter(Boolean),
     file: values.file,
     source: values.source,
-    configOverrides: values['frame-mismatch'] ? { merge: { onFrameMismatch: values['frame-mismatch'] } } : undefined,
+    configOverrides: { ...(values['frame-mismatch'] ? { merge: { onFrameMismatch: values['frame-mismatch'] } } : {}), ...(values.schema ? { schemaVersion: values.schema } : {}) },
     logger,
   });
   process.stdout.write(`${JSON.stringify(res, null, 2)}\n`);
