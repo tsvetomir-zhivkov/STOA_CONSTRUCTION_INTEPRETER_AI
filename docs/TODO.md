@@ -32,3 +32,21 @@ Open items found while building, grouped by the plan step that should handle the
   scored or compared, nothing was tuned. Result: exit 0, 5 storey documents (all schema-valid on write),
   4.43 MB in total, largest document 1.12 MB, 23 s uncached. The outputs sit in `index/ifc_bench/`
   (git-ignored); `eval/score.py` only scores them with `--split holdout` or `--split all`.
+
+## Step 5 (raster preprocessing)
+
+- **Done (2026-11-14), `translator/raster/preprocess.py`.** `preprocess(img)` / `preprocess_path(path)` give
+  original, normalized (inverted when median grey < 100), ocr_gray (CLAHE 2.0, 8x8), binary (adaptive
+  Gaussian, block 31, C 10) and ocr_upscaled (x2 when the longest side < 1500 px, OCR only), all on the
+  original pixel grid. `Preprocessed.schema_transforms()` turns the transforms dict into valid
+  `drawing.transforms` entries (kinds invert / upscale / resize / deskew).
+- **Dev-split check (cubicasa5k, 193 images; the 48 held-out ones skipped unopened):** 193/193 processed,
+  `pre.shape[:2] == orig.shape[:2]` for all, 0 failures, 0 inverted, 165 upscaled for OCR (longest side:
+  min 431, median 884, max 4500 px), all 193 binaries have a white background. 10 side-by-sides
+  (seed 5) in `index/debug_raster/` (git-ignored).
+- For step 7 (OCR): some CubiCasa originals are **mirrored** (text reads backwards, e.g. `colorful-7513`:
+  "RUOK" drawn as "KOUR"). Not touched here (no flips in step 5). OCR must try a mirrored copy and map
+  boxes back (x' = width - 1 - x), recording the flip in drawing.transforms. Not yet counted how many.
+- For step 7: no dev image has a dark background, so the invert path is only covered by synthetic tests.
+- Open: `translator/extract/raster/` (empty stub from step 1) now sits next to `translator/raster/`.
+  Decide where segmentation post-processing goes in step 6 and delete the other.
