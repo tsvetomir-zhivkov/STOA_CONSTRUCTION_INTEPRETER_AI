@@ -102,5 +102,21 @@ def translate(path: str, data: str | None = None) -> dict:
         ],
         "history": [{"extractor": "router", "action": "route", "note": note}],
     }
+    _run_extractor(doc, r, root)
     validate(doc, where=r["file"])
     return doc
+
+
+def _run_extractor(doc: dict, r: dict, root: Path) -> None:
+    """Fill the document from the extractor for this route, if one exists yet."""
+    if r["route"] == "dxf":
+        from translator.extract import swiss_dxf
+
+        dxf = root / r["read_from"] if not Path(r["read_from"]).is_absolute() else Path(r["read_from"])
+        if not swiss_dxf.is_swiss_dxf(dxf):
+            return
+        parts = swiss_dxf.extract(dxf, read_from=r["read_from"])
+        doc["drawing"]["scale"] = parts.pop("scale")
+        doc["history"].extend(parts.pop("history"))
+        for key, value in parts.items():
+            doc[key] = value

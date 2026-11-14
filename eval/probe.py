@@ -72,6 +72,14 @@ def _rooms_of_type(docs, *types):
     return [r for r in _all(docs, "rooms") if r.get("type") in types]
 
 
+NOT_RESIDENTIAL = {"non_residential", "unlabelled"}
+
+
+def _residential_units(docs):
+    """Units that are apartments: not flagged non_residential / unlabelled."""
+    return [u for u in _all(docs, "units") if not NOT_RESIDENTIAL & set(u.get("flags", []))]
+
+
 # Element words in IFC count questions -> (collection, filter)
 _ELEMENT_WORDS = {
     "door": ["doors", "døre", "ust", "türen"],
@@ -138,14 +146,19 @@ def sw_apartment_area(docs, m):
     rooms = [
         r
         for r in _all(docs, "rooms")
-        if r.get("unit_id") in unit_ids and not r.get("is_outdoor") and not r.get("is_void")
+        if r.get("unit_id") in unit_ids
+        and (r.get("name") or r.get("number"))  # labelled rooms only, not bare outlines
+        and not r.get("is_outdoor")
+        and r.get("type") != "shaft"
     ]
     return _sum(_area(r) for r in rooms)
 
 
 def sw_numbered_indoor_area(docs, m):
     rooms = [
-        r for r in _all(docs, "rooms") if r.get("number") and not r.get("is_outdoor") and not r.get("is_void")
+        r
+        for r in _all(docs, "rooms")
+        if r.get("number") and not r.get("is_outdoor") and r.get("type") != "shaft"
     ]
     return _sum(_area(r) for r in rooms)
 
@@ -281,7 +294,7 @@ INTENTS: list[Intent] = [
             r"^Combien d.appartements",
             r"^Quanti appartamenti",
         ),
-        _count(lambda d: _all(d, "units")),
+        _count(_residential_units),
     ),
     Intent(
         "sw_doors",
