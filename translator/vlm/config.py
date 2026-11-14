@@ -35,6 +35,9 @@ MAX_SIDE_PX = 1536  # longest side of an image sent to the model (downscaled, ne
 CROP_PAD_FRAC = 0.15  # padding around a room crop, as a share of the room's longest side
 CROP_MIN_PAD_PX = 24
 
+# Confidence of a VLM finding: a fixed prior, NOT calibrated (no per-answer probability from the API).
+VLM_CONFIDENCE = 0.6
+
 # Write-back per category: only enabled once it beats the pipeline on dev (decided after step d).
 WRITEBACK_ENABLED = {"shower": False, "kitchen": False, "bathroom": False, "floors": False,
                      "doors": False, "windows": False, "rooms": False}  # fmt: skip

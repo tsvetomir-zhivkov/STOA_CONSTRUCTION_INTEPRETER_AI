@@ -11,7 +11,8 @@ import cv2
 import numpy as np
 import pytest
 
-from translator.vlm import base, config, gate, gemini, images, shower
+from translator.store import validate as base_validate
+from translator.vlm import base, config, gate, gemini, images, shower, writeback
 from translator.vlm.base import Budget, BudgetExceeded, Crop, HoldoutError, HoldoutGuard, VLMError
 from translator.vlm.fake import FakeClient, QwenClient
 from translator.vlm.gemini import GeminiClient
@@ -413,3 +414,205 @@ def test_ledger_totals_include_estimates(tmp_path, monkeypatch):
     assert data["totals"] == {"logged_usd": 0.05, "estimated_unlogged_usd": 0.025, "total_usd": 0.075}
     assert data["runs"][0]["avg_cost_per_gated_image"] == 0.01
     assert data["runs"][0]["avg_cost_per_dev_image"] == round(0.05 / 193, 6)
+
+
+# ------------------------------------------------------------------ write-back
+
+ALL_ON = {"kitchen": True, "bathroom": True, "shower": True, "floors": True, "doors": True, "windows": True}
+
+
+def _wdoc(rooms=(), objects=(), openings=(), levels=(), cov=()):
+    img = "data/cubicasa5k/dev.png"
+    return {"schema_version": "0.2",
+            "drawing": {"file": img, "source": "cubicasa5k", "route": "raster", "read_from": img,
+                        "image": {"width_px": 1000, "height_px": 1000, "dpi": None}, "transforms": []},
+            "levels": list(levels), "units": [], "walls": [], "edges": [], "texts": [],
+            "rooms": list(rooms), "objects": list(objects), "openings": list(openings),
+            "coverage": [{"category": c, "region": "page", "status": s, "extractor": "x", "confidence": 0.2,
+                          "note": n} for c, s, n in cov], "history": []}  # fmt: skip
+
+
+def _wroom(rid, rtype, box=None, flags=(), extractor="cubicasa5k", details=None):
+    poly = [[box[0], box[1]], [box[2], box[1]], [box[2], box[3]], [box[0], box[3]]] if box else None
+    return {"id": rid, "name": None, "number": None, "label": None, "type": rtype, "subtype": None,
+            "is_outdoor": False, "polygon_px": poly, "polygon_m": None, "area_m2": None,
+            "confidence": 0.9 if box else 0.2, "status": "active", "flags": list(flags),
+            "provenance": {"extractor": extractor, "source_ref": rid,
+                           "details": dict(details or {})}}  # fmt: skip
+
+
+def _assumed(rtype="kitchen"):
+    return _wroom(f"room-prior-cc_{rtype}s-0", rtype, None, ["assumed_prior"], "prior")
+
+
+def _out(cat, count, boxes=(), gate_="prior"):
+    return {"category": cat, "count": count, "boxes_px": [list(b) for b in boxes], "cost_usd": 0.003,
+            "key": "k" * 64, "model": "gemini-3.8-flash", "gate": gate_}  # fmt: skip
+
+
+def _n(doc, rtype):
+    return sum(r["type"] == rtype and r.get("status", "active") == "active" for r in doc["rooms"])
+
+
+def _cov_of(doc, cat):
+    return next(c for c in doc["coverage"] if c["category"] == cat and c["region"] == "page")
+
+
+def test_writeback_is_off_by_default():
+    doc = _wdoc(rooms=[_assumed()])
+    assert writeback.apply(doc, _out("kitchen", 2))["applied"] is False
+    assert _n(doc, "kitchen") == 1 and doc["history"] == []
+
+
+def test_writeback_vlm_confirms_the_prior():
+    a = _assumed()
+    doc = _wdoc(rooms=[a], cov=[("kitchens", "partial", "prior: assumed 1, not read from the drawing")])
+    res = writeback.apply(doc, _out("kitchen", 1, [(100, 100, 300, 300)]), enabled=ALL_ON)
+    (new,) = [r for r in doc["rooms"] if r["provenance"]["extractor"] == "vlm_check"]
+    assert _n(doc, "kitchen") == 1 and res["new"] == [new["id"]]
+    assert a["status"] == "superseded" and a["superseded_by"] == new["id"]
+    assert new["provenance"]["source_ref"] == "vlm:kitchen" and new["polygon_px"][0] == [100, 100]
+    cov = _cov_of(doc, "kitchens")
+    assert cov["status"] == "analysed" and cov["confidence"] == config.VLM_CONFIDENCE
+    h = doc["history"][-1]
+    assert h["extractor"] == "vlm_check" and h["cost_usd"] == 0.003 and a["id"] in h["entity_ids"]
+    base_validate(doc)
+
+
+def test_writeback_vlm_contradicts_the_prior():
+    a = _assumed("bathroom")
+    doc = _wdoc(rooms=[a])
+    writeback.apply(doc, _out("bathroom", 2, [(0, 0, 100, 100), (500, 500, 600, 600)]), enabled=ALL_ON)
+    assert _n(doc, "bathroom") == 2 and a["status"] == "superseded"
+    assert all("assumed_prior" not in r["flags"] for r in doc["rooms"] if r.get("status") == "active")
+
+
+def test_writeback_vlm_says_absent():
+    a = _assumed()
+    doc = _wdoc(rooms=[a])
+    writeback.apply(doc, _out("kitchen", 0), enabled=ALL_ON)
+    assert _n(doc, "kitchen") == 0 and a["status"] == "superseded" and a["superseded_by"] is None
+    assert _cov_of(doc, "kitchens")["status"] == "analysed"
+    base_validate(doc)
+
+
+def test_writeback_restores_a_stepped_back_room_and_rejects_an_extra_one():
+    k1 = _wroom("k1", "kitchen", (0, 0, 100, 100))
+    k2 = _wroom("k2", "kitchen", (200, 0, 300, 100))
+    stepped = _wroom(
+        "s", "unknown", (500, 0, 600, 100), ["prior_stepped_back"], details={"prior_type": "kitchen"}
+    )
+    doc = _wdoc(rooms=[k1, k2, stepped])
+    writeback.apply(doc, _out("kitchen", 2, [(10, 10, 90, 90), (510, 10, 590, 90)]), enabled=ALL_ON)
+    assert stepped["type"] == "kitchen" and "vlm_confirmed" in stepped["flags"]
+    assert "vlm_confirmed" in k1["flags"]
+    assert k2["type"] == "unknown" and "vlm_stepped_back" in k2["flags"] and k2["status"] == "active"
+    assert _n(doc, "kitchen") == 2
+
+
+def test_writeback_fewer_boxes_than_count_adds_box_less_elements():
+    doc = _wdoc(rooms=[_assumed()])
+    writeback.apply(doc, _out("kitchen", 2, [(0, 0, 50, 50)]), enabled=ALL_ON)
+    assert _n(doc, "kitchen") == 2
+    assert sum("vlm_no_box" in r["flags"] for r in doc["rooms"]) == 1
+
+
+def _tub():
+    return {"id": "object-bathtub-0", "category": "bathtub", "bbox_px": [0.0, 0.0, 100.0, 40.0],
+            "polygon_px": None, "confidence": 0.8, "status": "active",
+            "provenance": {"extractor": "cubicasa5k", "source_ref": "icon:bathtub:0"}}  # fmt: skip
+
+
+def test_writeback_shower_confirms_a_tub_and_adds_a_shower():
+    tub = _tub()
+    doc = _wdoc(objects=[tub], cov=[("shower", "not_analysed", "no shower class")])
+    writeback.apply(doc, _out("shower", 2, [(10, 5, 90, 35), (400, 400, 450, 450)], "shower"), enabled=ALL_ON)
+    act = [o for o in doc["objects"] if o.get("status", "active") == "active"]
+    assert len(act) == 2 and "vlm_confirmed" in tub["flags"]
+    (new,) = [o for o in act if o["provenance"]["extractor"] == "vlm_check"]
+    assert new["category"] == "shower" and new["subtype"] == "shower_or_bathtub" and new["bbox_px"]
+    assert _cov_of(doc, "shower")["status"] == "analysed"
+    base_validate(doc)
+
+
+def test_writeback_shower_rejects_an_unconfirmed_pipeline_item():
+    tub = _tub()
+    doc = _wdoc(objects=[tub])
+    writeback.apply(doc, _out("shower", 0, (), "shower"), enabled=ALL_ON)
+    assert tub["status"] == "superseded" and "vlm_rejected" in tub["flags"] and len(doc["objects"]) == 1
+
+
+def test_writeback_floors_supersedes_levels():
+    lv = {"id": "level-0", "name": "floor 1", "bbox_px": [0.0, 0.0, 500.0, 500.0], "confidence": 0.4,
+          "provenance": {"extractor": "cubicasa5k", "source_ref": "blob:0"}}  # fmt: skip
+    doc = _wdoc(levels=[lv], cov=[("floors", "partial", "2 titles, 1 blob")])
+    writeback.apply(doc, _out("floors", 2, [(0, 0, 500, 500), (500, 0, 1000, 500)], "floors"), enabled=ALL_ON)
+    act = [x for x in doc["levels"] if x.get("status", "active") == "active"]
+    assert len(act) == 2 and lv["status"] == "superseded" and lv["superseded_by"] == "level-vlm-0"
+    assert _cov_of(doc, "floors")["status"] == "analysed"
+    base_validate(doc)
+
+
+def test_writeback_floors_confirmed_keeps_levels():
+    lv = {"id": "level-0", "name": "1. KRS", "confidence": 0.4,
+          "provenance": {"extractor": "ocr", "source_ref": "ocr:original:0"}}  # fmt: skip
+    doc = _wdoc(levels=[lv])
+    writeback.apply(doc, _out("floors", 1, [(0, 0, 500, 500)], "floors"), enabled=ALL_ON)
+    assert (
+        lv.get("status", "active") == "active" and "vlm_confirmed" in lv["flags"] and len(doc["levels"]) == 1
+    )
+
+
+def test_writeback_absent_windows_found_by_vlm():
+    doc = _wdoc()
+    writeback.apply(
+        doc, _out("windows", 2, [(0, 0, 10, 40), (100, 0, 110, 40)], "no_evidence"), enabled=ALL_ON
+    )
+    assert [o["kind"] for o in doc["openings"]] == ["window", "window"]
+    base_validate(doc)
+
+
+# ------------------------------------------------------------------ resumable run in priority order
+
+
+@pytest.fixture
+def mini_dataset(tmp_path, monkeypatch):
+    from translator import config as tconfig
+
+    root = tmp_path / "ds"
+    (root / "data" / "cubicasa5k").mkdir(parents=True)
+    idx = tmp_path / "index"
+    (idx / "cubicasa5k").mkdir(parents=True)
+    for name, grey in (("a", 255), ("b", 200)):  # different pixels: identical images share a cache key
+        cv2.imwrite(str(root / "data" / "cubicasa5k" / f"{name}.png"), np.full((200, 300, 3), grey, np.uint8))
+        doc = _wdoc(rooms=[_wroom("bath", "bathroom", (10, 10, 50, 50)), _assumed()],
+                    cov=[("kitchens", "partial", "prior: assumed 1, not read")])  # fmt: skip
+        (idx / "cubicasa5k" / f"{name}.json").write_text(json.dumps(doc), encoding="utf-8")
+    monkeypatch.setattr(tconfig, "INDEX_DIR", idx)
+    monkeypatch.setattr(base, "_GUARD", HoldoutGuard({"data/cubicasa5k/held.png"}))
+    return root, idx
+
+
+def test_run_is_in_priority_order_aborts_at_the_cap_and_resumes_from_cache(mini_dataset, monkeypatch):
+    from translator.vlm import ledger, run
+
+    root, idx = mini_dataset
+    vlm_dir = idx / "_raw" / "vlm"
+    for mod in (base, run, ledger):
+        monkeypatch.setattr(mod, "cache_dir", lambda: vlm_dir)
+    srcs = ["data/cubicasa5k/a.png", "data/cubicasa5k/b.png"]
+    tasks = run.plan(srcs, index_dir=idx)
+    assert [(t.source[-5:], t.category, t.gate) for t in tasks] == [
+        ("a.png", "shower", "shower"), ("b.png", "shower", "shower"),
+        ("a.png", "kitchen", "prior"), ("b.png", "kitchen", "prior"),  # no_evidence kitchen merged into prior
+        ("a.png", "doors", "no_evidence"), ("a.png", "windows", "no_evidence"),
+        ("b.png", "doors", "no_evidence"), ("b.png", "windows", "no_evidence")]  # fmt: skip
+    monkeypatch.setitem(config.PRICES_USD_PER_MTOK, "fake", {"input": 1000.0, "output": 0.0})
+    c1 = FakeClient(budget=Budget(cap_usd=1.0), tokens=(600, 0, 0), cache=vlm_dir)  # $0.60 per call
+    out, abort = run.run(tasks, c1, "t1", root)
+    # the 2nd call went over the cap: its answer is cached, the run stops there
+    assert abort and len(out) == 1 and len(c1.calls) == 2
+    c2 = FakeClient(budget=Budget(cap_usd=1.0), tokens=(600, 0, 0), cache=vlm_dir)
+    out2, abort2 = run.run(tasks[:2], c2, "t2", root)
+    assert not abort2 and [o["cached"] for o in out2] == [True, True] and c2.calls == []
+    assert ledger.load()["runs"][-1]["calls"] == 0
