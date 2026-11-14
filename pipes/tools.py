@@ -178,9 +178,14 @@ class PipeIndex:
             if n_found == 0:
                 ok = False
                 caveats.append("nothing matched and tags are partial: do not say the tag is absent")
-        caveats.append(
-            "tags are read by OCR: a misread or missed tag is not matched, so a result can be a lower bound"
-        )
+        if self.doc["sheet"]["route"] == "vector_parser":
+            caveats.append(
+                "tags come from the drawing file's own text and block attributes, matched by proximity"
+            )
+        else:
+            caveats.append(
+                "tags are read by OCR: a misread or missed tag is not matched, so a result can be a lower bound"
+            )
         return cov, ok, caveats
 
     # ------------------------------------------------------------------ tools
@@ -257,7 +262,13 @@ class PipeIndex:
                 path_e, path_p = [*eids, key], [*polys, self._oriented(key, cur)]
                 if nb in self.symbol_ids and nb != node:
                     if nb not in neighbours or len(path_e) < len(neighbours[nb]["edge_ids"]):
-                        neighbours[nb] = {"node_id": nb, "edge_ids": path_e, "polylines_px": path_p}
+                        neighbours[nb] = {
+                            "node_id": nb,
+                            "type": self.nodes[nb]["type"],
+                            "tag": self.nodes[nb].get("tag"),
+                            "edge_ids": path_e,
+                            "polylines_px": path_p,
+                        }
                 elif nb not in seen and nb not in self.symbol_ids:
                     seen.add(nb)
                     used_nodes.append(nb)

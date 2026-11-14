@@ -96,7 +96,15 @@ def collapse_deg2(g: G) -> None:
             p2 = e2["poly"] if ja else e2["poly"][::-1]  # starts at n
             a = e1["b"] if ia else e1["a"]
             b = e2["b"] if ja else e2["a"]
-            merged = {"a": a, "b": b, "poly": p1 + p2[1:]}
+            la, lb = e1.get("layer"), e2.get("layer")
+            layer = la if la == lb else "+".join(sorted({x for x in (la, lb) if x})) or None
+            merged = {
+                "a": a,
+                "b": b,
+                "poly": p1 + p2[1:],
+                "layer": layer,
+                "src": [*e1.get("src", []), *e2.get("src", [])],
+            }
             g.edges = [e for k, e in enumerate(g.edges) if k not in (i, j)] + [merged]
             del g.nodes[n]
             changed = True

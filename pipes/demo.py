@@ -30,8 +30,16 @@ AMBER = (200, 140, 0)
 
 
 def sheet_image(doc: dict) -> Path | None:
-    """data_pipes/ds/<split>/<id>/sheet.jpg for ids like 'pid_dataset/test/157#0'."""
-    parts = doc["sheet"]["id"].split("#")[0].split("/")
+    """The page image of a sheet: the PNG the DXF route rendered next to its published index, else the dataset image
+    data_pipes/ds/<split>/<id>/sheet.jpg for ids like 'pid_dataset/test/157#0'."""
+    from pipes.routing import pipe_index_path
+
+    sh = doc["sheet"]
+    png = pipe_index_path(sh["source_file"], sh["page_index"])
+    png = png.with_name(png.name.removesuffix(".pipe.json") + ".png")
+    if png.exists():
+        return png
+    parts = sh["id"].split("#")[0].split("/")
     if len(parts) == 3:
         p = HERE / "data_pipes" / "ds" / parts[1] / parts[2] / "sheet.jpg"
         return p if p.exists() else None

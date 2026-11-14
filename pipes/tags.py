@@ -52,6 +52,11 @@ _DIAM_DN = re.compile(r"^DN(\d{2,3})$")
 _LINE = re.compile(r'^(\d{1,3}(?:\.\d)?"?)((?:-[A-Z0-9]{1,6}){2,5})$')
 _EQUIP = re.compile(r"^(?:\d{1,3}-)?(?:[A-Z]{1,3}-\d{1,5}|[A-Z]{1,3}\d{2,5})[A-Z]?(?:/[A-Z])?$")
 _NUM = re.compile(r"^\d{2,5}$")
+# short system line codes (heating/plumbing sheets): LV-1, KV-2. At most 3 digits: LV-10028 is an instrument tag.
+_LINE_CODE = re.compile(r"^(?:KV|LV|LVK|VV|VVC|PWC|PWH|PWH-C|JV|SV|LJ)-\d{1,3}$")
+# exact CAD text allows short equipment tags (K1, P1, R2) that OCR noise would make ambiguous
+_EQUIP_VECTOR = re.compile(r"^(?:\d{1,3}-)?[A-Z]{1,3}-?\d{1,5}[A-Z]?(?:/[A-Z])?$")
+_LENGTH = re.compile(r"^L=(\d+(?:[.,]\d+)?)(M|MM)?$")
 
 
 def normalise(raw: str) -> str:
@@ -59,6 +64,8 @@ def normalise(raw: str) -> str:
     for a, b in (("”", '"'), ("“", '"'), ("''", '"'), ("″", '"'), ("–", "-"), ("—", "-")):
         t = t.replace(a, b)
     t = re.sub(r"\s+", "", t)
+    if re.match(r"^L=\d", t):  # a written length "L=1,2" keeps its equals sign
+        return t
     return re.sub(r"(?<=[A-Z])[.=](?=\d)", "-", t)  # V.100 -> V-100, PV=10014 -> PV-10014
 
 
@@ -83,15 +90,26 @@ def text_value(raw: str) -> dict | None:
     return {"number": float(m.group(1)), "unit": "dn"} if m else None
 
 
-def classify(raw: str) -> dict:
+def classify(raw: str, vector: bool = False) -> dict:
     """{'role': ..., 'canon': normalised tag or None, 'size_raw': size part of a line number or None}."""
     t = normalise(raw)
     if _DIAM_IN.match(t) or _DIAM_DN.match(t):
         return {"role": "diameter", "canon": t, "size_raw": raw}
+    m = _LENGTH.match(t)
+    if m:
+        v = float(m.group(1).replace(",", "."))
+        return {
+            "role": "length",
+            "canon": t,
+            "size_raw": None,
+            "metres": v / 1000 if m.group(2) == "MM" else v,
+        }
+    if _LINE_CODE.match(t):
+        return {"role": "line_tag", "canon": t, "size_raw": None}
     m = _LINE.match(t)
     if m and re.search(r"[A-Z]", m.group(2)) and re.search(r"\d", m.group(2)):
         return {"role": "line_tag", "canon": t, "size_raw": m.group(1)}
-    if _EQUIP.match(t):
+    if (_EQUIP_VECTOR if vector else _EQUIP).match(t):
         return {"role": "equipment_tag", "canon": t, "size_raw": None}
     if t in INSTRUMENT_CODES:
         return {"role": "equipment_tag", "canon": t, "size_raw": None, "instrument": True}
@@ -148,16 +166,19 @@ def _angle_diff(a: float, b: float) -> float:
 
 def _reset(doc: dict) -> None:
     for n in doc["nodes"]:
-        n["tag"], n["tag_text_id"] = None, None
+        if n.get("attributes", {}).get("tag_source") != "attribute":  # tags read from a block attribute stay
+            n["tag"], n["tag_text_id"] = None, None
     for e in doc["edges"]:
         e["line_tag"], e["line_tag_text_id"] = None, None
         e["provenance"]["evidence_ids"] = [x for x in e["provenance"].get("evidence_ids", []) if not x.startswith("text_")
                                            and not x.startswith("pipe_")]  # fmt: skip
+        if e["length"].get("written_text_id"):
+            e["length"]["written_m"], e["length"]["written_text_id"] = None, None
         if e["diameter"]["source"] == "label":
             e["diameter"] = {"value": None, "source": "unknown", "text_id": None, "confidence": 0.0}
     for t in doc["texts"]:
         t["role"], t["value"], t["attached_to"] = "unknown", None, []
-    doc["coverage"] = [c for c in doc["coverage"] if c["category"] not in ("tags", "diameters")]
+    doc["coverage"] = [c for c in doc["coverage"] if c["category"] not in ("tags", "diameters", "lengths")]
 
 
 def _nearest_edge(t, edges):
@@ -172,7 +193,7 @@ def _nearest_edge(t, edges):
     return best
 
 
-def attach_tags(doc: dict) -> dict:
+def attach_tags(doc: dict, vector: bool = False) -> dict:
     """Mutates a pipe doc (before finalize) and returns counts. Idempotent."""
     _reset(doc)
     if not any(x["id"] == EXT for x in doc["extractors"]):
@@ -183,12 +204,14 @@ def attach_tags(doc: dict) -> dict:
     for t in doc["texts"]:
         if t["provenance"]["confidence"] < MIN_TEXT_SCORE:
             continue
-        c = classify(t["raw_text"])
+        c = classify(t["raw_text"], vector)
         if c["role"] != "unknown":
             info[t["id"]] = c
             t["role"] = c["role"]
             if c["role"] == "diameter":
                 t["value"] = text_value(t["raw_text"])
+            elif c["role"] == "length":
+                t["value"] = {"number": c["metres"], "unit": "m"}
     # instrument code + loop number -> one tag
     nums = [
         t
@@ -251,7 +274,11 @@ def attach_tags(doc: dict) -> dict:
         t["attached_to"] = [n["id"]]
         if c.get("extra_text"):
             texts[c["extra_text"]]["attached_to"] = [n["id"]]
-        if conf > node_best.get(n["id"], 0):
+        if n.get("attributes", {}).get("tag_source") == "attribute":
+            node_best[n["id"]] = max(
+                node_best.get(n["id"], 0), conf
+            )  # the attribute is the tag; the text agrees
+        elif conf > node_best.get(n["id"], 0):
             node_best[n["id"]] = conf
             n["tag"], n["tag_text_id"] = c["canon"], tid
     stats["equipment_tags"] = len(node_best)
@@ -284,6 +311,23 @@ def attach_tags(doc: dict) -> dict:
             stats["diameters"] += 1
     stats["line_tags"] = len(line_best)
     assoc_conf += list(line_best.values())
+
+    # written lengths ("L=1,2"): nearest pipe, like a line tag
+    length_best: dict[str, float] = {}
+    for tid, c in info.items():
+        t = texts[tid]
+        if c["role"] != "length":
+            continue
+        hit = _nearest_edge(t, edges)
+        if not hit:
+            continue
+        _, d, e = hit
+        if d >= length_best.get(e["id"], math.inf):
+            continue
+        length_best[e["id"]] = d
+        e["length"]["written_m"], e["length"]["written_text_id"] = c["metres"], tid
+        t["attached_to"] = [e["id"]]
+    stats["lengths"] = len(length_best)
 
     # carry line tags along the run through small two-pipe symbols (valves)
     inc: dict[str, list[dict]] = {}
@@ -345,6 +389,29 @@ def attach_tags(doc: dict) -> dict:
             "id": f"cov_{cid + 2}", "region": "page", "category": "diameters",
             "status": "partial" if no_size else "analysed", "confidence": round(conf, 4), "extractor_id": EXT,
             "element_ids": no_size, "note": f"{len(edges) - len(no_size)} of {len(edges)} pipes have a size",
+        })  # fmt: skip
+    scale = doc["scale"]
+    to_scale = (
+        doc["sheet"].get("is_to_scale") is not False
+        and scale["source"] != "not_to_scale"
+        and scale["metres_per_px"]
+    )
+    no_len = [e["id"] for e in edges if e["length"]["written_m"] is None]
+    if edges:
+        if to_scale:
+            status, lconf, note = (
+                "analysed",
+                0.9,
+                "lengths from the drawing units (scale: " + str(scale["source"]) + ")",
+            )
+        elif len(no_len) < len(edges):
+            status, lconf = ("partial" if no_len else "analysed"), 0.9
+            note = f"written lengths on {len(edges) - len(no_len)} of {len(edges)} pipes; no scale"
+        else:
+            status, lconf, note = "not_analysed", 0.0, "not to scale and no written lengths"
+        doc["coverage"].append({
+            "id": f"cov_{cid + 3}", "region": "page", "category": "lengths", "status": status,
+            "confidence": lconf, "extractor_id": EXT, "element_ids": [] if to_scale else no_len, "note": note,
         })  # fmt: skip
     return stats
 

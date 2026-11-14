@@ -40,7 +40,12 @@ def test_wrappers_give_the_model_a_compact_result_and_log_the_full_one():
     assert log[0]["tool"] == "path_between" and log[0]["args"] == {"a": "node_1", "b": "node_4"}
     assert log[0]["result"]["highlights"]["edges"][0]["polyline_px"]  # the UI still gets the geometry
     link = tools["connected_to_tool"]("node_2")["answer"]["links"][0]
-    assert set(link) == {"node_id", "edge_ids"}  # polylines stripped for the model
+    assert set(link) == {
+        "node_id",
+        "type",
+        "tag",
+        "edge_ids",
+    }  # polylines stripped for the model; type and tag kept
 
 
 def test_empty_string_arguments_mean_not_given():
@@ -167,3 +172,24 @@ def test_null_arguments_are_dropped_before_validation():
     r = call_tool(idx(), "count_symbols", {"region": None, "type": "", "tag": ""})
     assert r["answer"]["count"] == 4 and r["reliable"]
     assert call_tool(idx(), "connected_to", {"node": None})["reliable"] is False  # still required
+
+
+def test_cost_per_question_uses_the_list_price_with_thinking_as_output():
+    from datetime import date
+
+    from pipes.cost import cost_usd, price
+
+    usage = {"input": 1_000_000, "output": 100_000, "thinking": 100_000}
+    assert cost_usd(usage, "gemini-3.8-flash", on=date(2026, 11, 15)) == pytest.approx(0.75 + 0.2 * 3.75)
+    assert cost_usd(usage, "gemini-3.8-flash", on=date(2027, 1, 2)) == pytest.approx(1.50 + 0.2 * 7.50)
+    assert (
+        price("gemini-3.8-flash", date(2026, 12, 31))["input"] == 0.75
+    )  # the intro price lasts through Dec 31
+    assert cost_usd(usage, "some-unknown-model") is None and cost_usd(None, "gemini-3.8-flash") is None
+    assert cost_usd({"input": None, "output": None, "thinking": None}, "gemini-3.8-flash") == 0
+
+
+def test_dxf_questions_are_part_of_the_example_set():
+    ids = [q["id"] for q in aq.SETS["dxf"]]
+    assert ids == ["d01", "d02", "d03"] and len(aq.SETS["all"]) == 13
+    assert any("metres" in q["question"] for q in aq.SETS["dxf"])  # one is a length in metres

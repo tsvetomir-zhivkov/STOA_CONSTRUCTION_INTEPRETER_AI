@@ -1,6 +1,8 @@
-"""Ten example questions on dev sheets 157, 151 and 176, with expected answers, run through the pipe agent.
+"""Example questions with expected answers, run through the pipe agent: 10 on dev sheets 157, 151 and 176, 3 on the
+synthetic heating DXF, with the cost of each question.
 
-  python -m pipes.eval.agent_questions                # agent (Gemini) + direct tool check
+  python -m pipes.eval.agent_questions                # agent (Gemini) + direct tool check, all 13 questions
+  python -m pipes.eval.agent_questions --set dxf      # only the heating DXF questions (dev | dxf | all)
   python -m pipes.eval.agent_questions --tools-only   # only call the reference tool of each question, no LLM
 
 Where each expected answer comes from (not from the tools under test):
@@ -189,14 +191,65 @@ QUESTIONS = [
 ]
 
 
-def run(tools_only: bool = False) -> list[dict]:
+HEATING = "hypothetical/LVI-heating.dxf"
+LOWER = re.compile(
+    r"lower bound|at least|minimum|no (?:written )?length|missing|not (?:all|every)|incomplete|only", re.I
+)
+
+# Expected answers from the schema's own example (pipes/schema/example_standalone_heating_schematic.json, written by
+# the schema owner): 2 radiators; line LV-1 = 1.2 + 0.8 + 2.5 m written, pipe_8 has no written length (summary: 4.5 m);
+# the pump P1 sits between the boiler K1 and a ball valve. The DXF itself was generated from that example.
+QUESTIONS_DXF = [
+    {
+        "id": "d01",
+        "sheet": "heating",
+        "file": HEATING,
+        "basis": "example",
+        "question": "How many radiators are on the heating sheet?",
+        "expected": "2 (R1 and R2): the symbols are typed from their block names",
+        "tool": ("count_symbols", {"type": "radiator"}),
+        "tool_ok": lambda r: r["answer"]["count"] == 2,
+        "answer_ok": lambda t, calls: first_number(t) == 2,
+    },
+    {
+        "id": "d02",
+        "sheet": "heating",
+        "file": HEATING,
+        "basis": "example",
+        "question": "What is the total length of line LV-1 in metres?",
+        "expected": "4.5 m, as a lower bound: one LV-1 pipe has no written length",
+        "tool": ("pipe_length", {"tag": "LV-1"}),
+        "tool_ok": lambda r: r["answer"]["length_m"] == 4.5 and r["answer"]["lower_bound"] is True,
+        "answer_ok": lambda t, calls: bool(re.search(r"4[.,]5", body(t))) and bool(LOWER.search(body(t))),
+    },
+    {
+        "id": "d03",
+        "sheet": "heating",
+        "file": HEATING,
+        "basis": "example",
+        "question": "What is directly connected to the pump P1?",
+        "expected": "the boiler K1 and a ball valve (two symbols)",
+        "tool": ("connected_to", {"node": "node_2"}),
+        "tool_ok": lambda r: r["answer"]["connected"] == ["node_1", "node_3"],
+        "answer_ok": lambda t, calls: {"node_1", "node_3"} <= set(ID.findall(t)) and "K1" in t,
+    },
+]
+
+SETS = {"dev": QUESTIONS, "dxf": QUESTIONS_DXF, "all": [*QUESTIONS, *QUESTIONS_DXF]}
+
+
+def run(tools_only: bool = False, which: str = "all") -> list[dict]:
+    from datetime import date
+
+    from pipes.cost import cost_usd
     from pipes.routing import route_page
 
     rows = []
     indexes: dict[str, PipeIndex] = {}
-    for q in QUESTIONS:
-        route = route_page(FILE.format(q["sheet"]))
-        idx = indexes.setdefault(q["sheet"], PipeIndex.load(route["pipe"]))
+    for q in SETS[which]:
+        file = q.get("file") or FILE.format(q["sheet"])
+        route = route_page(file)
+        idx = indexes.setdefault(file, PipeIndex.load(route["pipe"]))
         name, args = q["tool"]
         ref = call_tool(idx, name, args)
         row = {"id": q["id"], "sheet": q["sheet"], "basis": q["basis"], "question": q["question"],
@@ -204,7 +257,7 @@ def run(tools_only: bool = False) -> list[dict]:
         if not tools_only:
             from pipes.agent import answer_question
 
-            r = answer_question(q["question"], FILE.format(q["sheet"]))
+            r = answer_question(q["question"], file)
             calls = r["tool_calls"]
             seen = {
                 i for c in calls for i in [*c["result"].get("node_ids", []), *c["result"].get("edge_ids", [])]
@@ -214,7 +267,9 @@ def run(tools_only: bool = False) -> list[dict]:
             row |= {
                 "answer": r["answer"], "agent": bool(q["answer_ok"](r["answer"], calls)),
                 "grounded": cited <= seen, "tools_used": [c["tool"] for c in calls],
-                "used_reference_tool": name in [c["tool"] for c in calls], "usage": r["usage"],
+                "used_reference_tool": name in [c["tool"] for c in calls], "usage": r["usage"], "model": r["model"],
+                "cost_usd": cost_usd(r["usage"], r["model"]),
+                "cost_usd_from_2027": cost_usd(r["usage"], r["model"], on=date(2027, 1, 2)),
             }  # fmt: skip
         rows.append(row)
     return rows
@@ -222,14 +277,17 @@ def run(tools_only: bool = False) -> list[dict]:
 
 def report(rows: list[dict]) -> str:
     agent = "agent" in rows[0]
-    head = f"{'id':<4} {'sheet':>5} {'basis':<12} {'tool':>5} " + (
-        f"{'agent':>6} {'grounded':>8} tools" if agent else ""
+    head = f"{'id':<4} {'sheet':>7} {'basis':<12} {'tool':>5} " + (
+        f"{'agent':>6} {'grounded':>8} {'tokens in/out':>14} {'cost USD':>9}  tools" if agent else ""
     )
     out = [head]
     for r in rows:
-        line = f"{r['id']:<4} {r['sheet']:>5} {r['basis']:<12} {'ok' if r['tool'] else 'FAIL':>5} "
+        line = f"{r['id']:<4} {r['sheet']:>7} {r['basis']:<12} {'ok' if r['tool'] else 'FAIL':>5} "
         if agent:
-            line += f"{'ok' if r['agent'] else 'FAIL':>6} {'yes' if r['grounded'] else 'NO':>8} {','.join(r['tools_used'])}"
+            u = r["usage"] or {}
+            tok = f"{u.get('input') or 0}/{(u.get('output') or 0) + (u.get('thinking') or 0)}"
+            cost = "n/a" if r["cost_usd"] is None else f"{r['cost_usd']:.5f}"
+            line += f"{'ok' if r['agent'] else 'FAIL':>6} {'yes' if r['grounded'] else 'NO':>8} {tok:>14} {cost:>9}  {','.join(r['tools_used'])}"
         out.append(line)
     n = len(rows)
     out.append(f"\ntool-level: {sum(r['tool'] for r in rows)}/{n}")
@@ -237,6 +295,16 @@ def report(rows: list[dict]) -> str:
         out.append(
             f"agent answers: {sum(r['agent'] for r in rows)}/{n}; grounded: {sum(r['grounded'] for r in rows)}/{n}"
         )
+        costs = [r["cost_usd"] for r in rows if r["cost_usd"] is not None]
+        if costs:
+            c27 = [r["cost_usd_from_2027"] for r in rows if r["cost_usd_from_2027"] is not None]
+            model = rows[0]["model"]
+            out.append(
+                f"cost ({model}, {len(costs)} questions): total ${sum(costs):.4f}, "
+                f"average ${sum(costs) / len(costs):.5f} per question "
+                f"(${sum(c27) / len(c27):.5f} per question at the 2027 list price); thinking tokens billed as output"
+            )
+            out.append("prices: see pipes/cost.py (Google list price, checked 2026-11-15)")
     return "\n".join(out)
 
 
@@ -245,9 +313,10 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(prog="python -m pipes.eval.agent_questions", description=__doc__)
     ap.add_argument("--tools-only", action="store_true")
+    ap.add_argument("--set", choices=sorted(SETS), default="all")
     ap.add_argument("-o", "--out", default=str(HERE / "index_pipes" / "agent_eval.json"))
     a = ap.parse_args(argv)
-    rows = run(a.tools_only)
+    rows = run(a.tools_only, a.set)
     Path(a.out).write_text(json.dumps(rows, indent=1, ensure_ascii=False), encoding="utf-8")
     print(report(rows))
     return 0

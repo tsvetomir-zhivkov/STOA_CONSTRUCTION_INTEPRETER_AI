@@ -109,7 +109,8 @@ def compact(result: dict, max_ids: int = 40) -> dict:
     ans = {k: v for k, v in result["answer"].items() if k not in ("path_polyline_px", "per_edge_m", "links")}
     if "links" in result["answer"]:
         ans["links"] = [
-            {"node_id": x["node_id"], "edge_ids": x["edge_ids"]} for x in result["answer"]["links"]
+            {"node_id": x["node_id"], "type": x.get("type"), "tag": x.get("tag"), "edge_ids": x["edge_ids"]}
+            for x in result["answer"]["links"]
         ]
     r["answer"] = ans
     for key in ("node_ids", "edge_ids"):
