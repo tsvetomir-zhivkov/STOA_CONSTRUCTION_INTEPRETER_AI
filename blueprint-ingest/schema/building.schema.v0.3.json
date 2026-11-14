@@ -304,7 +304,8 @@
           "type": "object", "additionalProperties": false,
           "properties": {"floor": {"$ref": "#/$defs/finish"}, "wall": {"$ref": "#/$defs/finish"}, "ceiling": {"$ref": "#/$defs/finish"}}
         },
-        "boundary_element_ids": {"$ref": "#/$defs/ids"}
+        "boundary_element_ids": {"$ref": "#/$defs/ids", "description": "Elements bounding this space (IfcRelSpaceBoundary)"},
+        "type_id": {"$ref": "#/$defs/id_or_null", "description": "IfcSpaceType"}
       }
     },
     "wall": {
