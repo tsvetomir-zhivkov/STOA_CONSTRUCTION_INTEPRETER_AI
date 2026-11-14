@@ -9,11 +9,14 @@ fuse() adds to a CubiCasa document (translator.extract.cubicasa.to_parts output)
   orientation  the reading (as drawn or mirrored) with more glossary hits, then higher mean confidence;
                a mirrored plan gets drawing.transforms {"kind": "other", "note": "mirrored"}
   texts[]      every OCR hit, with a role: room_label, level_title, area, dimension, other
-  rooms        same-class segmentation regions that touch (within MERGE_GAP_PX) are merged into one room;
-               the parts stay as superseded. A room label names the room whose polygon holds its centre;
+  rooms        a room label names the room whose polygon holds its centre;
                more labels in one region become extra rooms (flag shares_region); a label in no region
                becomes a room of its own (flag label_only, low confidence). Unlabelled regions keep the
-               segmentation class.
+               segmentation class, except (label_priority, default on) when the page has a labelled room of
+               the same type: then the region steps back to type 'unknown' (flag unlabelled_region), so rooms
+               are counted by label, not by segmentation fragment. Optional (merge, default off): same-class
+               regions within MERGE_GAP_PX are merged, parts kept as superseded. On the dev split merging
+               changed no kitchen count and cost bedrooms 2-4 points; label priority fixed the kitchens.
   levels[]     storey titles (1. KRS, KELLARI, ...); without titles, one level per building blob (connected
                wall/room mask). If titles and blobs disagree, coverage 'floors' is partial, low confidence.
 """
@@ -437,8 +440,8 @@ def fuse(
     seg_raw: dict,
     ocr_raw: dict | None,
     read_from: str,
-    merge: bool = True,
-    label_priority: bool = False,
+    merge: bool = False,
+    label_priority: bool = True,
 ) -> dict:
     """Add OCR texts, room names, merged rooms and levels to a CubiCasa document. Returns a summary."""
     summary: dict = {}

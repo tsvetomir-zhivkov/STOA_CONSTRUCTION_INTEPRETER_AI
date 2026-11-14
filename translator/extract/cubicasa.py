@@ -326,7 +326,7 @@ def write_documents(
 
 
 if __name__ == "__main__":
-    # python -m translator.extract.cubicasa [--min-icon-px N] [--no-merge] [--label-priority] [--index DIR]
+    # python -m translator.extract.cubicasa [--min-icon-px N] [--merge] [--no-label-priority] [--index DIR]
     import argparse
 
     ap = argparse.ArgumentParser(
@@ -334,14 +334,16 @@ if __name__ == "__main__":
     )
     ap.add_argument("--min-icon-px", type=int, default=MIN_ICON_PX)
     ap.add_argument("--min-room-px", type=int, default=MIN_ROOM_PX)
-    ap.add_argument("--no-merge", action="store_true", help="do not merge same-class room regions")
-    ap.add_argument("--label-priority", action="store_true", help="count labelled rooms, not regions")
+    ap.add_argument("--merge", action="store_true", help="merge same-class room regions (default off)")
+    ap.add_argument(
+        "--no-label-priority", action="store_true", help="count segmentation regions even next to labels"
+    )
     ap.add_argument("--index", help="index directory to write to (default: index/)")
     args = ap.parse_args()
     written = write_documents(
         min_icon_px=args.min_icon_px,
         min_room_px=args.min_room_px,
-        ocr_params={"merge": not args.no_merge, "label_priority": args.label_priority},
+        ocr_params={"merge": args.merge, "label_priority": not args.no_label_priority},
         index_dir=Path(args.index) if args.index else None,
     )
     print(f"wrote {len(written)} documents")
