@@ -70,7 +70,7 @@ No viewer build/lint/typecheck scripts exist initially; start uses npx serve.
 - [x] 1. Inspection, dependency map, reference review, defect evidence.
 - [x] 2. Lifecycle stabilization and regression tests.
 - [x] 3. Canonical data integration, API, storage and existing pipeline repairs.
-- [ ] 4. IFC floor/category visibility.
+- [x] 4. IFC floor/category visibility.
 - [ ] 5. Cached per-storey 2D plans.
 - [ ] 6. Synchronized parallel workspace.
 - [ ] 7. Dedicated DXF/SVG environments.

@@ -1,3 +1,4 @@
+import { recordCategory, setRangeVisibility, identityOfRecord } from './visibility.js';
 /**
  * blueprintViewer.js — owns the three.js scene for one blueprint-ingest drawing JSON.
  *
@@ -792,13 +793,15 @@ export class BlueprintScene {
     this.overlays = new Map(); // 'select' | 'hover' -> mesh
     this.ifcOutlines = [];
     this.unitCheck = [];
+    this.hiddenCategories = new Set();
+    this.removedEntities = new Set();
     this.view = { groups: Object.fromEntries(GROUP_NAMES.map((n) => [n, true])), explode: 0, separation: 0, cut: null, highlight: true, isolateLevel: null, hiddenLevels: new Set(), category: null };
   }
 
   // ---- sources ---------------------------------------------------------------------------------------------
 
   /** add a drawing JSON (vocabulary mapped, inventory computed); returns the source record */
-  addJson(doc, name = doc?.drawing?.file ?? 'drawing.json') {
+  addJson(doc, name = doc?.drawing?.file ?? 'drawing.json', scope = null) {
     if (!doc || typeof doc !== 'object' || Array.isArray(doc)) throw new Error('not a drawing JSON object');
     if (!doc.drawing && !['rooms', 'walls', 'openings', 'objects'].some((k) => Array.isArray(doc[k]))) throw new Error('not a blueprint-ingest drawing JSON (no drawing, rooms, walls, openings or objects)');
     doc = renderProjection(doc);
@@ -806,14 +809,14 @@ export class BlueprintScene {
     const frame = docFrame(doc);
     const report = fileReport(doc);
     if (!this.origin) { const b = worldBounds(doc, frame); if (b) this.origin = { x: Math.round((b[0] + b[2]) / 2), y: Math.round((b[1] + b[3]) / 2) }; }
-    const src = { id: ++this.nextSourceId, name, kind: 'json', doc, frame, report, vocabulary };
+    const src = { id: ++this.nextSourceId, name, kind: 'json', doc, frame, report, vocabulary, scope };
     this.sources.push(src);
     this.assemble();
     return src;
   }
 
   /** add an IFC file streamed with web-ifc (api initialised by the caller); returns the source record */
-  addIfc(api, W, bytes, name = 'model.ifc') {
+  addIfc(api, W, bytes, name = 'model.ifc', scope = null) {
     const model = loadIfcModel(api, W, bytes, { origin: this.origin });
     if (!this.origin) this.origin = model.origin;
     const c = model.elements.reduce((b, e) => [Math.min(b[0], e.bbox.min[0]), Math.min(b[1], e.bbox.min[2]), Math.max(b[2], e.bbox.max[0]), Math.max(b[3], e.bbox.max[2])], [Infinity, Infinity, -Infinity, -Infinity]);
@@ -827,7 +830,7 @@ export class BlueprintScene {
     }
     for (const el of model.elements) el.pickId = this.pid();
     if (model.stats.unsupported) console.warn(`[blueprint-viewer] ${name}: web-ifc could not mesh ${model.stats.unsupported} representation(s) (unsupported type), e.g. ${model.stats.unsupportedSamples[0] ?? ''}`);
-    const src = { id: ++this.nextSourceId, name, kind: 'ifc', model, meshes, api };
+    const src = { id: ++this.nextSourceId, name, kind: 'ifc', model, meshes, api, scope };
     this.sources.push(src);
     this.assemble();
     return src;
@@ -859,8 +862,9 @@ export class BlueprintScene {
     for (const lv of this.levels.values()) { for (const cat of Object.values(lv.cats)) for (const c of [...cat.children]) cat.remove(c); this.root.remove(lv.group); }
     this.models = [];
     const levels = new Map();
-    const levelFor = (name, elevation, src, known = Number.isFinite(elevation)) => {
-      const key = levelKeyOf(name);
+    const levelFor = (name, elevation, src, known = Number.isFinite(elevation), identity = null) => {
+      const scope = src.scope ?? String(src.doc?.drawing?.read_from ?? src.name).replaceAll('\\','/').split('/').pop().replace(/\.json$/i,'');
+      const key = `${scope}:${identity ?? levelKeyOf(name)}`;
       let lv = levels.get(key);
       if (!lv) {
         lv = { key, name: name ?? '(no level)', elevation: known ? elevation : 0, known, sources: new Set(), group: new THREE.Group(), cats: {}, notes: new Set(), rank: 0 };
@@ -876,7 +880,7 @@ export class BlueprintScene {
 
     // IFC elements by GlobalId (match on provenance.source_ref = the RAW GUID, never on the sanitised element id)
     const byGuid = new Map();
-    for (const s of this.sources) if (s.kind === 'ifc') for (const el of s.model.elements) { el.json = null; el.jsonSource = null; if (el.globalId) byGuid.set(el.globalId, el); }
+    for (const s of this.sources) if (s.kind === 'ifc') for (const el of s.model.elements) { el.json = null; el.jsonSource = null; if (el.globalId) { const list = byGuid.get(el.globalId) ?? []; list.push({el,source:s}); byGuid.set(el.globalId,list); } }
 
     const origin = this.origin ?? { x: 0, y: 0 };
     for (const s of this.sources) {
@@ -887,7 +891,8 @@ export class BlueprintScene {
         if (!isActive(e)) return true;
         s.match.elements++;
         const gid = e.ifc_global_id ?? e.global_id ?? e.provenance?.source_ref; // v0.3 has global_id; v0.2 keeps the raw GUID in source_ref
-        const el = gid ? byGuid.get(gid) : null;
+        const matches = gid ? (byGuid.get(gid) ?? []).filter(m => !s.scope || m.source.scope === s.scope) : [];
+        const el = matches.length === 1 ? matches[0].el : null;
         if (el) { el.json = e; el.jsonSource = s; el.jsonKind = kindKey; s.match.withMesh++; return false; } // web-ifc draws it
         s.match.withoutMesh++;
         if (kindKey === 'rooms') s.match.roomsNoMesh++;
@@ -897,15 +902,17 @@ export class BlueprintScene {
       // one model per level of the document
       const lvls = asArray(s.doc.levels);
       const parts = new Map();
+      for (const L of lvls) parts.set(L.id, { rooms:[], walls:[], openings:[], objects:[] });
       for (const k of ['rooms', 'walls', 'openings', 'objects']) for (const e of sd[k]) {
-        const lid = e.level_id && lvls.some((l) => l.id === e.level_id) ? e.level_id : lvls[0]?.id ?? null;
+        const lid = e.level_id && lvls.some((l) => l.id === e.level_id) ? e.level_id : null;
         const p = parts.get(lid) ?? parts.set(lid, { rooms: [], walls: [], openings: [], objects: [] }).get(lid);
         p[k].push(e);
       }
       if (!parts.size) parts.set(lvls[0]?.id ?? null, { rooms: [], walls: [], openings: [], objects: [] });
       for (const [lid, p] of parts) {
         const L = lvls.find((l) => l.id === lid) ?? null;
-        const lv = levelFor(L?.name ?? L?.id ?? s.name, L?.elevation_m, s);
+        const lv = levelFor(L?.name ?? 'Unassigned', L?.elevation_m, s, Number.isFinite(L?.elevation_m), L?.ifc_global_id ?? L?.global_id ?? L?.provenance?.source_ref ?? L?.id ?? 'unassigned');
+        lv.entityId = L?.id ?? null;
         const model = buildModel({ ...sd, levels: L ? [L] : [], ...p }, this.palette(), { sceneFrame: true, pid: this.pid });
         model.source = s; model.level = lv;
         this.models.push(model);
@@ -918,9 +925,10 @@ export class BlueprintScene {
     for (const s of this.sources) {
       if (s.kind !== 'ifc') continue;
       const st = new Map(s.model.storeys.map((x) => [x.expressID, x]));
+      for (const sto of st.values()) levelFor(sto.name, sto.elevation, s, Number.isFinite(sto.elevation), sto.globalId ?? sto.expressID);
       for (const mesh of s.meshes) {
         const sto = st.get(mesh.userData.storeyId);
-        const lv = levelFor(sto?.name ?? `${s.name} (no storey)`, sto?.elevation, s, sto ? Number.isFinite(sto.elevation) : false);
+        const lv = levelFor(sto?.name ?? 'Unassigned', sto?.elevation, s, sto ? Number.isFinite(sto.elevation) : false, sto?.globalId ?? sto?.expressID ?? 'unassigned');
         lv.cats[mesh.userData.group].add(mesh);
       }
       const withJson = s.model.elements.filter((e) => e.json).length;
@@ -980,6 +988,7 @@ export class BlueprintScene {
     this.setExplode(v.explode, true);
     this.isolateCategory(v.category);
     this.setHighlightAssumptions(v.highlight);
+    this.applyEntityVisibility();
   }
 
   setGroupVisible(name, on) { this.view.groups[name] = !!on; for (const lv of this.levels.values()) if (lv.cats[name]) lv.cats[name].visible = !!on; }
@@ -1050,15 +1059,36 @@ export class BlueprintScene {
     for (const o of this.ifcOutlines) o.visible = this.view.highlight;
   }
 
+  categories() {
+    const counts=new Map();
+    for (const e of this.pickIndex.values()) { const c=recordCategory(e); counts.set(c,(counts.get(c)??0)+1); }
+    return [...counts].sort(([a],[b])=>a.localeCompare(b)).map(([name,count])=>({name,count,visible:!this.hiddenCategories.has(name)}));
+  }
+  setCategoryVisible(category, visible) {
+    visible ? this.hiddenCategories.delete(category) : this.hiddenCategories.add(category);
+    this.applyEntityVisibility();
+  }
+  applyEntityVisibility() {
+    for (const e of this.pickIndex.values()) {
+      const visible=!this.hiddenCategories.has(recordCategory(e)) && !this.removedEntities.has(identityOfRecord(e));
+      e.workspaceVisible=visible;
+      if (e.kind==='json') for (const mesh of e.meshes) mesh.visible=visible && (!this.view.category || mesh.userData.element.category===this.view.category);
+      else for (const range of e.el.ranges) {
+        const mesh=e.meshByKey.get(range.key);
+        if(mesh) setRangeVisibility(mesh,[range],visible);
+      }
+    }
+  }
+
   // ---- picking / highlighting --------------------------------------------------------------------------------
 
   /** ordered candidates under the pointer (see pickCandidates) */
-  candidates(raycaster, camera, ndc, o = {}) { return pickCandidates(raycaster, camera, this.pickables, ndc, { ...o, cut: this.view.cut }); }
+  candidates(raycaster, camera, ndc, o = {}) { return pickCandidates(raycaster, camera, this.pickables, ndc, { ...o, cut: this.view.cut }).filter(id=>this.isShown(id)); }
 
   /** is any piece of this element in a visible group / level? (a hidden layer is never selectable) */
   isShown(id) {
     const e = this.pickIndex.get(id);
-    if (!e) return false;
+    if (!e || e.workspaceVisible === false) return false;
     if (e.kind === 'json') return e.meshes.some(shown);
     return e.el.ranges.some((r) => { const m = e.meshByKey.get(r.key); return m && shown(m); });
   }
@@ -1100,6 +1130,7 @@ export class BlueprintScene {
   summary() {
     return {
       origin: this.origin,
+      categories:this.categories(),
       sources: this.sources.map((s) => ({
         id: s.id, name: s.name, kind: s.kind, geometry: s.geometry, match: s.match, approximate: !!s.approximate,
         frame: s.frame ? { kind: s.frame.kind, note: s.frame.note } : null,
@@ -1242,13 +1273,13 @@ export class BlueprintViewer {
           const bytes = new Uint8Array(await f.arrayBuffer());
           if (!token.current()) break;
           token.processing();
-          const src = this.bp.addIfc(api, W, bytes, f.name);
+          const src = this.bp.addIfc(api, W, bytes, f.name, f.documentId ?? null);
           results.push({ name: f.name, ok: true, kind: 'ifc', ms: Math.round(performance.now() - t0), stats: src.model.stats });
         } else {
           const doc = JSON.parse(await f.text());
           if (!token.current()) break;
           token.processing();
-          const src = this.bp.addJson(doc, f.name);
+          const src = this.bp.addJson(doc, f.name, f.documentId ?? null);
           logReport(src.report);
           results.push({ name: f.name, ok: true, kind: 'json' });
         }
@@ -1271,6 +1302,8 @@ export class BlueprintViewer {
   resetFilters() {
     Object.assign(this.bp.view, { isolateLevel: null, category: null, cut: null, explode: 0, separation: 0 });
     this.bp.view.hiddenLevels.clear();
+    this.bp.hiddenCategories.clear();
+    this.bp.removedEntities.clear();
     for (const key of GROUP_NAMES) this.bp.view.groups[key] = true;
     this.renderer.clippingPlanes = [];
   }
@@ -1375,6 +1408,7 @@ export class BlueprintViewer {
 
   // ---- view controls ----------------------------------------------------------------------------------
   setGroupVisible(name, visible) { this.bp.setGroupVisible(name, visible); this.dropHidden(); }
+  setCategoryVisible(key, visible) { this.bp.setCategoryVisible(key,visible); this.dropHidden(); this.onChange(this.summary()); }
   setLevelVisible(key, visible) { this.bp.setLevelVisible(key, visible); this.dropHidden(); }
   isolateLevel(key) { this.bp.isolateLevel(key); this.dropHidden(); }
   setLevelSeparation(s) { this.bp.setSeparation(s); this.bp.refreshOverlays(); }

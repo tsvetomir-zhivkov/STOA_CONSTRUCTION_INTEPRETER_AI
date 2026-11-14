@@ -200,10 +200,11 @@
     </details>
 
     <details id="levelsPanel" class="floating" open>
-      <summary>Levels</summary>
+      <summary>Levels</summary><div class="row"><button id="levelsAll" class="small ghost">Show all</button><button id="levelsNone" class="small ghost">Hide all</button></div>
       <ul id="levelList" class="list"></ul>
     </details>
 
+<details class="floating" open><summary>Component categories</summary><div id="categoryList"></div></details>
     <details id="legendPanel" class="floating" open>
       <summary>Fixtures legend</summary>
       <div class="sub">Click a row to show only that category; click again for all.</div>
@@ -273,6 +274,7 @@
 
     $('openBtn').addEventListener('click', () => input.click());
     $('addBtn').addEventListener('click', () => input.click());
+    for (const [id,visible] of [['levelsAll',true],['levelsNone',false]]) $(id).addEventListener('click',()=>{ if(!viewer)return; viewer.bp.view.isolateLevel=null; isolatedLevel=null; for(const key of viewer.bp.levels.keys()) viewer.setLevelVisible(key,visible); render(viewer.summary()); });
     $('clearBtn').addEventListener('click', () => { viewer?.clear(); isolatedLevel = null; isolatedCategory = null; document.body.classList.remove('viewing'); });
     input.addEventListener('change', () => { const f = [...input.files]; input.value = ''; addFiles(f); });
     // drag and drop anywhere
@@ -367,6 +369,12 @@
         li.append(label, iso);
         for (const n of lv.notes) li.append(Object.assign(document.createElement('span'), { className: 'warn', textContent: n }));
         return li;
+      }));
+      $('categoryList').replaceChildren(...(sum.categories ?? []).map(c=>{
+        const label=document.createElement('label'); label.className='check';
+        const checkbox=Object.assign(document.createElement('input'),{type:'checkbox',checked:c.visible});
+        checkbox.addEventListener('change',()=>viewer.setCategoryVisible(c.name,checkbox.checked));
+        label.append(checkbox,`${c.name} (${c.count})`); return label;
       }));
       // legend
       $('legendPanel').hidden = !sum.legend.length;
