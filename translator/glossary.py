@@ -117,7 +117,8 @@ def ocr_token(token: str) -> str:
     """Normalise one OCR token: drop dots, trailing room numbers (MH1 -> mh), read 0 as o inside words."""
     t = token.replace(".", "").replace("'", "")
     if re.search(r"[a-z]", t):
-        t = re.sub(r"\d+$", "", t)  # MH2, KH10: numbered rooms
+        if re.match(r"^[a-z]{2,}\d+$", t):  # MH2, KH10: numbered rooms (never K115 or S0 -> k, s)
+            t = re.sub(r"\d+$", "", t)
         t = t.replace("0", "o")  # 0H -> oh
         t = t.replace("vv", "w")  # VVC -> wc
     return t

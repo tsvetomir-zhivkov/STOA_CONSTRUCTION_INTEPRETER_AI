@@ -86,6 +86,9 @@ def test_glossary_types_are_in_the_schema_enum():
         ("VVC", ["wc"]),
         ("K ABC", []),  # a single letter next to an unknown word is not trusted
         ("S-1200 KAAPPI", []),
+        ("H39", []),  # a letter with digits is a dimension or a code, not a room number
+        ("K115116", []),
+        ("S0", []),
     ],
 )
 def test_ocr_noise_is_normalised(text, types):
