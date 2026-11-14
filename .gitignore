@@ -1,4 +1,11 @@
+# dataset lives outside the repo (set STOA_DATA); ignore it if copied in
+data/
 .env
-data
 node_modules
-
+questions.jsonl
+index/_raw/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.tmp
