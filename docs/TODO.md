@@ -168,3 +168,49 @@ Open issues (for steps 7-10):
     - 3 images: a second kitchen label inside a room (`Kök` + `kk`, `k/pH`, a 2nd `K` on the entry region).
     - 2 images: a false segmentation Kitchen region.
     - 1 image: the misread summary "JH+KK".
+
+## Icon size threshold (MIN_ICON_PX), 2026-11-14, branch step-7-ocr, dev only, NOT applied
+Sweep on the cached raw files (`index/_raw/cubicasa`, no GPU), scored with `eval/score.py` logic from a clean
+index copy. Each image has an EN and an FI question, so 2 questions = 1 image. Default stays 16 until k decides.
+
+| min icon area (px) | windows | doors | toilets | sinks | showers+baths |
+|---|---|---|---|---|---|
+| 4 | 25.4 | 39.9 | 69.8 | 52.6 | 9.1 |
+| 8 | 31.1 | 42.8 | 74.0 | 58.3 | 9.1 |
+| 12 | 31.1 | 43.5 | 75.0 | 60.4 | 9.1 |
+| **16 (current)** | 31.1 | 47.1 | 76.0 | 60.9 | 9.1 |
+| 24 | 32.6 | 47.8 | 77.6 | 62.0 | 9.1 |
+| 32 | 35.8 | 47.1 | 76.6 | 64.1 | 9.1 |
+| 40 | 35.8 | 49.3 | 76.6 | 67.7 | 9.1 |
+| 48 | 35.2 | 51.4 | 77.6 | 67.7 | 8.6 |
+| 56 | 33.7 | 50.0 | 78.1 | 68.8 | 8.6 |
+| 64 | 33.7 | 50.0 | 79.7 | 69.3 | 8.6 |
+| 96 | 32.6 | 47.1 | 79.7 | 67.2 | 8.6 |
+| 128 | 31.1 | 42.8 | 79.2 | 65.1 | 8.6 |
+| 256 | 30.6 | 23.2 | 76.6 | 58.3 | 8.6 |
+
+- **Plateau:** 40-56 for windows, doors and sinks; toilets keep rising to 64-96. 48 is the centre.
+  Official runs (`--min-icon-px`): 40 → CubiCasa 61.7, TOTAL 78.9 (+52 q, no template drops);
+  48 → CubiCasa 61.9, TOTAL 78.9 (+58 q; showers+baths −2 q = 1 image).
+- **Images flipped 16 → 48:** windows +16/−8, doors +11/−5, toilets +6/−3, sinks +16/−3, showers+baths 0/−1.
+  - Window losses were right by luck: the dropped 17-47 px component is a speck (wall corner, column mark),
+    and it made up for a missed window.
+  - Door losses (10498, 13210, 13607, 1772, 9198; L 739-1516) and sink losses (11866, 12943, 4855; L ≤ 530)
+    are real small icons on small images. Bathtub loss 7838 is a speck in an empty room (luck).
+- **Relative thresholds** do not beat a fixed one: longest bbox side ≥ 0.2-1.6% of L, area ≥ n·(L/884)²,
+  n·(L/884), and capped hybrids n·min(1, L/884). Best windows 34.7, best doors 51.4 (= fixed 48). Only sinks
+  (71.4) and toilets (81.2) are slightly better, and windows lose. Shrinking the threshold for small images
+  brings their specks back too.
+- **Maximum size** (≤ k × per-image median area of the class): k=3 doors −32 q; k=5/8/12 ±0-4 q. Not useful:
+  big components are real large windows/double doors or merged groups that should count MORE.
+- **Splitting merged components (report only):**
+  - Distance-transform peaks fail: thin windows have a flat ridge. Exact images would go from 60 to 5 (windows)
+    and from 65 to 3 (doors).
+  - Length rule (longest side ≥ 1.8× image median → round(ratio)) fixes 5/65 under-counted window images but
+    breaks 13 (net 60 → 52).
+  - Merging is real (2580, 10321, 12077, 1967, 7924: rows of adjacent windows in one component). It needs
+    another cue, e.g. OCR window-size labels (`10*22`, `IK 15x14`, `149x139`) printed next to each window.
+- **Ceiling:** even a per-image oracle threshold makes only 99/193 window and 96/138 door images exact.
+  Most errors are not size: 20 worst each, checked on overlays:
+  - windows: merged 6, missed 6, false positive 6, fragmented 2;
+  - doors: false-positive fragments 11, missed 4, open doorway/stair edge read as door 3, scope unclear 2.
