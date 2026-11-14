@@ -3,7 +3,8 @@ data/
 .env
 node_modules
 questions.jsonl
-index/_raw/
+# generated outputs: regenerate with python -m translator --source <name>
+index/
 __pycache__/
 *.pyc
 .pytest_cache/

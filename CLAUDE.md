@@ -31,6 +31,7 @@ Never cut: eval, router, Swiss, IFC areas.
 - Every write is validated with jsonschema. Fail loudly, never write invalid JSON.
 
 ## Schema rules
+- Schema v0.2 (translator/schema/drawing.schema.json) is the contract. The agent teammate reads v0.2. Do not change it without asking.
 - Every entity has source/provenance.extractor, confidence, and
   provenance.source_ref (DXF handle, PDF item index or IFC GlobalId).
 - Rooms: number, unit_id, parent_room_id, subtype, is_outdoor, polygon in pixels and metres.
