@@ -130,3 +130,18 @@ Open issues (for steps 7-10):
   - A second label of the same type in one region (`Kök` + `kk`), or a stray `K`, makes a second kitchen.
   - The kitchen "K" is often not detected at all; rotated labels (high_quality_architectural-4517) are misread.
   - OCR misreads like PARVERE are not fuzzy-matched.
+- **Follow-up (2026-11-14, dev only):**
+  - **Kitchen fallback, default ON:** when OCR reads no kitchen label, the segmentation Kitchen class counts
+    as one kitchen (the largest region). Kitchens 63.8 → 72.3; no other template changes. CubiCasa overall
+    58.5, TOTAL 77.1.
+  - **Rotated OCR pass, default OFF:** a second reading of a copy turned 90° clockwise, merged per box.
+    - It runs only where `needs_rotation()` triggers: 2+ tall boxes, or at least 40% of boxes below 0.7. That was
+      128/193 dev images, 99 s extra GPU (~$0.016). `python -m modal run -m translator.modal_app::ocr_rot_main`.
+    - Room labels per image went from 5.18 to 6.01 on average (4517: 1 → 6). Balconies +1.8, bathrooms +3.1,
+      saunas +0.7, WC rooms +2.1.
+    - But bedrooms −4.0 and kitchens −5.4, so it is not the default: the extra labels feed the known
+      problems (TK, apartment summaries such as `2 H+K+S`, stray `K`/`H`), and label priority steps back
+      unlabelled bedrooms when only some bedrooms are labelled.
+  - **Floors:** titles never fix a wrong building count on dev. All 7 regressions have fewer distinct titles
+    than buildings (a missed title, or the same title read twice). Rule 'max' (take whichever
+    counts more storeys) scores 96.9 vs 93.3. It is an option only (`floors_rule="max"`), waiting for k.
