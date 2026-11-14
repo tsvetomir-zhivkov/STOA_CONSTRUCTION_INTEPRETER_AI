@@ -17,3 +17,6 @@ uv.lock
 drawing.schema.json
 sample_drawing.json
 index_v03/
+
+# large local merge fixture (>100 MB, over GitHub limit)
+blueprint-ingest/big/

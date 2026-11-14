@@ -53,7 +53,8 @@ const GEOM = ['IFCLOCALPLACEMENT', 'IFCAXIS2PLACEMENT3D', 'IFCAXIS2PLACEMENT2D',
   'IFCCARTESIANPOINTLIST2D', 'IFCGEOMETRICCURVESET', 'IFCGEOMETRICSET', 'IFCBOOLEANCLIPPINGRESULT', 'IFCBOOLEANRESULT', 'IFCMAPPEDITEM', 'IFCREPRESENTATIONMAP', 'IFCCARTESIANTRANSFORMATIONOPERATOR3D'];
 const UNITS = ['IFCSIUNIT', 'IFCUNITASSIGNMENT', 'IFCCONVERSIONBASEDUNIT', 'IFCMEASUREWITHUNIT'];
 
-const WANTED_SET = new Set([...Object.keys(ELEMENTS), ...Object.keys(V03_ELEMENTS), ...COUNT_ONLY, ...STRUCTURE, ...PROPS, ...GEOM, ...UNITS, ...SEMANTIC_TYPES]);
+// NOT_EMITTED classes are parsed (never emitted) so a reference to one can name its GlobalId and class (elementRef)
+const WANTED_SET = new Set([...Object.keys(ELEMENTS), ...Object.keys(V03_ELEMENTS), ...COUNT_ONLY, ...STRUCTURE, ...PROPS, ...GEOM, ...UNITS, ...SEMANTIC_TYPES, ...Object.keys(NOT_EMITTED)]);
 const WANTED = { has: (t) => WANTED_SET.has(t) || isTypeClass(t) };
 // only geometry holders reference points we care about (keeps pass B small on tessellated models)
 const POINT_HOLDERS = new Set(['IFCAXIS2PLACEMENT3D', 'IFCAXIS2PLACEMENT2D', 'IFCPOLYLINE', 'IFCCARTESIANTRANSFORMATIONOPERATOR3D']);
@@ -771,6 +772,28 @@ function buildingBundle(model, building, parts, meshBounds, ctx) {
 // =====================================================================================================
 
 const keyOfId = (model, id) => guidKey(model.e.get(id)?.args?.[0], id);
+
+/**
+ * A reference from one element to another (express id `id`), resolved with the SAME key the target entity is emitted
+ * under (keyOfId = guidKey, as for every element record). `reason` is null when the target is emitted in this bundle
+ * (`keyAll`), else why not:
+ *   entity_not_in_file   the id does not exist in the STEP file
+ *   not_emitted_class    the class is deliberately not emitted (NOT_EMITTED, e.g. IfcVirtualElement)
+ *   class_not_read       the class is unknown to the extractor
+ *   outside_document     an emitted class, but not in this building's storeys (another building, or no storey)
+ * @returns {{ key: string, expressId: number, globalId: string|null, ifcClass: string|null, reason: string|null, detail?: string }}
+ */
+export function elementRef(model, id, keyAll) {
+  const ent = model.e.get(id);
+  const key = keyOfId(model, id);
+  const globalId = ent?.args?.[0] != null ? String(unwrap(ent.args[0])) : null;
+  const base = { key, expressId: id, globalId, ifcClass: ent?.type ?? null };
+  if (keyAll.has(key)) return { ...base, reason: null };
+  if (!ent) return { ...base, reason: 'entity_not_in_file' };
+  if (NOT_EMITTED[ent.type]) return { ...base, reason: 'not_emitted_class', detail: NOT_EMITTED[ent.type] };
+  if (!(ELEMENTS[ent.type] ?? V03_ELEMENTS[ent.type]) && !COUNT_ONLY.has(ent.type)) return { ...base, reason: 'class_not_read' };
+  return { ...base, reason: 'outside_document', detail: 'not contained in a storey of this building' };
+}
 const sval = (v) => { const u = unwrap(v); return u == null || typeof u === 'object' ? null : String(u); };
 
 /** boundary / covering indexes, built once per model */
@@ -839,7 +862,10 @@ function elementV03(model, sem, reg, r, fp, keyAll) {
   if (bucket === 'object' && r.host != null) out.hostKey = keyOfId(model, r.host);
   if (bucket !== 'space') out.roomKeys = (idx.elementSpaces.get(r.id) ?? []).map((sp) => keyOfId(model, sp));
   if (bucket === 'space') {
-    out.boundaryKeys = [...new Set((idx.spaceElements.get(r.id) ?? []).map((el) => keyOfId(model, el)).filter((k) => keyAll.has(k)))];
+    const refs = [...new Set(idx.spaceElements.get(r.id) ?? [])].map((el) => elementRef(model, el, keyAll));
+    out.boundaryKeys = [...new Set(refs.filter((x) => !x.reason).map((x) => x.key))];
+    // boundary elements this extraction does not emit: never invented, never silently dropped
+    out.unresolvedBoundaries = refs.filter((x) => x.reason);
     out.finishes = roomFinishes(model, sem, reg, r);
   }
   return out;
