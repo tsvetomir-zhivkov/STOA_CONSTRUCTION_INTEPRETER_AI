@@ -43,6 +43,31 @@ CROP_MIN_PAD_PX = 24
 # Confidence of a VLM finding: a fixed prior, NOT calibrated (no per-answer probability from the API).
 VLM_CONFIDENCE = 0.6
 
-# Write-back per category: only enabled once it beats the pipeline on dev (decided after step d).
-WRITEBACK_ENABLED = {"shower": False, "kitchen": False, "bathroom": False, "floors": False,
+# Write-back per category (k decides per category from dev scores). shower: ON (k, after stage 1: dev
+# showers+baths 9.1 -> 68.8; always-1 baseline 72.0).
+WRITEBACK_ENABLED = {"shower": True, "kitchen": False, "bathroom": False, "floors": False,
                      "doors": False, "windows": False, "rooms": False}  # fmt: skip
+
+# Shower fallback prior (k, from the stage-1 failure list; no API cost): when the VLM says 0 and the page has
+# a bathroom, or the page has no wet room so it was never sent, and no shower/bathtub is active, assume 1.
+SHOWER_PRIOR = True
+
+# Which saved runs (index/_raw/vlm/outcomes/<run>.jsonl) are applied, in order: a later run's answer for
+# the same (image, category) replaces an earlier one. A run that is not listed is never applied.
+# stage2 (windows/doors/floors) is listed but its categories stay off in WRITEBACK_ENABLED.
+# step_e_variant: e1 answers for its 80-image dev sample (accepted, see docs/TODO.md); later runs win.
+OUTCOME_RUNS = ["step_b", "stage1_shower", "stage2", "step_e_variant"]
+
+# Variant used by default for new runs, per category (k accepted e1 for showers after step e).
+DEFAULT_VARIANT = {"shower": "e1"}
+
+# Prompt/input variants (step e). e1: upscale small pages + ignore cut-off neighbouring flats.
+VARIANTS = {
+    "e1": {
+        "upscale_below": 1000,
+        "extra_prompt": "Count only the main apartment; ignore neighbouring flats cut off at the page edge. ",
+    },  # fmt: skip
+}
+
+# Total spend cap for all Step 9 work (k's final raise; ledger total incl. estimates). Runs abort above it.
+TOTAL_BUDGET_USD = 1.50

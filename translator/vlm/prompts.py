@@ -48,8 +48,15 @@ OPENINGS = {
 PAGE_PROMPTS = {"kitchen": KITCHEN, "bathroom": BATHROOM, "floors": FLOORS}
 
 
-def page_prompt(category: str) -> str:
-    """Whole-page prompt for a gated category (shower, kitchen, bathroom, floors, windows, doors)."""
+def page_prompt(category: str, extra: str = "") -> str:
+    """Whole-page prompt for a gated category (shower, kitchen, bathroom, floors, windows, doors).
+
+    extra (a variant's added line) goes just before the JSON instruction; empty = the original prompt.
+    """
+    if extra:
+        base = page_prompt(category)
+        i = base.index(_JSON)
+        return base[:i] + extra + base[i:]
     if category == "shower":
         return shower("page")
     if category in OPENINGS:

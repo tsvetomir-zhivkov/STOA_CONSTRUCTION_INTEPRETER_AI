@@ -7,7 +7,9 @@ fuse_raster() is the raster-plan pipeline after the extractors' raw results are 
      Segmentation components of one class never overlap, so today this mostly matters once vlm_check adds
      elements (step 9).
   3. apply_priors() (kitchens and bathrooms only, approved by k): see PRIORS below.
-  4. translator.scale.estimate, translator.coverage.build.
+  4. cached VLM answers (translator.vlm.run.apply_cached): write-back for the enabled categories
+     (config.WRITEBACK_ENABLED) and the shower fallback prior; never calls the API.
+  5. translator.scale.estimate, translator.coverage.build.
 """
 
 from __future__ import annotations
@@ -257,6 +259,10 @@ def fuse_raster(
     floors_rule: str = "max",
     priors: bool = True,
     grid: int = 4,
+    vlm: bool = True,
+    vlm_enabled: dict | None = None,
+    vlm_runs: list[str] | None = None,
+    shower_prior: bool | None = None,
 ) -> dict:
     """Raster plan (CubiCasa segmentation + OCR) -> fused document, in place. Returns a summary."""
     from translator import coverage, scale
@@ -269,6 +275,10 @@ def fuse_raster(
     summary["duplicates"] = len(dedupe_document(doc))
     if priors:
         summary["priors"] = apply_priors(doc)
+    if vlm:  # cached VLM answers (translator/vlm, no network), enabled categories only
+        from translator.vlm.run import apply_cached
+
+        summary["vlm"] = apply_cached(doc, enabled=vlm_enabled, runs=vlm_runs, shower_prior=shower_prior)
     doc["drawing"]["scale"] = scale.estimate(doc)
     coverage.build(doc, grid=grid)
     return summary

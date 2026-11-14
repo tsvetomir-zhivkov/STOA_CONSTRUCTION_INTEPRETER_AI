@@ -210,3 +210,56 @@ def apply(doc: dict, outcome: dict, enabled: dict | None = None) -> dict:
                  f"{len(ids_sup)} superseded; cache {str(outcome.get('key'))[:12]}"}
     )  # fmt: skip
     return {"category": cat, "applied": True, "count": n, "new": ids_new, "superseded": ids_sup}
+
+
+def _has_bathroom(doc: dict) -> bool:
+    """A bathroom read from the drawing (label or segmentation), not an assumed one."""
+    for r in _active(doc["rooms"]):
+        if r["provenance"]["extractor"] == "prior":
+            continue
+        det = r["provenance"].get("details", {})
+        if (
+            r["type"] == "bathroom"
+            or r.get("subtype") == "Bath"
+            or "bathroom"
+            in (
+                det.get("seg_type"),
+                det.get("prior_type"),
+            )
+        ):
+            return True
+    return False
+
+
+def shower_prior(doc: dict, outcome: dict | None) -> dict:
+    """Shower fallback prior (k, from the stage-1 failure list; no API cost).
+
+    Fires when no shower/bathtub is active and either the VLM said 0 on a page that has a bathroom, or the
+    page has no wet room and no VLM answer (gate 'shower' not passed, so the VLM never saw it; a page
+    answered by a later run, e.g. step e, is judged by that answer instead). Adds 1 assumed object:
+    category shower, subtype shower_or_bathtub, flags ["assumed_prior"], confidence 0.2, no geometry,
+    provenance prior / prior:shower; coverage 'shower' partial "prior: assumed 1, not read from the drawing".
+    """
+    from translator.vlm import gate as _gate
+
+    active = [o for o in _active(doc["objects"]) if o["category"] in ("shower", "bathtub")]
+    not_gated = not _gate.gates(doc)["shower"] and outcome is None  # the VLM never saw this page
+    vlm_zero = outcome is not None and int(outcome["count"]) == 0 and _has_bathroom(doc)
+    if active or not (not_gated or vlm_zero):
+        return {"fired": False}
+    why = (
+        "page has no wet room, never sent to the VLM" if not_gated else "VLM said 0 on a page with a bathroom"
+    )
+    prov = {"extractor": "prior", "source_ref": "prior:shower",
+            "details": {"rule": why, "note": "dev majority answer for showers+baths is 1"}}  # fmt: skip
+    el = {"id": "object-prior-shower-0", "category": "shower", "subtype": "shower_or_bathtub",
+          "bbox_px": None, "polygon_px": None, "polygon_m": None, "confidence": 0.2, "status": "active",
+          "flags": ["assumed_prior"], "provenance": prov}  # fmt: skip
+    doc["objects"].append(el)
+    note = f"prior: assumed 1, not read from the drawing ({why})"
+    _set_cov(doc, "shower", "partial", 0.2, note)
+    doc["coverage"][-1]["extractor"] = "prior"
+    doc["history"].append(
+        {"extractor": "prior", "action": "prior_shower", "entity_ids": [el["id"]], "note": note}
+    )
+    return {"fired": True, "why": why}

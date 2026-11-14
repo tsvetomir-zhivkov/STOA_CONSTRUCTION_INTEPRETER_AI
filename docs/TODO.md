@@ -356,3 +356,53 @@ index copy. Each image has an EN and an FI question, so 2 questions = 1 image. D
 - **Saved for later (not run):** step-e candidate: pages with a long side under about 1000 px are upscaled
   to 1280 px before sending (`config.UPSCALE_BELOW_PX`, off). Prompt candidates suggested by the failures:
   "count only the apartment in the centre / not cut-off neighbours". Not applied (no tuning before k decides).
+
+### Step 9, after stage 1 (k's decisions applied, 2026-11-14)
+- **Shower write-back: ON by default.** Always report it next to the always-1 baseline (72.0%).
+- **Shower fallback prior** (`config.SHOWER_PRIOR`; rule from the stage-1 failure list; no API cost).
+  - It fires when no shower/bathtub is active and either the VLM said 0 on a page with a bathroom (label
+    or segmentation), or the page has no wet room AND no VLM answer.
+  - It adds 1 object: shower / shower_or_bathtub, flags ["assumed_prior"], confidence 0.2, no geometry,
+    prior / prior:shower. The coverage record 'shower' is partial, "prior: assumed 1, not read from the
+    drawing".
+  - The "no VLM answer" condition was added after step e. Three never-gated pages that e1 answered with 0
+    (gold 0) were still getting the prior; it now trusts the VLM answer (+6 questions).
+  - On dev the prior fires on 20 images: 12 right; 4 wrong where the gold is 0 (regressions versus VLM-only);
+    3 wrong where the gold is 2 (wrong before as well); 1 without a dev question.
+- **Step e (the one allowed variant), e1:** pages with a long side < 1000 px upscaled to 1280 px, plus the
+  prompt line "Count only the main apartment; ignore neighbouring flats cut off at the page edge."
+  - Paired on a fixed-seed sample (seed 0): all 32 small gated pages that were wrong (only 32 exist, not 40),
+    40 that were right, and the 8 never-gated pages. 80 calls, $0.393.
+  - Result: 18 fixed, 4 broken (hqa-6001 2→1, hqa-11142 1→0, hqa-2145 1→0, high_quality-11377 1→0), net +14.
+    Gated pages net +9; never-gated pages 5 fixed, 3 confirmed 0.
+  - Acceptance rule, set before the run: net ≥ +5, broken ≤ half of fixed, and full-dev showers improves.
+    Met: VLM-only 68.8 → 76.3; with the shower prior 75.8 → 79.0.
+  - Accepted: `config.DEFAULT_VARIANT = {"shower": "e1"}`, and run step_e_variant is in
+    `config.OUTCOME_RUNS`.
+  - Caveat: the other ~103 shower pages still have the old prompt's answers. Re-running them with e1 would
+    cost about $0.48, which is over budget. The dev number mixes both prompts, and the sample was drawn
+    using dev labels, so expect less on hold-out.
+- **Stage 2, reduced** (7 new calls, $0.015): no-evidence windows (2) / doors (1), and floors (7).
+  - Kitchen/bathroom prior-fired tasks (82) are deferred.
+  - Floors: all 7 were already right (rule "max"); the VLM agreed 7/7.
+  - Windows: colorful-34 0 → 14 (gold 17, still wrong); high_quality-3086 0 confirmed (gold 0).
+  - Doors: 1 image, no dev door question.
+  - With write-back on, windows / doors / floors scores do not move. Their write-back stays OFF (k decides).
+- **Final dev** (clean index copy; `python eval/priors_report.py` shows every column side by side):
+
+  | template | pipeline | + count priors | + VLM (shower) | + shower prior | always-majority |
+  |---|---|---|---|---|---|
+  | showers + baths | 9.1 | 9.1 | 76.3 | **80.6** | 72.0 |
+  | kitchens | 87.7 | 93.8 | 93.8 | 93.8 | 93.8 |
+  | bathrooms | 66.0 | 87.2 | 87.2 | 87.2 | 87.2 |
+  | windows / doors / floors | 35.8 / 51.4 / 96.9 | same | same | same | 15.0 / 14.5 / 80.3 |
+  | other CubiCasa templates | unchanged | | | | |
+
+  CubiCasa 63.6 → 71.3, TOTAL 79.9 → 84.0 (5369/6388). Swiss 99.5 and ifc_models 100 are unchanged.
+  No template drops.
+- **Cost (run_summary.json):**
+  - Shower gate: 183 + 8 images. Cost per gated image ≈ $0.0047, per dev image ≈ $0.0044 (target
+    < $0.002: not met).
+  - Every run so far: $1.351 logged + $0.025 estimated = **$1.376** of the $1.50 total cap (k's final raise).
+- **Deferred:** prior-fired kitchen/bathroom VLM tasks (82); e1 on the remaining shower pages; gate 5
+  (windows/doors confidence).

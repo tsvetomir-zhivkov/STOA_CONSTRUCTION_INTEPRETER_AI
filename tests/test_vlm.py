@@ -625,3 +625,86 @@ def test_run_is_in_priority_order_aborts_at_the_cap_and_resumes_from_cache(mini_
     out2, abort2 = run.run(tasks[:2], c2, "t2", root)
     assert not abort2 and [o["cached"] for o in out2] == [True, True] and c2.calls == []
     assert ledger.load()["runs"][-1]["calls"] == 0
+
+
+# ------------------------------------------------------------------ shower fallback prior, variants, budget
+
+
+def _bath_region():
+    return _wroom("bath", "bathroom", (10, 10, 50, 50))
+
+
+def test_shower_prior_fires_when_vlm_says_zero_on_a_page_with_a_bathroom():
+    doc = _wdoc(rooms=[_bath_region()], cov=[("shower", "not_analysed", "no shower class")])
+    assert writeback.shower_prior(doc, _out("shower", 0, (), "shower"))["fired"]
+    (o,) = doc["objects"]
+    assert o["flags"] == ["assumed_prior"] and o["polygon_px"] is None and o["bbox_px"] is None
+    assert o["confidence"] == 0.2 and o["provenance"]["source_ref"] == "prior:shower"
+    assert o["provenance"]["extractor"] == "prior" and o["subtype"] == "shower_or_bathtub"
+    cov = _cov_of(doc, "shower")
+    assert cov["status"] == "partial" and cov["note"].startswith(
+        "prior: assumed 1, not read from the drawing"
+    )
+    base_validate(doc)
+
+
+def test_shower_prior_fires_on_a_page_that_was_never_gated():
+    doc = _wdoc(rooms=[_wroom("b", "bedroom", (10, 10, 50, 50))])  # no wet room: not sent to the VLM
+    assert writeback.shower_prior(doc, None)["fired"] and len(doc["objects"]) == 1
+
+
+def test_shower_prior_trusts_a_vlm_zero_on_a_never_gated_page():
+    doc = _wdoc(rooms=[_wroom("b", "bedroom", (10, 10, 50, 50))])  # no wet room, but the VLM was asked
+    assert not writeback.shower_prior(doc, _out("shower", 0, (), "step_e"))["fired"]
+
+
+@pytest.mark.parametrize("case", ["vlm_found_one", "no_bathroom", "pipeline_tub", "gated_unanswered"])
+def test_shower_prior_does_not_fire(case):
+    rooms = [_bath_region()] if case != "no_bathroom" else [_wroom("wc", "wc", (10, 10, 50, 50))]
+    objects = [_tub()] if case == "pipeline_tub" else []
+    doc = _wdoc(rooms=rooms, objects=objects)
+    outcome = {"vlm_found_one": _out("shower", 1, (), "shower"), "gated_unanswered": None}.get(
+        case, _out("shower", 0, (), "shower")
+    )
+    if case == "vlm_found_one":
+        writeback.apply(doc, outcome, enabled=ALL_ON)
+    assert not writeback.shower_prior(doc, outcome)["fired"]
+    assert all("assumed_prior" not in o.get("flags", []) for o in doc["objects"])
+
+
+def test_variant_prompt_adds_one_line_and_keeps_the_original():
+    from translator.vlm import prompts
+
+    extra = config.VARIANTS["e1"]["extra_prompt"]
+    v = prompts.page_prompt("shower", extra)
+    assert v != prompts.page_prompt("shower") == prompts.shower("page")
+    assert v.replace(extra, "") == prompts.page_prompt("shower") and extra in v
+    assert config.VARIANTS["e1"]["upscale_below"] == 1000
+
+
+def test_total_budget_is_cumulative(tmp_path, monkeypatch):
+    from translator.vlm import ledger, run
+
+    monkeypatch.setattr(ledger, "cache_dir", lambda: tmp_path)
+    ledger.append_run("x", calls=1, cost_usd=1.2, images_sent=1)
+    ledger.add_estimate("timeout", 0.025)
+    assert run.remaining_budget() == pytest.approx(config.TOTAL_BUDGET_USD - 1.225)
+    assert config.TOTAL_BUDGET_USD <= config.BUDGET_HARD_MAX_USD
+
+
+def test_apply_cached_uses_only_listed_runs(tmp_path, monkeypatch):
+    from translator.vlm import run
+
+    folder = tmp_path / "outcomes"
+    folder.mkdir()
+    src = "data/cubicasa5k/dev.png"
+    for name, count in (("old", 1), ("new", 2), ("unlisted", 5)):
+        o = {**_out("shower", count, [(0, 0, 10, 10)] * count, "shower"), "source": src}
+        (folder / f"{name}.jsonl").write_text(json.dumps(o) + "\n", encoding="utf-8")
+    monkeypatch.setattr(run, "cache_dir", lambda: tmp_path)
+    monkeypatch.setattr(base, "_GUARD", HoldoutGuard({"data/cubicasa5k/held.png"}))
+    run.load_outcomes.cache_clear()
+    doc = _wdoc(rooms=[_bath_region()])
+    run.apply_cached(doc, enabled={"shower": True}, runs=["old", "new"])
+    assert sum(o.get("status", "active") == "active" for o in doc["objects"]) == 2
+    run.load_outcomes.cache_clear()
