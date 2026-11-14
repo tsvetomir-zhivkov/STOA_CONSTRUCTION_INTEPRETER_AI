@@ -6,6 +6,7 @@ questions.jsonl
 # generated outputs: regenerate with python -m translator --source <name>
 index/
 __pycache__/
+.venv/
 *.pyc
 .pytest_cache/
 .ruff_cache/

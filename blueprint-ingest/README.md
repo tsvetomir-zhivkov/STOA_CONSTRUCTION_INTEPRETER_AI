@@ -1,3 +1,5 @@
+> Current public contract: **v0.3, one JSON per building**. [Full architecture and verification report](../docs/building-v0.3.md).
+
 # blueprint-ingest
 
 Entry-point **filter + vector extractor + schema mapper** for the Stoa blueprint pipeline (Node.js 22+, ESM). Fully deterministic and offline: no network calls, no model calls, same input -> same output.
@@ -46,7 +48,7 @@ Node >= 22 (pdfjs-dist 6 needs it). Optional settings (`VISION_AGENT_MODULE`, `D
 ```bash
 node src/index.js plan.ifc            --out out/plan.json
 node src/index.js sheet.pdf           --out out/sheet.json     # multi-page: out/sheet.p1.json, out/sheet.p2.json ...
-node src/index.js model.ifc --levels "Level 1,Level 2"        # one JSON per storey
+node src/index.js model.ifc --out out/building.json           # all levels, one building
 node src/index.js photo.jpg                                    # -> routed_to_vision_agent (nothing written)
 node src/index.js scan.pdf --file data/swiss_dwellings/scan.pdf --source swiss_dwellings  # set drawing.file / drawing.source explicitly
 node src/index.js model.ifc --schema 0.2 --out out/plan.v02.json   # the previous schema, for comparison
@@ -67,21 +69,19 @@ const result = await processBlueprint({
 
 Exit codes: `0` ok / routed, `1` error, `3` unsupported format.
 
-### Merge semantics (`mode: 'auto'` on an existing file)
+### Building merge semantics
 
-* A better duplicate (same kind, bbox IoU >= 0.6, `confidence` higher by >= 0.15) **supersedes** the old entity (`status: "superseded"`, `superseded_by`); nothing is deleted. Otherwise the existing entity wins and only its **empty** fields are filled.
-* Texts: same text at the same place = same text; a role upgrades a text that has none. Levels match by `name`, units by `label`.
-* A stronger scale source replaces `drawing.scale` and all metre fields are recomputed.
-* Coverage: the stronger claim wins per (category, region). The incoming `history` is appended plus one `merge` entry when something changed.
-* **Pixel frames must match.** If the incoming page has another width/height, the default is to refuse (`FrameMismatchError`) because pixel coordinates are the source of truth. `--frame-mismatch sibling` writes `<name>.alt-WxH.json`; `reproject` rescales when the aspect ratio is identical.
+Source frames remain separate. IFC GlobalIds establish shared identity; page-local IDs are namespaced. Matching source observations are combined. Conflicting non-null facts fail with a useful entity/field error rather than overwriting either input. Existing v0.2 inputs are migrated centrally. The established v0.2 same-frame IoU/supersession merger remains available for internal compatibility; it does not compare pixels from unrelated building drawings.
 
-## Schema v0.2 mapping
+See [the v0.3 architecture, migration and verification report](../docs/building-v0.3.md) for the complete contract and limitations.
+
+## Internal page-fragment mapping (normalized into v0.3 before writing)
 
 | Schema field | Filled from |
 |---|---|
 | `drawing.file` / `drawing.source` | `data/<source>/...` in the input path, else path relative to `DATASET_ROOT` (cwd); override with `--file` / `--source` |
 | `drawing.route` | `ifc`, `dxf`, `svg`, `vector_pdf` (vision agent: `raster` / `vlm`) |
-| `drawing.part` | IFC storey slug, or `p<n>` for multi-page PDFs (also the output file suffix) |
+| `drawing.part` | IFC storey slug, or `p<n>` for multi-page PDFs (retained as source-frame metadata, never a storey output suffix) |
 | `drawing.transforms` | model units -> page px (`affine`, DXF/IFC), pt -> px (`resize`, PDF), viewBox -> px (`resize`, SVG) |
 | `levels[]` | IFC storeys (name, elevation, height to next storey, GlobalId); not detected on PDF/DXF/SVG pages (level-like texts get role `level_title`) |
 | `units[]` | unit-label texts such as `Whg. A`, `Wohnung 3`, `Asunto B` (polygon unknown -> `null`) |
@@ -156,7 +156,7 @@ Two ways to connect your agent:
 1. **No code change:** set `VISION_AGENT_MODULE=./path/to/agent.js`. Its default export is called with the single argument object above; whatever it returns is passed back as `agentResult`. A throwing agent surfaces as `VISION_AGENT_FAILED`.
 2. **In code:** edit `invokeAgent()` in the adapter (marked `PLUG-IN POINT`) and call your agent directly.
 
-Contract for the agent: write (or merge into) `outputJsonPath` following `schemaPath` (schema v0.2), set `drawing.route = "raster"` or `"vlm"`, give every entity `id` / `confidence` / `provenance: { extractor, source_ref }`, keep pixels of the original page image as source of truth, and if the file exists merge with `mergeDocuments()` from `src/mappers/merge.js` (supersede, never delete). Unchanged behaviour of this repo: it never builds that agent and never embeds the schema into data files.
+Contract for the agent: write a v0.3 building to the supplied staging `outputJsonPath` following `schemaPath`; the adapter validates before publishing. Use `drawings[]`, `source_documents[]`, `source_refs`, and `source_drawing_id`. Legacy v0.2 output is migrated. In each source drawing, set `drawing.route = "raster"` or `"vlm"`, give every entity `id` / `confidence` / `provenance: { extractor, source_ref }`, keep pixels of the original page image as source of truth, and if the file exists merge with `mergeDocuments()` from `src/mappers/merge.js` (supersede, never delete). Unchanged behaviour of this repo: it never builds that agent and never embeds the schema into data files.
 
 ## Changes in 0.3.0 (schema v0.3)
 

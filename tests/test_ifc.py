@@ -281,16 +281,17 @@ def test_cache_is_used_on_second_read(tmp_path, monkeypatch):
 def test_translate_all_parts_and_translate_part(tmp_path):
     path = build(tmp_path)
     docs = translate_all(str(path), str(tmp_path))
-    assert [d["drawing"]["part"] for d in docs] == ["00-EG", "01-OG", "no-storey"]
+    assert len(docs) == 1
+    assert [d["part"] for d in docs[0]["drawings"]] == ["00-EG", "01-OG", "no-storey"]
+    assert len(docs[0]["levels"]) == 2
     for d in docs:
         validate(d)
-        assert d["drawing"]["route"] == "ifc"
+        assert all(frame["route"] == "ifc" for frame in d["drawings"])
         assert all(
             o["provenance"]["source_ref"] for o in d["rooms"] + d["walls"] + d["openings"] + d["objects"]
         )
     assert translate(str(path), str(tmp_path), part="01-OG")["levels"][0]["name"] == "OG"
-    with pytest.raises(ValueError, match="translate_all"):
-        translate(str(path), str(tmp_path))
+    assert translate(str(path), str(tmp_path))["building_id"] == docs[0]["building_id"]
 
 
 def test_probe_reads_ifc_documents(tmp_path):

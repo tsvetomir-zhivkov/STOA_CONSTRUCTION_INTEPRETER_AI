@@ -1,3 +1,5 @@
+> Historical v0.2 implementation plan. The current contract is documented in [building-v0.3.md](building-v0.3.md); page/storey persistence below is superseded.
+
 # Vision translator: step-by-step build plan
 
 Owner: k. Written 2026-11-14 00:00 (UTC), about 40 hours left.

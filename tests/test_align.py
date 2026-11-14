@@ -56,10 +56,10 @@ def test_translate_maps_rooms_onto_the_pdf_page(tmp_path):
     numbers = {"1.01": (2, 2), "1.02": (8, 2), "1.03": (2, 9), "1.04": (12, 14)}
     pdf = _pair(tmp_path, numbers)
     doc = translate(str(pdf), str(tmp_path))
-    aff = [t for t in doc["drawing"]["transforms"] if t["kind"] == "affine"]
+    aff = [t for t in doc["drawings"][0]["transforms"] if t["kind"] == "affine"]
     assert len(aff) == 1 and aff[0]["residual_px"] < align.MAX_RESIDUAL_PX
-    k = doc["drawing"]["image"]["dpi"] / 72
-    assert doc["drawing"]["scale"]["m_per_px"] == pytest.approx(1 / (28.35 * k), rel=0.01)
+    k = doc["drawings"][0]["image"]["dpi"] / 72
+    assert doc["drawings"][0]["scale"]["m_per_px"] == pytest.approx(1 / (28.35 * k), rel=0.01)
     room = next(r for r in doc["rooms"] if r["number"] == "1.04")
     # the room's corner (11, 13) m must land where the true transform puts it
     expected = (TRUE_PT @ np.array([11, 13, 1.0])) * k
@@ -73,16 +73,16 @@ def test_too_few_anchors_leaves_pixels_empty(tmp_path):
     pdf = _pair(tmp_path, {"1.01": (2, 2), "1.02": (8, 2)})
     doc = translate(str(pdf), str(tmp_path))
     assert all(r["polygon_px"] is None for r in doc["rooms"])
-    assert not doc["drawing"]["transforms"]
+    assert not doc["drawings"][0]["transforms"]
     assert "fewer than 3" in doc["history"][-1]["note"]
 
 
 @needs_data
 def test_real_floor_alignment_residual():
     doc = translate("data/swiss_dwellings/site1000_bldg2082_floor9385.pdf")
-    aff = next(t for t in doc["drawing"]["transforms"] if t["kind"] == "affine")
+    aff = next(t for t in doc["drawings"][0]["transforms"] if t["kind"] == "affine")
     assert aff["residual_px"] < align.MAX_RESIDUAL_PX
     assert all(r["polygon_px"] for r in doc["rooms"])
     assert all(o["bbox_px"] for o in doc["openings"] + doc["objects"])
     # 1:200 at 150 dpi = 29.53 px per metre
-    assert 1 / doc["drawing"]["scale"]["m_per_px"] == pytest.approx(150 / 0.0254 / 200, rel=0.005)
+    assert 1 / doc["drawings"][0]["scale"]["m_per_px"] == pytest.approx(150 / 0.0254 / 200, rel=0.005)

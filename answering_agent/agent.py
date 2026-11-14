@@ -1,4 +1,4 @@
-"""Gemini answering agent for Stoa drawing-index schema v0.2.
+"""Gemini answering agent for Stoa building schema v0.3.
 
 Install: uv add google-genai python-dotenv shapely
 Set GEMINI_API_KEY in .env and optionally GEMINI_MODEL.
@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from tools import (
+from answering_agent.tools import (
     aggregate,
     connected_rooms,
     check_coverage,
@@ -20,6 +20,7 @@ from tools import (
     geometry_operation,
     get_entity,
     query_entities,
+    building_summary,
 )
 
 load_dotenv()
@@ -27,7 +28,10 @@ load_dotenv()
 MODEL = os.getenv("GEMINI_MODEL", "gemini-4-hydrogen")
 SYSTEM_INSTRUCTION = """You are a construction drawing assistant for engineers.
 Use deterministic tools for drawing facts, counts, measurements, and geometry.
-The drawing index uses schema v0.2; ignore superseded entities.
+The building index uses schema v0.3; ignore superseded entities. It contains all levels.
+Filter by level_id for floor-specific questions. Types and schedule rows are specifications,
+not physical instances. Doorways and voids are not doors. Check quantity origin and method;
+unknown measurements are not zero. Pixel coordinates from different drawings cannot be compared.
 - Prefer the smallest number of tool calls needed.
 - Reuse evidence already returned by tools.
 - Do not repeat coverage checks when the returned coverage information is sufficient.
@@ -71,17 +75,24 @@ LANGUAGE:
 
 def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
     """Answer one question using deterministic drawing tools and Gemini planning."""
-    if drawing_data.get("schema_version") not in ("0.2", "0.3"):
-        raise ValueError("This agent expects Stoa drawing-index schema v0.2 or v0.3")
+    from translator.building import migrate
+    from translator.store import validate
+    validate(drawing_data)
+    drawing_data = migrate(drawing_data)
+    validate(drawing_data)
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("Set GEMINI_API_KEY in your .env file")
 
     # Wrappers bind the drawing data privately; the model never supplies it.
+    def building_summary_tool() -> dict:
+        """Get project/building metadata, source files, levels and calculated building statistics."""
+        return building_summary(drawing_data)
+
     def query_entities_tool(collection: str, field: str = "", value: str = "", limit: int = 50) -> dict:
         """Search active drawing entities. Collections: levels, units, rooms, walls,
-        openings, objects, texts, edges. Optional exact-match field/value filter.
+        openings, objects, texts, edges, types, systems, schedules. Optional exact-match field/value filter.
         Results include ALL flags, assumption flags, and coverage notes.
         Use room 'type' (e.g. bedroom, living, wc, entry), opening 'kind'
         (door, window, doorway), or object 'category'.
@@ -143,6 +154,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM_INSTRUCTION,
             tools=[
+                building_summary_tool,
                 query_entities_tool,
                 get_entity_tool,
                 aggregate_tool,

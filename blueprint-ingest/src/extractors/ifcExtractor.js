@@ -20,6 +20,7 @@ import { parseStepFile, typesOfIds, unwrap, isRef } from './ifc/stepParser.js';
 import { readSemantics, SEMANTIC_TYPES, QUANTITY_FIELDS, quantityMeasures } from './ifcSemantics.js';
 import { ELEMENT_CLASSES, NOT_EMITTED, classNoun, isTypeClass } from '../schema/ifcClasses.js';
 import { emptyBundle, makeCanvas } from './bundle.js';
+import { normalizeIfc } from './ifc/building.js';
 import { polygonArea, polygonCenterline, minAreaRect, cleanRing, bboxOfPoints, round, circlePolygon } from '../geometry/geom.js';
 
 // ---- IFC type tables ---------------------------------------------------------------------------------
@@ -121,6 +122,27 @@ export async function extractIfc(filePath, opts) {
   model.fileName = fileName;
   const size = (await fs.stat(filePath)).size;
   return buildBundles(model, { ...opts, filePath, fileSize: size });
+}
+
+/** Public building output. Keep all entity classes/properties; geometry retains the existing engine. */
+export async function extractIfcBuildings(filePath, opts) {
+  if (opts.levels?.length) throw new Error('Building extraction includes every level; filter levels when querying the saved document');
+  const { entities, schema } = await parseStepFile(filePath, { wanted: { has: type => type !== 'IFCCARTESIANPOINT' }, pointHolders: POINT_HOLDERS });
+  const model = new IfcModel(entities, schema);
+  const records = new Map();
+  for (const [id, ent] of entities) if (ent.args.length >= 7 && isRef(ent.args[6])) {
+    records.set(id, { id, ent, shape: model.shapeOf(ent), world: isRef(ent.args[5]) ? model.placement(ent.args[5]) : ID3() });
+  }
+  let bounds = new Map();
+  const missing = new Set([...records].filter(([, r]) => r.shape.meshOnly && !r.shape.outline).map(([id]) => id));
+  if (missing.size && opts.config.ifc.webIfc !== 'off' && (await fs.stat(filePath)).size <= opts.config.ifc.webIfcMaxBytes) {
+    try { bounds = await webIfcBounds(filePath, missing); } catch (error) { opts.logger?.warn?.(`Geometry unavailable: ${error.message}`); }
+  }
+  return normalizeIfc(model, filePath, opts, (id, ent, length) => {
+    const record = records.get(id);
+    if (!record || (!record.shape.outline && !bounds.has(id))) return null;
+    return worldFootprint(model, record, length, bounds);
+  });
 }
 
 // =====================================================================================================
@@ -271,7 +293,7 @@ class IfcModel {
       }
       case 'IFCCIRCLEPROFILEDEF': {
         const m = pos2(2);
-        ring = circlePolygon([0, 0], Number(p.args[3]), 16).map((q) => apply3(m, [q[0], q[1], 0]).slice(0, 2));
+        ring = circlePolygon([0, 0], Number(p.args[3]), 64).map((q) => apply3(m, [q[0], q[1], 0]).slice(0, 2));
         break;
       }
       case 'IFCARBITRARYCLOSEDPROFILEDEF':
@@ -335,7 +357,7 @@ class IfcModel {
       }
       case 'IFCBOOLEANCLIPPINGRESULT':
       case 'IFCBOOLEANRESULT':
-        return this.itemOutline(it.args[1], depth + 1);
+        { const outline = this.itemOutline(it.args[1], depth + 1); return outline ? { ...outline, approximate: true } : null; }
       case 'IFCMAPPEDITEM': {
         const map = this.get(it.args[0]);
         const rep = this.get(map?.args?.[1]);
@@ -354,7 +376,7 @@ class IfcModel {
         const m = compose(target, origin);
         for (const sub of rep.args[3] ?? []) {
           const o = this.itemOutline(sub, depth + 1);
-          if (o) return { ...o, ring: o.ring.map((p) => apply3(m, p)) };
+          if (o) return { ...o, ring: o.ring.map((p) => apply3(m, p)), holes: (o.holes ?? []).map(h => h.map(p => apply3(m, p))), extrusion: o.extrusion ? apply3({ ...m, t: [0, 0, 0] }, o.extrusion) : null };
         }
         return null;
       }
@@ -567,7 +589,11 @@ function convexHull2(points) {
 function worldFootprint(model, r, lenM, meshBounds) {
   if (r.shape.outline) {
     const ring = r.shape.outline.ring.map((p) => apply3(r.world, p));
-    return { ring: cleanRing(ring.map((p) => [p[0] * lenM, p[1] * lenM]), 1e-9), z: Math.min(...ring.map((p) => p[2])) * lenM, depthM: r.shape.outline.depth != null ? r.shape.outline.depth * lenM : null, method: 'extrusion', confidence: 0.95 };
+    const vector = r.shape.outline.extrusion ? apply3({ ...r.world, t: [0, 0, 0] }, r.shape.outline.extrusion) : null;
+    if (vector && (Math.abs(vector[0]) > 1e-6 || Math.abs(vector[1]) > 1e-6)) return null;
+    const points = vector ? [...ring, ...ring.map(p => p.map((x, i) => x + vector[i]))] : ring;
+    const bbox = [...[0, 1, 2].map(i => Math.min(...points.map(p => p[i])) * lenM), ...[0, 1, 2].map(i => Math.max(...points.map(p => p[i])) * lenM)];
+    return { ring: cleanRing(ring.map((p) => [p[0] * lenM, p[1] * lenM]), 1e-9), holes: (r.shape.outline.holes ?? []).map(h => h.map(p => apply3(r.world, p).slice(0, 2).map(x => x * lenM))), bbox, z: bbox[2], depthM: vector ? Math.abs(vector[2]) * lenM : null, method: r.shape.outline.approximate ? 'approximate_profile' : 'extrusion', confidence: r.shape.outline.approximate ? .6 : .95 };
   }
   const mb = meshBounds.get(r.id);
   if (mb) {

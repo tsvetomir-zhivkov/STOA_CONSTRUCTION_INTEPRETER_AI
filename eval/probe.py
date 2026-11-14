@@ -29,8 +29,13 @@ def _active(items):
 
 def _all(docs, key):
     out = []
+    seen = set()
     for d in docs:
-        out.extend(_active(d.get(key, [])))
+        for item in _active(d.get(key, [])):
+            identity = item.get("ifc_global_id") or (d.get("building_id", id(d)), item["id"])
+            if identity not in seen:
+                out.append(item)
+                seen.add(identity)
     return out
 
 
@@ -111,7 +116,11 @@ def _elements(docs, element):
 
 def _other(docs, subtype):
     """Objects without their own schema category: category 'other', subtype = the IFC kind."""
-    return [o for o in _all(docs, "objects") if o.get("category") == "other" and o.get("subtype") == subtype]
+    return [
+        o
+        for o in _all(docs, "objects")
+        if o.get("category") == subtype or (o.get("category") == "other" and o.get("subtype") == subtype)
+    ]
 
 
 # ---------------------------------------------------------------- answer functions
@@ -191,7 +200,12 @@ def _level_sum(collection, field, subtype=None):
             return None
         items = _on_level(_all(docs, collection), ids)
         if subtype:
-            items = [x for x in items if x.get("category") == "other" and x.get("subtype") == subtype]
+            items = [
+                x
+                for x in items
+                if x.get("category") == subtype
+                or (x.get("category") == "other" and x.get("subtype") == subtype)
+            ]
         if field == "area":
             return _sum(_area(x) for x in items)
         return _sum(x.get(field) for x in items)
@@ -501,7 +515,11 @@ def answer(docs: list[dict], source: str, question: str, related: list[dict] | N
     if intent is None:
         return None, None
     if intent.name in MODEL_WIDE and related:
-        model_docs = [d for d in related if d["drawing"]["file"] == d["drawing"]["read_from"]]
+        from translator.building import page_views
+
+        model_docs = [
+            v for d in related for v in page_views(d) if v["drawing"]["file"] == v["drawing"]["read_from"]
+        ]
         docs = model_docs or docs
     if not docs:
         return intent.name, None

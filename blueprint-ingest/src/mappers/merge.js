@@ -56,6 +56,10 @@ const norm = (s) => String(s ?? '').trim().toLowerCase();
  * @returns {{ document: any, report: MergeReport }}
  */
 export function mergeDocuments(existing, incoming, cfg, opts = {}) {
+  return mergeCompatible(existing, incoming, cfg, opts, mergePageDocuments);
+}
+
+function mergePageDocuments(existing, incoming, cfg, opts = {}) {
   const now = opts.now ?? new Date().toISOString();
   const doc = clone(existing);
   const inc = clone(incoming);

@@ -11,6 +11,7 @@ import { recomputeMetres } from '../storage/metres.js';
 
 export const SCHEMA_VERSION = '0.2';
 export const TRANSLATOR_VERSION = 'blueprint-ingest@0.3.0';
+export const TRANSLATOR_VERSION = 'blueprint-ingest@0.3.0';
 
 /** bundle format -> drawing.route */
 const ROUTE = { ifc: 'ifc', dxf: 'dxf', svg: 'svg', pdf: 'vector_pdf' };
