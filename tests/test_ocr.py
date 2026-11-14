@@ -27,6 +27,7 @@ from translator.extract import ocr  # noqa: E402
     "text, types",
     [
         ("MH", ["bedroom"]),
+        ("H", ["bedroom"]),  # huone, as drawn on high_quality-5815
         ("OH", ["living"]),
         ("TUPA", ["living"]),
         ("KEITTIÖ", ["kitchen"]),
