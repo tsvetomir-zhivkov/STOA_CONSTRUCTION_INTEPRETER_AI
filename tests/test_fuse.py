@@ -150,6 +150,35 @@ def test_prior_differs_without_two_strong_signals_falls_back(second):
     assert _cov(doc, "kitchens")["note"].startswith("prior: assumed 1, not read from the drawing")
 
 
+def _label_text(tid, text, conf):
+    return {"id": tid, "text": text, "role": "room_label", "confidence": conf, "bbox_px": [0, 0, 10, 10],
+            "provenance": {"extractor": "ocr", "source_ref": tid}, "status": "active"}  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    ("name", "ocr_conf"),
+    [("K", 0.38), ("JH+KK 3S'2 ws", 0.9)],
+    ids=["low_ocr_confidence", "plus_summary"],
+)
+def test_weak_labels_are_not_strong_signals(name, ocr_conf):
+    """Rule found on two dev images (hqa-6001: 'K' at OCR 0.38; hqa-12617: misread summary 'JH+KK ...')."""
+    first = _room("k1", "kitchen", (0, 0, 50, 50), "K", conf=0.95)
+    second = _room("k2", "kitchen", (100, 0, 150, 50), name, conf=0.95)
+    texts = [_label_text("t-k1", "K", 0.95), _label_text("t-k2", name, ocr_conf)]
+    doc = _doc(rooms=[first, second], texts=texts)
+    assert fuse.strong_signals(doc["rooms"], "kitchen", doc["texts"]) == {"k1"}
+    res = fuse.apply_prior(doc, "cc_kitchens")
+    assert res["branch"] == "fallback" and _count(doc, "kitchen") == 1
+    assert second["type"] == "unknown" and first["type"] == "kitchen"
+
+
+def test_ocr_confidence_comes_from_the_label_text_not_the_room():
+    # a shared-region room has confidence 0.6 x OCR; its label read at 0.7 is still strong
+    room = _room("k2", "kitchen", (10, 10, 20, 20), "kk", flags=["shares_region"], parent="r9", conf=0.42)
+    assert fuse.strong_signals([room], "kitchen", [_label_text("t-k2", "kk", 0.7)]) == {"r9"}
+    assert fuse.strong_signals([room], "kitchen", [_label_text("t-k2", "kk", 0.4)]) == set()
+
+
 def test_prior_fallback_below_the_majority_adds_assumed_rooms():
     prior = {"type": "bathroom", "majority": 2, "share": 0.8, "category": "bathrooms"}
     doc = _doc(rooms=[_room("b1", "bathroom", (0, 0, 50, 50), "KH")])

@@ -31,6 +31,10 @@ PRIOR_CONF = 0.2  # confidence of an assumed element (low on purpose)
 PRIOR_EXTRACTOR = "prior"
 NOT_STRONG_LABELS = {"tk"}  # tuulikaappi (vestibule): never a strong kitchen/bathroom signal
 MIN_STRONG = 2  # independent strong signals needed to keep a count that differs from the majority
+# A label is a strong signal only when its OCR confidence is >= MIN_STRONG_OCR and its text is not a '+'
+# summary (k's decision, 2026-11-14). NOTE: this rule was found on two dev images only: hqa-12617 (misread
+# summary "JH+KK 3S'2 ws") and hqa-6001 (a second "K" read at OCR 0.38 on the entry region).
+MIN_STRONG_OCR = 0.5
 
 
 def _active(items: list[dict]) -> list[dict]:
@@ -104,14 +108,25 @@ def dedupe_document(doc: dict) -> list[dict]:
 # ------------------------------------------------------------------ priors
 
 
-def _region_key(room: dict) -> str | None:
+def _ocr_confidence(room: dict, text_conf: dict[str, float]) -> float:
+    """OCR confidence of the room's label text; the room's own confidence when the text is not at hand."""
+    confs = [text_conf[t] for t in room.get("text_ids", []) if t in text_conf]
+    return max(confs) if confs else room["confidence"]
+
+
+def _region_key(room: dict, text_conf: dict[str, float] | None = None) -> str | None:
     """The segmentation region a labelled room sits in, or None when it is not a strong signal."""
     if not room.get("text_ids"):
         return None  # segmentation class only, or an assumed element
     flags = set(room.get("flags", []))
     if "label_only" in flags or "assumed_prior" in flags:
         return None  # a label in no region: no room polygon behind it
-    label = re.sub(r"[^a-z]", "", glossary.fold(room.get("name") or ""))
+    name = room.get("name") or ""
+    if "+" in name:
+        return None  # a '+' summary (apartment description or misread one), not one room's label
+    if _ocr_confidence(room, text_conf or {}) < MIN_STRONG_OCR:
+        return None
+    label = re.sub(r"[^a-z]", "", glossary.fold(name))
     if label in NOT_STRONG_LABELS:
         return None
     if "shares_region" in flags:
@@ -119,15 +134,20 @@ def _region_key(room: dict) -> str | None:
     return room["id"] if room.get("polygon_px") else None
 
 
-def strong_signals(rooms: list[dict], rtype: str) -> set[str]:
+def _text_conf(texts: list[dict]) -> dict[str, float]:
+    return {t["id"]: t["confidence"] for t in texts}
+
+
+def strong_signals(rooms: list[dict], rtype: str, texts: list[dict] = ()) -> set[str]:
     """Independent strong signals for a room type: distinct regions holding a label of that type."""
-    keys = {_region_key(r) for r in _active(rooms) if r["type"] == rtype}
+    tc = _text_conf(texts)
+    keys = {_region_key(r, tc) for r in _active(rooms) if r["type"] == rtype}
     keys.discard(None)
     return keys
 
 
-def _strength(room: dict) -> tuple:
-    return (_region_key(room) is not None, bool(room.get("text_ids")), room["confidence"])
+def _strength(room: dict, text_conf: dict[str, float]) -> tuple:
+    return (_region_key(room, text_conf) is not None, bool(room.get("text_ids")), room["confidence"])
 
 
 def assumed_room(template: str, prior: dict, k: int, detected: int) -> dict:
@@ -173,7 +193,7 @@ def apply_prior(doc: dict, template: str, prior: dict | None = None) -> dict:
     rtype, maj = prior["type"], prior["majority"]
     rooms = doc["rooms"]
     found = [r for r in _active(rooms) if r["type"] == rtype]
-    detected, strong = len(found), strong_signals(rooms, rtype)
+    detected, strong = len(found), strong_signals(rooms, rtype, doc.get("texts", []))
     if detected == maj:
         branch = "equal"
     elif detected == 0:
@@ -187,7 +207,8 @@ def apply_prior(doc: dict, template: str, prior: dict | None = None) -> dict:
         assumed = [assumed_room(template, prior, k, detected) for k in range(maj - detected)]
         rooms.extend(assumed)
     elif branch == "fallback":
-        for r in sorted(found, key=_strength, reverse=True)[maj:]:
+        tc = _text_conf(doc.get("texts", []))
+        for r in sorted(found, key=lambda x: _strength(x, tc), reverse=True)[maj:]:
             r["provenance"].setdefault("details", {})["prior_type"] = r["type"]
             r["type"] = "unknown"
             r["flags"] = sorted(set(r.get("flags", [])) | {"prior_stepped_back"})

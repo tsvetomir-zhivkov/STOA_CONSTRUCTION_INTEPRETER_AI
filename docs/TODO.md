@@ -268,5 +268,12 @@ index copy. Each image has an EN and an FI question, so 2 questions = 1 image. D
     - Fallback: 23 images, 19 gained.
     - Zero branch: 9 images, 5 gained, 4 lost (true answer 0: hqa-1886, 3660, 5640, 9405).
     - Kept on strong signals: 2 images, 1 right (14341, Badrum ×2), 1 wrong (14494: `k/pH` shared label).
-  - Kitchens stay below the majority baseline (92.3 vs 95/93.8). Possible next fix, not applied: a strong
-    signal needs OCR confidence ≥ 0.5 and is not a '+' summary. It would fix the 2 kept kitchen images.
+  - **Strong-signal rule tightened (k's decision, applied):** a label is a strong signal only when its OCR
+    confidence (of the label text, not the room) is ≥ 0.5 and its text holds no '+'.
+    - **This rule was found on two dev images only** (hqa-12617, misread summary "JH+KK 3S'2 ws"; hqa-6001,
+      a second "K" at OCR 0.38), so expect it to generalise less than the dev number suggests.
+    - Dev, with MIN_ICON_PX 46: kitchens 92.3 → 93.8 (those 2 images fixed); every other template
+      unchanged; CubiCasa 63.5 → 63.6, TOTAL 79.8 → 79.9.
+    - 3 images change count: hqa-12617 and hqa-6001 kitchens 2 → 1, and colorful-11400 bathrooms 2 → 1.
+      The last has no bathroom question on dev, but it is a side effect: `KHH+PH` is a real combined label
+      (utility + washroom), and the '+' rule no longer counts it as strong.
