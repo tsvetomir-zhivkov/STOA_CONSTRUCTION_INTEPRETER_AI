@@ -191,7 +191,7 @@ def test_translate_writes_none_for_unknown(tmp_path):
     dwg = tmp_path / "x.dwg"
     dwg.write_bytes(b"AC1027")
     doc = translate(str(dwg), str(tmp_path))
-    assert doc["drawing"]["route"] == "none"
+    assert doc["drawings"][0]["route"] == "none"
     assert all(c["status"] == "not_analysed" for c in doc["coverage"])
 
 
@@ -199,10 +199,10 @@ def test_translate_keeps_asked_file(tmp_path):
     (tmp_path / "floor1.dxf").write_text("0\nEOF\n")
     pdf = _vector_pdf(tmp_path / "floor1.pdf")
     doc = translate(str(pdf), str(tmp_path))
-    assert doc["drawing"]["file"].endswith("floor1.pdf")
-    assert doc["drawing"]["read_from"].endswith("floor1.dxf")
-    assert doc["drawing"]["route"] == "dxf"
-    assert doc["drawing"]["image"]["dpi"] == 150
+    assert doc["drawings"][0]["file"].endswith("floor1.pdf")
+    assert doc["drawings"][0]["read_from"].endswith("floor1.dxf")
+    assert doc["drawings"][0]["route"] == "dxf"
+    assert doc["drawings"][0]["image"]["dpi"] == 150
 
 
 # ------------------------------------------------------------------ real preview files

@@ -1,7 +1,7 @@
-"""Deterministic drawing tools for Stoa schema v0.2.
+"""Deterministic query tools for Stoa building schema v0.3.
 
 Install: uv add shapely
-Every function accepts the already-validated v0.2 drawing dict as its first argument.
+Every function accepts the already-validated v0.3 building dict as its first argument.
 """
 from __future__ import annotations
 
@@ -10,12 +10,23 @@ from typing import Any
 
 from shapely.geometry import Polygon
 
-COLLECTIONS = ("levels", "units", "rooms", "walls", "openings", "objects", "texts", "edges")
+COLLECTIONS = ("levels", "units", "rooms", "walls", "openings", "objects", "texts", "edges", "systems", "types", "schedules")
 MEASURES = ("area_m2", "area_written_m2", "area_computed_m2", "height_m", "volume_m3", "length_m", "width_m", "thickness_m", "net_side_area_m2", "net_volume_m3")
 
 
 def _active(item: dict) -> bool:
     return item.get("status", "active") == "active"
+
+
+def building_summary(data: dict) -> dict:
+    """Return normalized metadata without sending the entire raw IFC graph to the language model."""
+    return {
+        'building_id': data['building_id'],
+        'project': {k: v for k, v in data['project'].items() if k != 'properties'},
+        'source_documents': [{k: v for k, v in s.items() if k != 'properties'} for s in data['source_documents']],
+        'levels': [_brief(level, 'levels') for level in data['levels'] if _active(level)],
+        'statistics': data.get('statistics'),
+    }
 
 
 def _assumed_prior(item: dict) -> bool:
@@ -44,16 +55,18 @@ def _coverage(data: dict, category: str) -> dict:
     verified = (bool(matches)
                 and any(c.get("status") == "analysed" and c.get("confidence", 0) >= 0.8 for c in matches)
                 and not any(c.get("status") != "analysed" for c in matches))
+    if data.get('drawings'):
+        verified = verified and {c.get('drawing_id') for c in matches} == {d['id'] for d in data['drawings']}
     # Keep relevant partial-coverage notes, but omit repeated full records.
     records = [{k: c[k] for k in ("status", "note") if k in c} for c in matches]
     return {"records": records, "absence_verified": verified}
 
 
 def query_entities(data: dict, collection: str, field: str = "", value: str = "", limit: int = 50) -> dict:
-    """Search active entities in one v0.2 collection. Filter by an exact string field, or search all if field is empty."""
+    """Search active entities in one building collection. Filter by an exact string field, or search all if field is empty."""
     if collection not in COLLECTIONS:
         return {"error": f"Unknown collection: {collection}", "allowed": COLLECTIONS}
-    if field and field not in ("id", "name", "label", "number", "type", "kind", "category", "unit_id", "level_id", "room_id", "text", "role", "is_entrance"):
+    if field and field not in ("id", "name", "label", "number", "type", "kind", "category", "unit_id", "level_id", "room_id", "text", "role", "is_entrance", "ifc_global_id", "ifc_class", "type_id", "type_mark", "system_type", "schedule_type", "fire_rating", "is_load_bearing"):
         return {"error": "Unsupported filter field"}
     items = [x for x in data.get(collection, []) if _active(x)]
     if field:
@@ -125,6 +138,12 @@ def geometry_operation(data: dict, first_id: str, second_id: str, operation: str
         return {"error": "Both entities need valid polygons"}
     if ua != ub:
         return {"error": "Mixed coordinate units; cannot compare"}
+    if a.get('level_id') != b.get('level_id'):
+        return {'error': 'Plan polygons belong to different levels; a 2D comparison would be misleading'}
+    if a.get('source_drawing_id') != b.get('source_drawing_id'):
+        world = all((e.get('geometry') or {}).get('coordinate_system') == 'world' for e in (a, b))
+        if ua == 'px' or not world:
+            return {'error': 'Different source coordinate frames; register drawings before comparing'}
     if operation == "distance":
         result = pa.distance(pb)
     else:
@@ -180,6 +199,8 @@ def check_coverage(data: dict, category: str, region: list[float] | None = None)
     reliable analysed record fully covers it, and no overlapping contradictory
     partial/not_analysed record exists. This is deliberately conservative.
     """
+    if region is not None and len(data.get('drawings', [])) > 1:
+        return {'error': 'A pixel region requires a single source drawing view', 'absence_verified': False}
     category = CATEGORY_ALIASES.get(category.strip().casefold(), category.strip().casefold())
     if region is not None:
         if (len(region) != 4 or any(not isinstance(v, (int, float)) or
@@ -205,6 +226,8 @@ def check_coverage(data: dict, category: str, region: list[float] | None = None)
     conflicting = [(i, rec) for i, rec in matches if rec.get("status") != "analysed"
                    or rec.get("confidence", 0) < COVERAGE_THRESHOLD]
     verified = bool(reliable) and not conflicting
+    if data.get('drawings'):
+        verified = verified and {rec.get('drawing_id') for _, rec in reliable} == {d['id'] for d in data['drawings']}
     return {
         "category": category, "region": region if region is not None else "page",
         "status": "analysed" if verified else "gap",

@@ -13,16 +13,16 @@
 
 import path from 'node:path';
 import { buildDocument, applyRoomType, roomLabel } from './documentBuilder.js';
-import { mergeDocuments } from './merge.js';
 import { ROOM_TYPES, WET_TYPES } from './glossary.js';
 import { parseUnitLabel } from '../extractors/textRoles.js';
 import { createValidator, readJsonIfExists, writeJsonAtomic, groupErrorsByElement, pointerForElement, getByKey, setByKey, toGeminiSchema, describeErrors } from '../storage/jsonStore.js';
-import { recomputeMetres } from '../storage/metres.js';
 import { understandPdfWithGemini } from '../extractors/pdfExtractor.js';
 import { hasWord } from '../extractors/textRoles.js';
-import { PipelineError, SchemaValidationError, FrameMismatchError } from '../util/errors.js';
+import { PipelineError, SchemaValidationError } from '../util/errors.js';
 import { silentLogger } from '../util/logger.js';
 import { UsageTracker } from '../util/usage.js';
+import { migrate, mergeBuildings } from '../storage/building.js';
+import { readScheduleTables, addSchedules } from '../extractors/schedules.js';
 
 /** text.role values Gemini may assign to texts the deterministic pass left without a role */
 const TEXT_ROLES = ['title', 'level_title', 'legend', 'unit_label', 'other'];
@@ -92,18 +92,37 @@ export async function mapToSchema(opts) {
   if (!bundles.length) throw new PipelineError('No bundles to map', 'NO_BUNDLES');
 
   const outputs = [];
+  const documents = [];
   for (const bundle of bundles) {
-    const callsBefore = usage.calls;
     const costBefore = usage.costUsd;
     const { document, pending } = buildDocument(bundle, { inputFilePath, now: opts.now, file: opts.file, source: opts.source, datasetRoot: config.datasetRoot, multiPage: bundles.length > 1 && bundle.format === 'pdf' });
 
     if (gemini?.isConfigured) await enrich({ document, pending, bundle, inputFilePath, gemini, config, logger, usage, costBefore, now: opts.now });
     else if (pending.roomNames.length) logger.info(`${pending.roomNames.length} room name(s) unresolved by the glossary and no GEMINI_API_KEY set; they stay type "unknown"`);
 
-    const target = outputPathFor(outputJsonPath, document, bundles.length, inputFilePath);
-    await finalizeOne({ document, target, mode, validator, gemini, config, logger, usage, now: opts.now, outputs, callsBefore });
+    const building = migrate(document);
+    addSchedules(building, bundle.schedules?.length ? bundle.schedules : readScheduleTables(building.texts));
+    documents.push(building);
   }
+  const document = await validateOrRepair(mergeBuildings(documents), { validator, gemini, logger, label: 'building document' });
+  await persistBuilding({ document, target: outputJsonPath, mode, validator, outputs, usage });
   return { outputs, usage: usage.snapshot() };
+}
+
+export async function persistBuilding({ document, target, mode = 'auto', validator, outputs = [], usage }) {
+  const existing = await readJsonIfExists(target);
+  if (mode === 'create' && existing) throw new PipelineError(`Refusing to overwrite ${target}`, 'OUTPUT_EXISTS');
+  if (mode === 'merge' && !existing) throw new PipelineError(`Missing ${target}`, 'OUTPUT_MISSING');
+  validator.assertValid(document);
+  let result = document;
+  if (existing) {
+    const migrated = migrate(existing); validator.assertValid(migrated);
+    result = mergeBuildings([migrated, document], document.building_id);
+  }
+  validator.assertValid(result);
+  await writeJsonAtomic(target, result);
+  outputs.push({ outputJsonPath: target, buildingId: result.building_id, action: existing ? 'merged' : 'created', geminiCalls: usage?.calls ?? 0 });
+  return outputs;
 }
 
 /** one file per drawing page: if a source yields several pages/levels, suffix the drawing id before the extension */
@@ -122,42 +141,6 @@ export const drawingKey = (d) => `${d.file}${d.part ? `#${d.part}` : ''}`;
 // persistence
 // =====================================================================================================
 
-async function finalizeOne({ document, target, mode, validator, gemini, config, logger, usage, now, outputs, callsBefore }) {
-  let existing = await readJsonIfExists(target);
-  if (mode === 'create' && existing) throw new PipelineError(`Refusing to overwrite existing ${target} in mode "create" (use "auto" or "merge")`, 'OUTPUT_EXISTS');
-  if (mode === 'merge' && !existing) throw new PipelineError(`mode "merge" needs an existing ${target}`, 'OUTPUT_MISSING');
-
-  let doc = await validateOrRepair(document, { validator, gemini, logger, label: 'new document' });
-  let action = 'created';
-  let report = { added: [...doc.levels, ...doc.units, ...doc.rooms, ...doc.walls, ...doc.openings, ...doc.texts, ...doc.objects].length };
-  let outPath = target;
-
-  if (existing) {
-    existing = await validateOrRepair(existing, { validator, gemini, logger, label: `existing ${path.basename(target)}`, existingFile: true });
-    try {
-      const m = mergeDocuments(existing, doc, config, { now });
-      doc = m.document; report = m.report; action = 'merged';
-    } catch (err) {
-      if (err instanceof FrameMismatchError && config.merge.onFrameMismatch === 'sibling') {
-        const ext = path.extname(target);
-        outPath = `${target.slice(0, target.length - ext.length)}.alt-${doc.drawing.image.width_px}x${doc.drawing.image.height_px}${ext}`;
-        action = 'sibling';
-        logger.warn(`pixel frame differs from ${target}; writing ${outPath} instead`);
-        const prior = await readJsonIfExists(outPath);
-        if (prior) { const m = mergeDocuments(prior, doc, config, { now }); doc = m.document; report = m.report; } else report = { note: 'new sibling file' };
-      } else throw err;
-    }
-    // merged result must be valid too (a bug or a stale file must never be persisted silently)
-    doc = await validateOrRepair(doc, { validator, gemini, logger, label: 'merged document' });
-  }
-  await writeJsonAtomic(outPath, doc);
-  outputs.push({ outputJsonPath: outPath, drawingId: drawingKey(doc.drawing), action, report, geminiCalls: usage.calls - callsBefore });
-}
-
-/**
- * Validate; on failure do exactly ONE repair pass that sends Gemini only the errors and the invalid sub-object.
- * Without a configured Gemini (or when the repair does not fix it) a SchemaValidationError is thrown.
- */
 async function validateOrRepair(doc, { validator, gemini, logger, label, existingFile = false }) {
   let r = validator.validate(doc);
   if (r.valid) return doc;
@@ -174,7 +157,6 @@ async function validateOrRepair(doc, { validator, gemini, logger, label, existin
     const { json } = await gemini.generateJson({ tier: 'primary', label: `repair${key}`, prompt, schema });
     setByKey(fixed, key, json);
   }
-  recomputeMetres(fixed);
   r = validator.validate(fixed);
   if (!r.valid) throw new SchemaValidationError(r.errors, `${label} still invalid after the repair pass${existingFile ? ' (the existing file was left untouched)' : ''}: ${describeErrors(r.errors).slice(0, 3).join('; ')}`);
   return fixed;
@@ -261,6 +243,7 @@ async function enrich({ document, pending, bundle, inputFilePath, gemini, config
   if (bundle.format === 'pdf' && pending.looksLikeLegendOrSchedule && config.pdf.filesApi !== 'off') {
     const u = await understandPdfWithGemini(inputFilePath, { gemini, pageIndex: bundle.page.pageIndex, logger });
     if (u) {
+      bundle.schedules = u.schedules ?? [];
       const byRaw = new Map(document.texts.map((t) => [t.text.trim().toLowerCase(), t]));
       if (u.title) { const t = byRaw.get(String(u.title).trim().toLowerCase()); if (t && !t.role) { t.role = 'title'; touched.add(t.id); } }
       if (!levelName && !document.levels.length && u.level) levelName = String(u.level).trim();

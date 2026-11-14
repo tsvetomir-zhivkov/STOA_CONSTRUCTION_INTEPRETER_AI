@@ -16,6 +16,7 @@
 import { bboxIou, round } from '../geometry/geom.js';
 import { FrameMismatchError } from '../util/errors.js';
 import { recomputeMetres } from '../storage/metres.js';
+import { mergeCompatible } from '../storage/building.js';
 
 const SCALE_RANK = { vector_units: 5, scale_note: 4, dimension_lines: 3, door_width: 2, none: 0 };
 const COV_RANK = { analysed: 3, partial: 2, not_analysed: 1 };
@@ -48,6 +49,10 @@ const norm = (s) => String(s ?? '').trim().toLowerCase();
  * @returns {{ document: any, report: MergeReport }}
  */
 export function mergeDocuments(existing, incoming, cfg, opts = {}) {
+  return mergeCompatible(existing, incoming, cfg, opts, mergePageDocuments);
+}
+
+function mergePageDocuments(existing, incoming, cfg, opts = {}) {
   const now = opts.now ?? new Date().toISOString();
   const doc = clone(existing);
   const inc = clone(incoming);

@@ -20,11 +20,12 @@ import { createLogger } from './util/logger.js';
 import { UsageTracker } from './util/usage.js';
 import { UnsupportedFormatError, PipelineError } from './util/errors.js';
 import { classifyBlueprint } from './classifier/blueprintClassifier.js';
-import { extractIfc } from './extractors/ifcExtractor.js';
+import { extractIfcBuildings } from './extractors/ifcExtractor.js';
 import { extractPdf } from './extractors/pdfExtractor.js';
 import { extractDxf, extractSvg } from './extractors/cadExtractor.js';
 import { createGeminiClient } from './mappers/geminiClient.js';
-import { mapToSchema } from './mappers/geminiSchemaMapper.js';
+import { mapToSchema, persistBuilding } from './mappers/geminiSchemaMapper.js';
+import { migrate } from './storage/building.js';
 import { routeToVisionAgent } from './agents/visionAgentAdapter.js';
 import { createValidator, describeErrors } from './storage/jsonStore.js';
 
@@ -85,7 +86,16 @@ export async function processBlueprint(opts) {
   const exOpts = { config, logger };
   /** @type {import('./extractors/bundle.js').Bundle[]} */
   let bundles;
-  if (fmt === 'ifc') bundles = await extractIfc(inputFilePath, { ...exOpts, levels: opts.levels });
+  if (fmt === 'ifc') {
+    const documents = await extractIfcBuildings(inputFilePath, { ...exOpts, levels: opts.levels, file: opts.file, source: opts.source });
+    const validator = await createValidator(config.schemaPath), outputs = [];
+    for (const document of documents) {
+      const suffix = document.building_id.replace(/[^A-Za-z0-9_-]/g, '_');
+      const target = documents.length === 1 ? outputJsonPath : outputJsonPath.replace(/\.json$/i, '') + `.${suffix}.json`;
+      await persistBuilding({ document, target, mode: opts.mode, validator, outputs, usage });
+    }
+    return { status: 'processed', route: classification.route, classification: summarize(classification), outputs, usage: usage.snapshot() };
+  }
   else if (fmt === 'dxf') bundles = await extractDxf(inputFilePath, exOpts);
   else if (fmt === 'svg') bundles = await extractSvg(inputFilePath, exOpts);
   else if (fmt === 'pdf') bundles = await extractPdf(inputFilePath, { ...exOpts, pages: vectorPages });
@@ -138,7 +148,7 @@ async function main(argv) {
   }
   if (values['validate-only']) {
     const { validate } = await createValidator(loadConfig().schemaPath);
-    const r = validate(JSON.parse(await fs.readFile(positionals[0], 'utf8')));
+    const r = validate(migrate(JSON.parse(await fs.readFile(positionals[0], 'utf8'))));
     process.stdout.write(r.valid ? 'valid\n' : `INVALID\n${describeErrors(r.errors).join('\n')}\n`);
     return r.valid ? 0 : 1;
   }

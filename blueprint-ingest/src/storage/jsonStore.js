@@ -11,6 +11,10 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { SchemaValidationError } from '../util/errors.js';
+import { referenceErrors } from './building.js';
+import { SCHEMA_PATH } from '../config.js';
+
+let writeValidator;
 
 const DATE_TIME = /^\d{4}-\d{2}-\d{2}[Tt ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})$/;
 
@@ -32,7 +36,10 @@ export async function createValidator(schemaPath) {
   const fn = ajv.compile(schema);
   const validate = (doc) => {
     const valid = fn(doc);
-    return { valid: !!valid, errors: valid ? [] : [...(fn.errors ?? [])] };
+    const errors = valid && doc.schema_version === '0.3'
+      ? referenceErrors(doc).map(message => ({ instancePath: '', keyword: 'reference', message, params: {} }))
+      : valid ? [] : [...(fn.errors ?? [])];
+    return { valid: !!valid && errors.length === 0, errors };
   };
   return {
     schema,
@@ -59,6 +66,8 @@ export async function readJsonIfExists(filePath) {
  * @param {string} filePath @param {any} data
  */
 export async function writeJsonAtomic(filePath, data) {
+  writeValidator ??= createValidator(SCHEMA_PATH);
+  (await writeValidator).assertValid(data);
   const dir = path.dirname(filePath);
   await fs.mkdir(dir, { recursive: true });
   const tmp = path.join(dir, `.${path.basename(filePath)}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`);

@@ -1,6 +1,6 @@
 {
   "name": "blueprint-ingest",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Entry-point filter, vector extractor and Gemini schema mapper for the Stoa blueprint pipeline.",
   "private": true,
   "type": "module",

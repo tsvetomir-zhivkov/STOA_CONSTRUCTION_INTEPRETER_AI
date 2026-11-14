@@ -1,5 +1,5 @@
 /**
- * Bundle -> schema v0.2 document (deterministic). No LLM here: this step turns geometry + raw facts into the schema shape,
+ * Bundle -> internal v0.2 page fragment (deterministic); the mapper aggregates it into v0.3. No LLM here: this step turns geometry + raw facts into the schema shape,
  * resolves names through the glossary, links texts to rooms by geometry and writes the code-owned fields.
  */
 
@@ -10,7 +10,7 @@ import { lookupRoomName, OUTDOOR_TYPES } from './glossary.js';
 import { recomputeMetres } from '../storage/metres.js';
 
 export const SCHEMA_VERSION = '0.2';
-export const TRANSLATOR_VERSION = 'blueprint-ingest@0.2.0';
+export const TRANSLATOR_VERSION = 'blueprint-ingest@0.3.0';
 
 /** bundle format -> drawing.route */
 const ROUTE = { ifc: 'ifc', dxf: 'dxf', svg: 'svg', pdf: 'vector_pdf' };

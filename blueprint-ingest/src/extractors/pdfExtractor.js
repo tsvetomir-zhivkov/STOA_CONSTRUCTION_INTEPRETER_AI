@@ -195,6 +195,11 @@ const UNDERSTAND_SCHEMA = {
     level: { type: 'string', nullable: true },
     scale_note: { type: 'string', nullable: true },
     legend: { type: 'array', items: { type: 'object', properties: { symbol: { type: 'string' }, meaning: { type: 'string' } }, required: ['symbol', 'meaning'] } },
+    schedules: { type: 'array', items: { type: 'object', properties: {
+      name: { type: 'string' }, schedule_type: { type: 'string', enum: ['door', 'window', 'room_finish', 'material', 'equipment', 'sanitary_fixture', 'other'] },
+      headers: { type: 'array', items: { type: 'string' } },
+      rows: { type: 'array', items: { type: 'object', properties: { cells: { type: 'array', items: { type: 'string' } } }, required: ['cells'] } },
+    }, required: ['name', 'schedule_type', 'headers', 'rows'] } },
   },
   required: ['page_kind', 'legend'],
 };
@@ -215,7 +220,7 @@ export async function understandPdfWithGemini(filePath, { gemini, pageIndex, log
     const { json } = await gemini.generateJson({
       tier: 'primary',
       label: 'pdf_page_understanding',
-      prompt: `You are reading page ${pageIndex + 1} (1-based) of an architectural drawing PDF. Report only what is printed on that page: its kind, title, level, printed scale note, and legend entries (symbol -> meaning). Do not invent anything; use null when absent.`,
+      prompt: `Read page ${pageIndex + 1} (1-based) of this architectural PDF. Report only printed page kind, title, level, scale note, legend entries, and schedules. Preserve table headers including units and every cell in row order. Schedule rows describe specifications, never physical instances. Do not infer instance counts or entity links. Return an empty schedules array if no readable table is present. Do not invent values; use null when absent.`,
       schema: UNDERSTAND_SCHEMA,
       file: uploaded,
     });

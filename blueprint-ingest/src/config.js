@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
-export const SCHEMA_PATH = path.resolve(HERE, '..', 'schema', 'blueprint.schema.json');
+export const LEGACY_SCHEMA_PATH = path.resolve(HERE, '..', 'schema', 'blueprint.schema.json');
+export const SCHEMA_PATH = path.resolve(HERE, '..', '..', 'translator', 'schema', 'building.v0.3.schema.json');
 
 /** @param {string|undefined} v @param {number} d */
 const num = (v, d) => (v === undefined || v === '' || Number.isNaN(Number(v)) ? d : Number(v));
