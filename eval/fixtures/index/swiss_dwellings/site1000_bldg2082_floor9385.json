@@ -1,0 +1,53 @@
+{
+ "schema_version": "0.2",
+ "drawing": {
+  "file": "data/swiss_dwellings/site1000_bldg2082_floor9385.pdf",
+  "source": "swiss_dwellings",
+  "page_index": 0,
+  "page_count": 1,
+  "image": null,
+  "route": "dxf",
+  "read_from": "data/swiss_dwellings/site1000_bldg2082_floor9385.dxf",
+  "transforms": [],
+  "scale": {"m_per_px": null, "source": "vector_units", "confidence": 1.0, "note": "hand-written fixture for the step 1 quick test"}
+ },
+ "levels": [],
+ "units": [],
+ "rooms": [
+  {
+   "id": "room-2.10",
+   "name": "Zimmer",
+   "number": "2.10",
+   "label": "Zimmer (2.10)",
+   "type": "bedroom",
+   "is_outdoor": false,
+   "area_m2": 16.78,
+   "area_written_m2": 16.78,
+   "confidence": 1.0,
+   "provenance": {"extractor": "hand_fixture", "source_ref": "fixture:room-2.10"}
+  },
+  {
+   "id": "room-2.09",
+   "name": "Zimmer",
+   "number": "2.09",
+   "label": "Zimmer (2.09)",
+   "type": "bedroom",
+   "is_outdoor": false,
+   "area_m2": 15.9,
+   "area_written_m2": 15.9,
+   "confidence": 1.0,
+   "provenance": {"extractor": "hand_fixture", "source_ref": "fixture:room-2.09"}
+  }
+ ],
+ "walls": [],
+ "openings": [],
+ "objects": [],
+ "texts": [],
+ "edges": [],
+ "coverage": [
+  {"category": "rooms", "region": "page", "status": "partial", "extractor": "hand_fixture", "confidence": 1.0, "note": "only two rooms written by hand"}
+ ],
+ "history": [
+  {"extractor": "hand_fixture", "action": "create", "entity_ids": ["room-2.10", "room-2.09"], "note": "step 1 quick test"}
+ ]
+}

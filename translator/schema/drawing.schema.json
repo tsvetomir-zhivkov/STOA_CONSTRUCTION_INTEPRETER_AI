@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stoa.local/drawing.schema.json",
+  "title": "Stoa drawing index, schema v0.2",
+  "description": "One document per page (or per IFC storey). Pixel coordinates are pixels of the ORIGINAL page image at drawing.image.dpi. Metric coordinates are metres. Entities are never deleted: replaced ones get status=superseded.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "drawing", "levels", "units", "rooms", "walls", "openings", "objects", "texts", "edges", "coverage", "history"],
+  "properties": {
+    "schema_version": {"const": "0.2"},
+    "drawing": {"$ref": "#/$defs/drawing"},
+    "levels": {"type": "array", "items": {"$ref": "#/$defs/level"}},
+    "units": {"type": "array", "items": {"$ref": "#/$defs/unit"}},
+    "rooms": {"type": "array", "items": {"$ref": "#/$defs/room"}},
+    "walls": {"type": "array", "items": {"$ref": "#/$defs/wall"}},
+    "openings": {"type": "array", "items": {"$ref": "#/$defs/opening"}},
+    "objects": {"type": "array", "items": {"$ref": "#/$defs/object"}},
+    "texts": {"type": "array", "items": {"$ref": "#/$defs/text"}},
+    "edges": {"type": "array", "items": {"$ref": "#/$defs/edge"}},
+    "coverage": {"type": "array", "items": {"$ref": "#/$defs/coverage"}},
+    "history": {"type": "array", "items": {"$ref": "#/$defs/history"}}
+  },
+  "$defs": {
+    "num_or_null": {"type": ["number", "null"]},
+    "point": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 3},
+    "polygon": {"type": ["array", "null"], "items": {"$ref": "#/$defs/point"}},
+    "polygons": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/point"}}},
+    "bbox": {"type": ["array", "null"], "items": {"type": "number"}, "minItems": 4, "maxItems": 4, "description": "[x0, y0, x1, y1] in original page pixels"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+
+    "provenance": {
+      "type": "object",
+      "required": ["extractor", "source_ref"],
+      "properties": {
+        "extractor": {"type": "string", "minLength": 1, "description": "Which extractor produced this, e.g. swiss_dxf, ifc, cubicasa_seg, ocr, vlm_check"},
+        "source_ref": {"type": "string", "minLength": 1, "description": "DXF handle, PDF item index, IFC GlobalId, or extractor-local id (e.g. seg:icon:12)"},
+        "file": {"type": "string", "description": "File actually read, if different from drawing.file"},
+        "layer": {"type": "string"},
+        "details": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+
+    "entity": {
+      "type": "object",
+      "required": ["id", "confidence", "provenance"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "provenance": {"$ref": "#/$defs/provenance"},
+        "status": {"enum": ["active", "superseded"], "default": "active"},
+        "superseded_by": {"type": ["string", "null"]},
+        "level_id": {"type": ["string", "null"]},
+        "flags": {"type": "array", "items": {"type": "string"}, "description": "e.g. check_this, low_confidence"},
+        "properties": {"type": "object", "description": "Free-form extra data, e.g. all IFC psets"}
+      }
+    },
+
+    "drawing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "source", "route", "read_from"],
+      "properties": {
+        "file": {"type": "string", "description": "Dataset-relative path the question asks about, e.g. data/swiss_dwellings/x.pdf"},
+        "source": {"type": "string", "description": "Dataset source folder, e.g. swiss_dwellings"},
+        "page_index": {"type": ["integer", "null"], "minimum": 0},
+        "page_count": {"type": ["integer", "null"], "minimum": 1},
+        "part": {"type": ["string", "null"], "description": "Page or level slug when one file yields several documents"},
+        "image": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["width_px", "height_px"],
+          "properties": {
+            "width_px": {"type": "integer", "minimum": 1},
+            "height_px": {"type": "integer", "minimum": 1},
+            "dpi": {"$ref": "#/$defs/num_or_null"}
+          }
+        },
+        "route": {"enum": ["ifc", "dxf", "svg", "vector_pdf", "raster", "vlm", "none"]},
+        "read_from": {"type": "string", "description": "Sibling file actually parsed"},
+        "transforms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind"],
+            "properties": {
+              "kind": {"enum": ["resize", "deskew", "affine", "upscale", "invert", "other"]},
+              "from": {"type": "string"},
+              "to": {"type": "string"},
+              "scale_x": {"type": "number"},
+              "scale_y": {"type": "number"},
+              "angle_deg": {"type": "number"},
+              "matrix": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}},
+              "residual_px": {"type": "number"},
+              "note": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "scale": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["source", "confidence"],
+          "properties": {
+            "m_per_px": {"$ref": "#/$defs/num_or_null"},
+            "source": {"enum": ["vector_units", "scale_note", "dimension_lines", "door_width", "none"]},
+            "confidence": {"$ref": "#/$defs/confidence"},
+            "note": {"type": "string"}
+          }
+        },
+        "translator_version": {"type": "string"},
+        "created_at": {"type": "string"}
+      }
+    },
+
+    "level": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [{"$ref": "#/$defs/entity"}],
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string", "description": "Storey name exactly as in the source, e.g. 1.korrus, Kælder"},
+        "elevation_m": {"$ref": "#/$defs/num_or_null"},
+        "height_m": {"$ref": "#/$defs/num_or_null"},
+        "bbox_px": {"$ref": "#/$defs/bbox"}
+      }
+    },
+
+    "unit": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [{"$ref": "#/$defs/entity"}],
+      "required": ["label"],
+      "properties": {
+        "label": {"type": "string", "description": "Apartment letter or id as asked, e.g. A"},
+        "label_raw": {"type": ["string", "null"], "description": "Text as drawn, e.g. Whg. A"},
+        "polygon_px": {"$ref": "#/$defs/polygon"},
+        "polygon_m": {"$ref": "#/$defs/polygon"},
+        "area_m2": {"$ref": "#/$defs/num_or_null"}
+      }
+    },
+
+    "room": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [{"$ref": "#/$defs/entity"}],
+      "required": ["name", "type", "is_outdoor"],
+      "properties": {
+        "name": {"type": ["string", "null"], "description": "Raw label text exactly as drawn (Zimmer, MH, ELUTUBA+KÖÖK)"},
+        "number": {"type": ["string", "null"], "description": "Room number, e.g. 2.10, K08, 3-1"},
+        "label": {"type": ["string", "null"], "description": "Combined label as questions quote it, e.g. ELUTUBA+KÖÖK (3-1)"},
+        "type": {"enum": ["bedroom", "living", "kitchen", "dining", "bathroom", "wc", "sauna", "entry", "corridor", "closet", "storage", "utility", "technical", "stair", "balcony", "terrace", "garage", "office", "outdoor", "shaft", "other", "unknown"]},
+        "subtype": {"type": ["string", "null"]},
+        "unit_id": {"type": ["string", "null"]},
+        "parent_room_id": {"type": ["string", "null"]},
+        "is_outdoor": {"type": "boolean", "description": "Balcony, loggia, terrace, other outdoor space"},
+        "polygon_px": {"$ref": "#/$defs/polygon"},
+        "polygon_m": {"$ref": "#/$defs/polygon"},
+        "holes_px": {"$ref": "#/$defs/polygons"},
+        "holes_m": {"$ref": "#/$defs/polygons"},
+        "area_m2": {"$ref": "#/$defs/num_or_null", "description": "Best area value to answer with"},
+        "area_written_m2": {"$ref": "#/$defs/num_or_null"},
+        "area_computed_m2": {"$ref": "#/$defs/num_or_null"},
+        "height_m": {"$ref": "#/$defs/num_or_null"},
+        "volume_m3": {"$ref": "#/$defs/num_or_null"},
+        "text_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "wall": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [{"$ref": "#/$defs/entity"}],
+      "properties": {
+        "polyline_px": {"$ref": "#/$defs/polygon"},
+        "polygon_px": {"$ref": "#/$defs/polygon"},
+        "polygon_m": {"$ref": "#/$defs/polygon"},
+        "length_m": {"$ref": "#/$defs/num_or_null"},
+        "thickness_m": {"$ref": "#/$defs/num_or_null"},
+        "height_m": {"$ref": "#/$defs/num_or_null"},
+        "net_side_area_m2": {"$ref": "#/$defs/num_or_null"},
+        "net_volume_m3": {"$ref": "#/$defs/num_or_null"},
+        "is_external": {"type": ["boolean", "null"]},
+        "is_load_bearing": {"type": ["boolean", "null"]},
+        "room_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "opening": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [{"$ref": "#/$defs/entity"}],
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["door", "window", "doorway"], "description": "doorway = opening without a door leaf; never counted as a door"},
+        "bbox_px": {"$ref": "#/$defs/bbox"},
+        "polygon_px": {"$ref": "#/$defs/polygon"},
+        "polygon_m": {"$ref": "#/$defs/polygon"},
+        "width_m": {"$ref": "#/$defs/num_or_null"},
+        "height_m": {"$ref": "#/$defs/num_or_null"},
+        "is_entrance": {"type": ["boolean", "null"]},
+        "wall_id": {"type": ["string", "null"]},
+        "room_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "object": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [{"$ref": "#/$defs/entity"}],
+      "required": ["category"],
+      "properties": {
+        "category": {"enum": ["toilet", "sink", "shower", "bathtub", "sauna_bench", "stair", "other"]},
+        "subtype": {"type": ["string", "null"]},
+        "bbox_px": {"$ref": "#/$defs/bbox"},
+        "polygon_px": {"$ref": "#/$defs/polygon"},
+        "polygon_m": {"$ref": "#/$defs/polygon"},
+        "room_id": {"type": ["string", "null"]},
+        "net_volume_m3": {"$ref": "#/$defs/num_or_null"},
+        "area_m2": {"$ref": "#/$defs/num_or_null"}
+      }
+    },
+
+    "text": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [{"$ref": "#/$defs/entity"}],
+      "required": ["text"],
+      "properties": {
+        "text": {"type": "string"},
+        "bbox_px": {"$ref": "#/$defs/bbox"},
+        "polygon_px": {"$ref": "#/$defs/polygon"},
+        "angle_deg": {"$ref": "#/$defs/num_or_null"},
+        "role": {"enum": ["room_label", "room_number", "area", "dimension", "scale_note", "title", "level_title", "unit_label", "legend", "other"]},
+        "room_id": {"type": ["string", "null"]}
+      }
+    },
+
+    "edge": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [{"$ref": "#/$defs/entity"}],
+      "required": ["kind", "from_id"],
+      "properties": {
+        "kind": {"enum": ["reference", "legend"]},
+        "from_id": {"type": "string"},
+        "to": {"type": ["string", "null"], "description": "Target sheet/detail reference or entity id"},
+        "meaning": {"type": ["string", "null"]}
+      }
+    },
+
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category", "region", "status", "extractor", "confidence"],
+      "properties": {
+        "category": {"type": "string", "description": "rooms, doors, windows, fixtures, shower, text, walls, ..."},
+        "region": {"oneOf": [{"const": "page"}, {"$ref": "#/$defs/bbox"}]},
+        "status": {"enum": ["analysed", "partial", "not_analysed"]},
+        "extractor": {"type": "string"},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "note": {"type": "string"}
+      }
+    },
+
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["extractor", "action"],
+      "properties": {
+        "at": {"type": "string"},
+        "extractor": {"type": "string"},
+        "action": {"type": "string"},
+        "entity_ids": {"type": "array", "items": {"type": "string"}},
+        "cost_usd": {"$ref": "#/$defs/num_or_null"},
+        "note": {"type": "string"}
+      }
+    }
+  }
+}

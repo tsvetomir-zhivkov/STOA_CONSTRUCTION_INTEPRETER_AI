@@ -1,0 +1,17 @@
+[project]
+name = "stoa-translator"
+version = "0.2.0"
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 110
+extend-exclude = ["eval/fixtures"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["translator"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
