@@ -3,10 +3,11 @@
 CubiCasa5K segmentation (hg_furukawa_original, CubiCasa5K repo pinned at CC5K_COMMIT), weights in the Modal
 Volume cubicasa-weights at /model_best_val_loss_var.pkl (mounted at /w).
 
-Run (the modal command is not on PATH here, so through python -m):
-  python -m modal run -m translator.modal_app --limit 1          # smoke test, one dev image
-  python -m modal run -m translator.modal_app --limit 5
-  python -m modal run -m translator.modal_app                    # every dev image without a raw file
+Run (the modal command is not on PATH here, so through python -m; the app has two entrypoints):
+  python -m modal run -m translator.modal_app::main --limit 1      # segmentation smoke test, one dev image
+  python -m modal run -m translator.modal_app::main                # every dev image without a raw seg file
+  python -m modal run -m translator.modal_app::ocr_main --limit 1  # step 7 OCR (PaddleOCR, Latin model)
+  python -m modal run -m translator.modal_app::ocr_main --names colorful-7513,high_quality-5815
 
 Only images NOT in eval/holdout_files.txt are ever read or sent (translator.extract.cubicasa.dev_images).
 Raw results go to index/_raw/cubicasa/<name>.seg.json; images that already have one are skipped.
@@ -56,6 +57,37 @@ image = (
     .apt_install("git", "libgl1", "libglib2.0-0")
     .pip_install(*TORCH_VARIANTS[VARIANT]["pip"])
     .run_commands(f"git clone {CC5K_REPO} /cc5k && cd /cc5k && git checkout {CC5K_COMMIT}")
+    .add_local_python_source("translator")
+)
+
+
+# Step 7 OCR image. PyPI has no Paddle 3 GPU wheel for Python 3.11 (only paddlepaddle-gpu 2.6.2), so the
+# GPU wheel comes from Paddle's own index; PaddleOCR / PaddleX 3.0.3 are the matching release.
+# paddleocr 3.0.3 pulls paddlex[ie,multimodal,ocr]; "ie" brings an unpinned langchain whose current release
+# has no langchain.docstore, and PaddleX imports it at start-up. So: paddleocr without its dependencies,
+# plus paddlex[ocr] only.
+PADDLE_INDEX = "https://www.paddlepaddle.org.cn/packages/stable/cu118/"
+OCR_PIP = ["paddleocr==3.0.3"]
+OCR_DEPS = ["paddlex[ocr]==3.0.3", "PyYAML>=6", "typing-extensions>=4.12"]
+OCR_KW = {
+    "lang": "fi",  # Latin-script recogniser: keeps ä/ö/å (the English model drops them)
+    "use_doc_orientation_classify": False,
+    "use_doc_unwarping": False,
+    "use_textline_orientation": True,  # labels drawn upside down / rotated
+}
+ocr_image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .apt_install("libgl1", "libglib2.0-0", "libgomp1")
+    .pip_install("paddlepaddle-gpu==3.0.0", index_url=PADDLE_INDEX)
+    .pip_install(*OCR_PIP, extra_options="--no-deps")
+    .pip_install(*OCR_DEPS)
+    .run_commands("pip freeze > /pip-freeze.txt")
+    .env({"PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK": "True"})
+    # download the models at build time, so containers start without network fetches
+    .run_commands(
+        "python -c \"from paddleocr import PaddleOCR; PaddleOCR(device='cpu', lang='fi', "
+        'use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=True)"'
+    )
     .add_local_python_source("translator")
 )
 
@@ -160,22 +192,133 @@ class Seg:
         return raw
 
 
+@app.cls(image=ocr_image, gpu="T4", scaledown_window=120, timeout=900)
+class Ocr:
+    @modal.enter()
+    def load(self):
+        import sys
+
+        import paddle
+        from paddleocr import PaddleOCR
+
+        self.ocr = PaddleOCR(device="gpu", **OCR_KW)
+        models = Path.home() / ".paddlex" / "official_models"
+        names = sorted(p.name for p in models.iterdir()) if models.exists() else []
+        frozen = Path("/pip-freeze.txt").read_text().splitlines() if Path("/pip-freeze.txt").exists() else []
+        pins = {ln.split("==")[0].lower(): ln.split("==")[1] for ln in frozen if "==" in ln}
+        self.info = {
+            "paddle": str(paddle.__version__),
+            "paddleocr": pins.get("paddleocr", "?"),
+            "paddlex": pins.get("paddlex", "?"),
+            "opencv": pins.get("opencv-contrib-python", pins.get("opencv-python", "?")),
+            "numpy": pins.get("numpy", "?"),
+            "cuda": str(paddle.version.cuda()),
+            "cudnn": str(paddle.version.cudnn()),
+            "compiled_with_cuda": bool(paddle.device.is_compiled_with_cuda()),
+            "gpu_count": int(paddle.device.cuda.device_count()),
+            "place": str(paddle.get_device()),
+            "gpu": str(paddle.device.cuda.get_device_name(0)) if paddle.device.cuda.device_count() else None,
+            "python": sys.version.split()[0],
+            "params": OCR_KW,
+            "models": names,
+            "rec_model": next((n for n in names if n.endswith("_rec")), OCR_KW["lang"]),
+        }
+        print("PaddleOCR loaded:", self.info)
+
+    @modal.method()
+    def run(self, png_bytes: bytes, name: str) -> dict:
+        import cv2
+        import numpy as np
+
+        from translator.extract.ocr import items_from_result
+        from translator.raster.preprocess import preprocess, to_bgr
+
+        t0 = time.time()
+        img = cv2.imdecode(np.frombuffer(png_bytes, np.uint8), cv2.IMREAD_UNCHANGED)
+        pre = preprocess(to_bgr(img, name), source=name)
+        H, W = pre.normalized.shape[:2]
+        up = pre.ocr_upscaled is not None
+        k = pre.transforms["ocr_upscale"]
+        bgr = cv2.cvtColor(pre.ocr_upscaled if up else pre.ocr_gray, cv2.COLOR_GRAY2BGR)
+        orientations, timing = {}, {}
+        for key, im in (("original", bgr), ("flipped", np.ascontiguousarray(bgr[:, ::-1]))):
+            t1 = time.time()
+            r = self.ocr.predict(im)[0]
+            d = r if "rec_texts" in r else r.json["res"]
+            orientations[key] = items_from_result(
+                d["rec_texts"], d["rec_scores"], d["rec_polys"], k, key == "flipped", im.shape[1]
+            )
+            timing[key] = round(time.time() - t1, 3)
+        timing["total"] = round(time.time() - t0, 3)
+        return {
+            "name": name,
+            "width_px": int(W),
+            "height_px": int(H),
+            "ocr_input": "ocr_upscaled" if up else "ocr_gray",
+            "ocr_upscale": k,
+            "inverted": pre.transforms["inverted"],
+            "orientations": orientations,
+            "model": self.info,
+            "timing_s": timing,
+        }
+
+
+def _select(files: list[str], names: str, limit: int, overwrite: bool, exists) -> list[str]:
+    from translator.extract import cubicasa
+
+    if names:
+        wanted = {n.strip() for n in names.split(",")}
+        files = [f for f in files if Path(f).stem in wanted]
+    if not overwrite:
+        files = [f for f in files if not exists(Path(f).stem)]
+    if limit:
+        files = files[:limit]
+    assert not set(files) & cubicasa.holdout_files(), "held-out image selected"
+    return files
+
+
+@app.local_entrypoint()
+def ocr_main(limit: int = 0, names: str = "", overwrite: bool = False):
+    """OCR dev images without a raw OCR file (both orientations). Same selection flags as main."""
+    from translator.config import data_root
+    from translator.extract import cubicasa, ocr
+
+    files = _select(cubicasa.dev_images(), names, limit, overwrite, lambda s: ocr.raw_path(s).exists())
+    if not files:
+        print("nothing to do: every selected dev image already has a raw OCR file")
+        return
+    stems = [Path(f).stem for f in files]
+    blobs = [(data_root() / f).read_bytes() for f in files]
+    ocr.raw_dir().mkdir(parents=True, exist_ok=True)
+    t0 = time.time()
+    gpu_s, failures, done = 0.0, [], 0
+    for stem, res in zip(stems, Ocr().run.map(blobs, stems, return_exceptions=True), strict=True):
+        if isinstance(res, Exception):
+            failures.append((stem, repr(res)[:300]))
+            print("FAIL", stem, repr(res)[:300])
+            continue
+        res["cost_usd"] = round(res["timing_s"]["total"] * T4_USD_PER_S, 6)
+        ocr.raw_path(stem).write_text(json.dumps(res, ensure_ascii=False), encoding="utf-8")
+        gpu_s += res["timing_s"]["total"]
+        done += 1
+        side, _, st = ocr.choose_orientation(res)
+        o, f = st["original"], st["flipped"]
+        print(f"{stem}: {len(res['orientations']['original'])} texts, read {side} "
+              f"(hits {o['hits']}/{f['hits']}, mean {o['mean_score']}/{f['mean_score']}) "
+              f"in {res['timing_s']['total']}s")  # fmt: skip
+    print(
+        f"\n{done}/{len(files)} images, {len(failures)} failures, wall {time.time() - t0:.0f}s, "
+        f"GPU time in run() {gpu_s:.0f}s (~${gpu_s * T4_USD_PER_S:.3f} at T4 list price, excl. start-up)"
+    )
+
+
 @app.local_entrypoint()
 def main(limit: int = 0, names: str = "", overwrite: bool = False):
     """Segment dev images without a raw file. --names a,b picks images by stem; --limit N takes N."""
     from translator.config import data_root
     from translator.extract import cubicasa
 
-    hold = cubicasa.holdout_files()
-    files = cubicasa.dev_images()  # never lists a held-out image
-    if names:
-        wanted = {n.strip() for n in names.split(",")}
-        files = [f for f in files if Path(f).stem in wanted]
-    if not overwrite:
-        files = [f for f in files if not cubicasa.raw_path(Path(f).stem).exists()]
-    if limit:
-        files = files[:limit]
-    assert not set(files) & hold, "held-out image selected"
+    files = _select(cubicasa.dev_images(), names, limit, overwrite, lambda s: cubicasa.raw_path(s).exists())
     if not files:
         print("nothing to do: every selected dev image already has a raw file")
         return
