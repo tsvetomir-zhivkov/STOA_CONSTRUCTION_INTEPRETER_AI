@@ -55,7 +55,7 @@ def test_ink_dense_interior_is_not_equipment(monkeypatch):
 
     img = canvas()
     cv2.circle(img, (300, 300), 110, 1, 4)
-    cv2.rectangle(img, (260, 270), (340, 330), 1, -1)  # a solid block well inside, ~12% of the interior
+    cv2.rectangle(img, (270, 280), (330, 320), 1, -1)  # a solid block well inside, ~7% of the interior
     cv2.line(img, (410, 300), (800, 300), 1, 4)
     ink = img.astype(bool)
     assert len(find_equipment(ink, 4.0, [])) == 1  # at the default limit it is accepted
