@@ -7,9 +7,9 @@
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-        "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.8/build/index.module.js",
+        "three": "./vendor/three/build/three.module.js",
+        "three/examples/jsm/": "./vendor/three/examples/jsm/",
+        "three-mesh-bvh": "./vendor/three-mesh-bvh/build/index.module.js",
         "web-ifc": "./vendor/web-ifc/web-ifc-api.js"
       }
     }
@@ -244,8 +244,8 @@
     const input = $('fileInput');
     let viewer = null; // one WebGL context for the page's lifetime
     const ensureViewer = () => {
-      if (viewer) return viewer;
-      document.body.classList.add('viewing'); // the stage needs a size before the renderer measures it
+      document.body.classList.add('viewing');
+      if (viewer) { viewer.resize(); return viewer; } // the stage needs a size before the renderer measures it
       viewer = new BlueprintViewer($('stage'), { onSelect: showSelection, onCorrectionsChange: showCorrectionCount, onChange: render });
       window.viewer = viewer; // for inspection from the browser console
       applyControls();
@@ -273,7 +273,7 @@
 
     $('openBtn').addEventListener('click', () => input.click());
     $('addBtn').addEventListener('click', () => input.click());
-    $('clearBtn').addEventListener('click', () => { viewer?.bp.clearAll(); viewer?.afterChange(true); document.body.classList.remove('viewing'); });
+    $('clearBtn').addEventListener('click', () => { viewer?.clear(); isolatedLevel = null; isolatedCategory = null; document.body.classList.remove('viewing'); });
     input.addEventListener('change', () => { const f = [...input.files]; input.value = ''; addFiles(f); });
     // drag and drop anywhere
     let depth = 0;
@@ -332,7 +332,15 @@
     let isolatedCategory = null, isolatedLevel = null;
 
     function render(sum) {
-      if (!sum.sources.length) { document.body.classList.remove('viewing'); return; }
+      if (!sum.sources.length) {
+        document.body.classList.remove('viewing');
+        isolatedLevel = null; isolatedCategory = null;
+        for (const c of checks) c.checked = true;
+        explode.value = '0'; sep.value = '0'; cut.value = cut.max;
+        $('explodeOut').textContent = 'off'; $('sepOut').textContent = 'off'; $('cutOut').textContent = 'off';
+        return;
+      }
+      document.body.classList.add('viewing');
       // files
       $('fileList').replaceChildren(...sum.sources.map((s) => {
         const li = document.createElement('li');

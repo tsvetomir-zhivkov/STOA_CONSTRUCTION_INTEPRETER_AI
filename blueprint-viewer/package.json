@@ -6,7 +6,8 @@
   "description": "Static three.js viewer for blueprint-ingest drawing JSON, with real IFC geometry via web-ifc",
   "scripts": {
     "postinstall": "node scripts/vendor.mjs",
-    "start": "npx --yes serve@14.2.4 ."
+    "start": "npx --yes serve@14.2.4 .",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "web-ifc": "0.0.68"

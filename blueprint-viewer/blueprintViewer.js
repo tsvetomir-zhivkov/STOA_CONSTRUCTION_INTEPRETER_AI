@@ -11,6 +11,7 @@
  */
 
 import * as THREE from 'three';
+import { FileSession } from './session.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import { loadIfcModel, ifcMeshes, explodeIfcMesh, elementGeometry, captureWebIfcLog } from './ifcGeometry.js';
@@ -1131,6 +1132,9 @@ export class BlueprintViewer {
    */
   constructor(container, opts = {}) {
     this.container = container;
+    this.listeners = new AbortController();
+    this.session = new FileSession(opts.onState);
+    this.disposed = false;
     this.onSelect = opts.onSelect ?? (() => {});
     this.onCorrectionsChange = opts.onCorrectionsChange ?? (() => {});
     this.onChange = opts.onChange ?? (() => {});
@@ -1166,21 +1170,22 @@ export class BlueprintViewer {
     this.downAt = null;
     this.bindPointer();
     this.onResize = () => this.resize();
-    window.addEventListener('resize', this.onResize);
-    reducedMotionQuery?.addEventListener('change', (e) => { this.controls.enableDamping = !e.matches; });
-    darkQuery?.addEventListener('change', () => this.applyPalette());
+    this.listen(window, 'resize', this.onResize);
+    this.listen(reducedMotionQuery, 'change', (e) => { this.controls.enableDamping = !e.matches; });
+    this.listen(darkQuery, 'change', () => this.applyPalette());
     this.applyPalette();
     this.resize();
     // frame timing for the panel (rolling average over the last 60 frames)
     this.frameTimes = [];
     let last = performance.now();
-    renderer.setAnimationLoop(() => {
+    this.tick = () => {
       const now = performance.now();
       this.frameTimes.push(now - last); last = now;
       if (this.frameTimes.length > 60) this.frameTimes.shift();
       this.controls.update();
       renderer.render(this.scene, this.camera);
-    });
+    };
+    renderer.setAnimationLoop(this.tick);
   }
 
   get fps() { const a = this.frameTimes; return a.length ? 1000 / (a.reduce((s, x) => s + x, 0) / a.length) : 0; }
@@ -1191,6 +1196,12 @@ export class BlueprintViewer {
    * (is the .wasm served at all?) and a successful one is verified (the module really instantiated).
    */
   async webIfc() {
+    if (this.ifcPromise) return this.ifcPromise;
+    this.ifcPromise = this.initWebIfc().catch(error => { this.ifcPromise = null; throw error; });
+    return this.ifcPromise;
+  }
+
+  async initWebIfc() {
     if (this.ifc) return this.ifc;
     const wasmUrl = `${WASM_DIR}web-ifc.wasm`;
     const W = await import('web-ifc');
@@ -1204,6 +1215,7 @@ export class BlueprintViewer {
       throw new Error(r.ok ? `web-ifc failed to initialise from ${wasmUrl}: ${err.message}` : `web-ifc.wasm is not served at ${wasmUrl} (${r.status ?? ''} ${r.statusText ?? ''}). Run "npm install" in blueprint-viewer: it copies the wasm into vendor/web-ifc/.`);
     } finally { restore(); }
     if (!api.wasmModule) throw new Error(`web-ifc did not instantiate (wasm at ${wasmUrl})`);
+    if (this.disposed) { api.Dispose?.(); throw new Error('Viewer was disposed'); }
     this.ifc = { api, W, wasmUrl };
     return this.ifc;
   }
@@ -1212,17 +1224,28 @@ export class BlueprintViewer {
    * Add files (.json and .ifc, any mix). Adds to the model, never replaces it. Returns per-file results.
    * @param {Array<File | { name:string, text?:() => Promise<string>, arrayBuffer?:() => Promise<ArrayBuffer> }>} files
    */
-  async addFiles(files) {
+  addFiles(files) {
+    if (this.disposed) return Promise.reject(new Error('Viewer was disposed'));
+    return this.session.run(token => this.importFiles(files, token), () => this.bp.sources.length > 0);
+  }
+
+  async importFiles(files, token) {
     const results = [];
     for (const f of files) {
+      if (!token.current() || this.disposed) break;
       try {
         if (/\.ifc$/i.test(f.name)) {
           const { api, W } = await this.webIfc();
           const t0 = performance.now();
-          const src = this.bp.addIfc(api, W, new Uint8Array(await f.arrayBuffer()), f.name);
+          const bytes = new Uint8Array(await f.arrayBuffer());
+          if (!token.current()) break;
+          token.processing();
+          const src = this.bp.addIfc(api, W, bytes, f.name);
           results.push({ name: f.name, ok: true, kind: 'ifc', ms: Math.round(performance.now() - t0), stats: src.model.stats });
         } else {
           const doc = JSON.parse(await f.text());
+          if (!token.current()) break;
+          token.processing();
           const src = this.bp.addJson(doc, f.name);
           logReport(src.report);
           results.push({ name: f.name, ok: true, kind: 'json' });
@@ -1232,13 +1255,51 @@ export class BlueprintViewer {
         results.push({ name: f.name, ok: false, error: err.message });
       }
     }
-    this.afterChange(true);
+    if (token.current()) this.afterChange(true);
     return results;
   }
 
-  remove(id) { this.bp.remove(id); this.afterChange(!this.bp.sources.length); }
+  remove(id) {
+    this.session.invalidate();
+    this.bp.remove(id);
+    if (!this.bp.sources.length) this.resetFilters();
+    this.afterChange(!this.bp.sources.length);
+    this.session.set(this.bp.sources.length ? 'READY' : 'EMPTY');
+  }
+  resetFilters() {
+    Object.assign(this.bp.view, { isolateLevel: null, category: null, cut: null, explode: 0, separation: 0 });
+    this.bp.view.hiddenLevels.clear();
+    for (const key of GROUP_NAMES) this.bp.view.groups[key] = true;
+    this.renderer.clippingPlanes = [];
+  }
+  clear() {
+    this.session.invalidate();
+    this.bp.clearAll();
+    this.corrections = [];
+    this.onCorrectionsChange([]);
+    this.resetFilters();
+    this.afterChange(true);
+    this.session.set('EMPTY');
+  }
+  listen(target, type, handler, options = {}) {
+    target?.addEventListener(type, handler, { ...options, signal: this.listeners.signal });
+  }
+  dispose() {
+    if (this.disposed) return;
+    this.clear();
+    this.disposed = true;
+    this.listeners.abort();
+    this.renderer.setAnimationLoop(null);
+    this.controls.dispose();
+    this.sun.shadow.map?.dispose();
+    this.renderer.renderLists.dispose();
+    this.renderer.dispose();
+    this.renderer.domElement.remove();
+    this.ifc?.api.Dispose?.();
+  }
 
   afterChange(reframe) {
+    this.renderer.setAnimationLoop(this.bp.sources.length ? this.tick : null);
     this.setHovered(null);
     this.select(null);
     this.disposeEnvironment();
@@ -1365,10 +1426,10 @@ export class BlueprintViewer {
   // ---- picking ------------------------------------------------------------------------------------------
   bindPointer() {
     const el = this.renderer.domElement;
-    el.addEventListener('pointerdown', (e) => { this.downAt = { x: e.clientX, y: e.clientY }; });
-    el.addEventListener('pointermove', (e) => { if (e.buttons === 0) this.setHovered(this.pick(e)); });
-    el.addEventListener('pointerleave', () => this.setHovered(null));
-    el.addEventListener('pointerup', (e) => {
+    this.listen(el, 'pointerdown', (e) => { this.downAt = { x: e.clientX, y: e.clientY }; });
+    this.listen(el, 'pointermove', (e) => { if (e.buttons === 0) this.setHovered(this.pick(e)); });
+    this.listen(el, 'pointerleave', () => this.setHovered(null));
+    this.listen(el, 'pointerup', (e) => {
       if (!this.downAt) return;
       const moved = Math.hypot(e.clientX - this.downAt.x, e.clientY - this.downAt.y);
       this.downAt = null;

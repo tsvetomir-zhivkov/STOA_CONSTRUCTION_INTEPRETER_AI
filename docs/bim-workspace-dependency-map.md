@@ -68,7 +68,7 @@ No viewer build/lint/typecheck scripts exist initially; start uses npx serve.
 ## Approved stages (one commit per stage)
 
 - [x] 1. Inspection, dependency map, reference review, defect evidence.
-- [ ] 2. Lifecycle stabilization and regression tests.
+- [x] 2. Lifecycle stabilization and regression tests.
 - [ ] 3. Canonical data integration, API, storage and existing pipeline repairs.
 - [ ] 4. IFC floor/category visibility.
 - [ ] 5. Cached per-storey 2D plans.
@@ -77,3 +77,5 @@ No viewer build/lint/typecheck scripts exist initially; start uses npx serve.
 - [ ] 8. Component inspection and removal.
 - [ ] 9. Reference-based UI, AI analysis and document library.
 - [ ] 10. Integration tests, performance/lifecycle verification and architecture docs.
+
+Stage 2: generation-owned serialized imports, visibility restoration, teardown, stale-state reset and parser failure cleanup; session tests pass. Full cross-format browser matrix remains a stage 10 gate.

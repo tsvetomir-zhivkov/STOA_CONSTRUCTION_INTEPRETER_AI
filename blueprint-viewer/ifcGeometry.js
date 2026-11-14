@@ -122,6 +122,7 @@ export function loadIfcModel(api, W, bytes, o = {}) {
 function loadIfcModelInner(api, W, bytes, o, t0) {
   const modelID = api.OpenModel(bytes, { COORDINATE_TO_ORIGIN: false });
   if (modelID < 0) throw new Error('web-ifc could not open the file');
+  try {
   const lenM = lengthUnit(api, W, modelID);
 
   // spatial structure: element -> container (contained-in + aggregates), up to a storey
@@ -213,6 +214,7 @@ function loadIfcModelInner(api, W, bytes, o, t0) {
     batches: [...batches.values()].map((b) => ({ key: b.key, storeyId: b.storeyId, group: b.group, category: b.category, rgba: b.rgba, position: b.pos.done(), normal: b.nrm.done(), elementIndex: b.elem.done(), index: b.idx.done() })),
     stats: { elements: elements.length, geometries, triangles, batches: batches.size, ms: Date.now() - t0, unsupported: 0, unsupportedSamples: [] },
   };
+  } catch (error) { api.CloseModel(modelID); throw error; }
 }
 
 /**

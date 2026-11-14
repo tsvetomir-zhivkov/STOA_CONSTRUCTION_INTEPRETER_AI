@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 // Phase 5 checks, in Node, on the viewer's own scene code (BlueprintScene + pickCandidates) and web-ifc's Node build.
 // usage: node scripts/verify.mjs <samples dir (blueprint-ingest output)> <data dir>
 //   e.g. node scripts/verify.mjs ../blueprint-ingest/out/samples ../data
@@ -9,7 +10,7 @@ import * as THREE from 'three';
 import { BlueprintScene, buildModel, GROUP_NAMES, cleanRing, captureWebIfcLog } from '../blueprintViewer.js';
 
 const require = createRequire(import.meta.url);
-const W = require(path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', 'node_modules', 'web-ifc', 'web-ifc-api-node.js'));
+const W = require(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'node_modules', 'web-ifc', 'web-ifc-api-node.js'));
 const [samples = '../blueprint-ingest/out/samples', data = '../data'] = process.argv.slice(2);
 const S = (...p) => path.join(samples, ...p), D = (...p) => path.join(data, ...p);
 const json = (f) => JSON.parse(fs.readFileSync(f, 'utf8'));
@@ -262,3 +263,5 @@ ok('no console errors during any of the above loads', consoleErrors === 0, `${co
 
 console.log(`\n${results.filter(Boolean).length}/${results.length} checks passed`);
 console.log('Browser-only (no GPU in Node): frame rate while orbiting (shown live in the page status line), visual look, wasm served over HTTP.');
+
+if (results.some(value => !value)) process.exitCode = 1;
