@@ -35,7 +35,7 @@ export async function createValidator(schemaPath) {
   const fn = ajv.compile(schema);
   const validate = (doc) => {
     const valid = fn(doc);
-    const errors = valid && doc.schema_version === '0.3'
+    const errors = valid && doc.schema_version === '0.3' && Array.isArray(doc.drawings)
       ? referenceErrors(doc).map(message => ({ instancePath: '', keyword: 'reference', message, params: {} }))
       : valid ? [] : [...(fn.errors ?? [])];
     return { valid: !!valid && errors.length === 0, errors };
@@ -64,9 +64,9 @@ export async function readJsonIfExists(filePath) {
  * Atomic write: <file>.<rand>.tmp -> fsync -> rename.
  * @param {string} filePath @param {any} data
  */
-export async function writeJsonAtomic(filePath, data) {
+export async function writeJsonAtomic(filePath, data, validator = null) {
   writeValidator ??= createValidator(SCHEMA_PATH);
-  (await writeValidator).assertValid(data);
+  (validator ?? await writeValidator).assertValid(data);
   const dir = path.dirname(filePath);
   await fs.mkdir(dir, { recursive: true });
   const tmp = path.join(dir, `.${path.basename(filePath)}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`);

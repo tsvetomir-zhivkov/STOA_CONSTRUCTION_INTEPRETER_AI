@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createValidator, describeErrors } from '../storage/jsonStore.js';
 import { detectVersion, migrateV02toV03, validateRelationships } from './v03.js';
+import { SCHEMA_PATH } from '../config.js';
 import { SchemaValidationError } from '../util/errors.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -25,15 +26,17 @@ export { detectVersion, migrateV02toV03, validateRelationships };
  */
 export async function createVersionedValidator(o = {}) {
   const paths = { ...SCHEMA_PATHS, ...(o.schemaPaths ?? {}) };
+  const canonical = await createValidator(SCHEMA_PATH);
   const byVersion = {};
   for (const [v, p] of Object.entries(paths)) byVersion[v] = await createValidator(p);
   /** @returns {{ valid:boolean, version:string|null, errors:any[], relationshipErrors:string[] }} */
   const validate = (doc) => {
     const version = detectVersion(doc);
-    const v = byVersion[version];
+    const isCanonical = !!doc?.building_id && Array.isArray(doc.drawings);
+    const v = isCanonical ? canonical : byVersion[version];
     if (!v) return { valid: false, version, errors: [{ instancePath: '/schema_version', message: `unsupported schema_version ${JSON.stringify(doc?.schema_version)} (supported: ${SUPPORTED.join(', ')})`, params: {} }], relationshipErrors: [] };
     const r = v.validate(doc);
-    const relationshipErrors = version === '0.3' && r.valid ? validateRelationships(doc) : [];
+    const relationshipErrors = version === '0.3' && !isCanonical && r.valid ? validateRelationships(doc) : [];
     return { valid: r.valid && !relationshipErrors.length, version, errors: r.errors, relationshipErrors };
   };
   return {

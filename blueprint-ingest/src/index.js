@@ -25,7 +25,8 @@ import { extractDxf, extractSvg } from './extractors/cadExtractor.js';
 import { mapToSchema } from './mappers/schemaMapper.js';
 import { loadCorrections } from './mappers/corrections.js';
 import { routeToVisionAgent } from './agents/visionAgentAdapter.js';
-import { describeErrors } from './storage/jsonStore.js';
+import { persistBuilding } from './storage/persistBuilding.js';
+import { createValidator, describeErrors } from './storage/jsonStore.js';
 import { createVersionedValidator } from './schema/versions.js';
 
 /**
@@ -90,9 +91,9 @@ export async function processBlueprint(opts) {
     for (const document of documents) {
       const suffix = document.building_id.replace(/[^A-Za-z0-9_-]/g, '_');
       const target = documents.length === 1 ? outputJsonPath : outputJsonPath.replace(/\.json$/i, '') + `.${suffix}.json`;
-      await persistBuilding({ document, target, mode: opts.mode, validator, outputs, usage });
+      await persistBuilding({ document, target, mode: opts.mode, validator, outputs });
     }
-    return { status: 'processed', route: classification.route, classification: summarize(classification), outputs, usage: usage.snapshot() };
+    return { status: 'processed', route: classification.route, classification: summarize(classification), outputs };
   }
   else if (fmt === 'dxf') bundles = await extractDxf(inputFilePath, exOpts);
   else if (fmt === 'svg') bundles = await extractSvg(inputFilePath, exOpts);

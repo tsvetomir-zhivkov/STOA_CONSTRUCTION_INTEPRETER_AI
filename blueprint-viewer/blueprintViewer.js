@@ -11,6 +11,7 @@
  */
 
 import * as THREE from 'three';
+import { renderProjection } from './buildingModel.js';
 import { FileSession } from './session.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
@@ -800,6 +801,7 @@ export class BlueprintScene {
   addJson(doc, name = doc?.drawing?.file ?? 'drawing.json') {
     if (!doc || typeof doc !== 'object' || Array.isArray(doc)) throw new Error('not a drawing JSON object');
     if (!doc.drawing && !['rooms', 'walls', 'openings', 'objects'].some((k) => Array.isArray(doc[k]))) throw new Error('not a blueprint-ingest drawing JSON (no drawing, rooms, walls, openings or objects)');
+    doc = renderProjection(doc);
     const vocabulary = normalizeVocabulary(doc);
     const frame = docFrame(doc);
     const report = fileReport(doc);
@@ -884,7 +886,7 @@ export class BlueprintScene {
       const keep = (list, kindKey) => list.filter((e) => {
         if (!isActive(e)) return true;
         s.match.elements++;
-        const gid = e.global_id ?? e.provenance?.source_ref; // v0.3 has global_id; v0.2 keeps the raw GUID in source_ref
+        const gid = e.ifc_global_id ?? e.global_id ?? e.provenance?.source_ref; // v0.3 has global_id; v0.2 keeps the raw GUID in source_ref
         const el = gid ? byGuid.get(gid) : null;
         if (el) { el.json = e; el.jsonSource = s; el.jsonKind = kindKey; s.match.withMesh++; return false; } // web-ifc draws it
         s.match.withoutMesh++;

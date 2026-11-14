@@ -1,3 +1,4 @@
+import { mergeCompatible } from '../storage/building.js';
 /**
  * Non-destructive merge of an incoming schema v0.2 document into an existing one (same drawing page, same pixel frame).
  *
@@ -56,6 +57,7 @@ const norm = (s) => String(s ?? '').trim().toLowerCase();
  * @returns {{ document: any, report: MergeReport }}
  */
 export function mergeDocuments(existing, incoming, cfg, opts = {}) {
+  if (existing.drawing && incoming.drawing) return mergePageDocuments(existing, incoming, cfg, opts);
   return mergeCompatible(existing, incoming, cfg, opts, mergePageDocuments);
 }
 

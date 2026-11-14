@@ -1,3 +1,7 @@
+import { mergeBuildings } from '../storage/building.js';
+import { toCanonical } from '../schema/canonical.js';
+import { persistBuilding } from '../storage/persistBuilding.js';
+import { createValidator } from '../storage/jsonStore.js';
 /**
  * Bundles -> validated JSON files. Fully deterministic, no network.
  *
@@ -44,11 +48,12 @@ export async function mapToSchema(opts) {
   const logger = opts.logger ?? silentLogger;
   const version = opts.schemaVersion ?? config.schemaVersion ?? DEFAULT_OUTPUT_VERSION;
   if (version !== '0.2' && version !== '0.3') throw new PipelineError(`unsupported output schema ${version} (0.2 or 0.3)`, 'BAD_ARGS');
-  const validator = await createVersionedValidator({ schemaPaths: config.schemaPath ? { '0.2': config.schemaPath } : {} });
+  const validator = await createVersionedValidator();
   if (!bundles.length) throw new PipelineError('No bundles to map', 'NO_BUNDLES');
   const fileInfo = version === '0.3' ? await fileFacts(inputFilePath) : null;
 
   const outputs = [];
+  const canonicalDocuments = [];
   for (const bundle of bundles) {
     const built = buildDocument(bundle, { inputFilePath, now: opts.now, file: opts.file, source: opts.source, datasetRoot: config.datasetRoot, multiPage: bundles.length > 1 && bundle.format === 'pdf', schemaVersion: version });
     let document = built.document;
@@ -66,7 +71,22 @@ export async function mapToSchema(opts) {
     if (version === '0.3') document = liftToV03(document, { bundle, ids, inputFilePath, file: fileInfo, now: opts.now });
 
     const target = outputPathFor(outputJsonPath, document, bundles.length, inputFilePath);
+    if (version === '0.3') {
+      validator.assertValid(document);
+      canonicalDocuments.push(toCanonical(document));
+      continue;
+    }
     await finalizeOne({ document, target, mode, validator, config, logger, now: opts.now, outputs, version });
+  }
+  if (canonicalDocuments.length) {
+    const grouped = new Map();
+    for (const doc of canonicalDocuments) {
+      const group = grouped.get(doc.building_id) ?? []; group.push(doc); grouped.set(doc.building_id, group);
+    }
+    for (const [id, docs] of grouped) {
+      const target = grouped.size === 1 ? outputJsonPath : outputJsonPath.replace(/\.json$/i, '') + '.' + id.replace(/[^a-zA-Z0-9_-]/g, '_') + '.json';
+      await persistBuilding({ document: mergeBuildings(docs), target, mode, validator: await createValidator(config.schemaPath), outputs });
+    }
   }
   return { outputs };
 }
@@ -124,7 +144,7 @@ async function finalizeOne({ document, target, mode, validator, config, logger, 
     // merged result must be valid too (a bug or a stale file must never be persisted silently)
     doc = validateOrThrow(doc, { validator, label: 'merged document' });
   }
-  await writeJsonAtomic(outPath, doc);
+  await writeJsonAtomic(outPath, doc, validator);
   outputs.push({ outputJsonPath: outPath, drawingId: drawingKey(doc.drawing), action, report });
 }
 

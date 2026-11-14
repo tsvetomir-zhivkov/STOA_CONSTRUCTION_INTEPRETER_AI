@@ -89,13 +89,9 @@ def write_drawing(doc: dict, index_dir: Path = INDEX_DIR) -> Path:
 
 
 def read_drawing(path: Path) -> dict:
-    """Read a v0.2 or v0.3 document, validated against the schema its schema_version names. Returned as stored
-    (no migration, so v0.2 consumers see exactly what was written); use translator.schema_compat.load_document for v0.3."""
-    from translator.schema_compat import validate_document
-
+    """Read the same canonical/legacy contracts accepted by the write boundary."""
     doc = json.loads(Path(path).read_text(encoding="utf-8"))
-    if doc.get("schema_version") == "0.2":
-        validate(doc, where=str(path))
-    else:
-        validate_document(doc, where=str(path))
+    validate(doc, where=str(path))
+    doc = migrate(doc)
+    validate(doc, where=str(path))
     return doc

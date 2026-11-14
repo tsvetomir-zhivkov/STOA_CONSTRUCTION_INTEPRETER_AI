@@ -1,16 +1,7 @@
-<<<<<<< HEAD
 """Deterministic query tools for Stoa building schema v0.3.
 
 Install: uv add shapely
 Every function accepts the already-validated v0.3 building dict as its first argument.
-=======
-"""Deterministic drawing tools for Stoa schema v0.2 and v0.3.
-
-Install: uv add shapely
-Every function accepts the already-validated drawing dict (v0.2, or v0.3 from translator.schema_compat.load_document)
-as its first argument. v0.3 adds the collections element_types, materials, material_layer_sets, systems, schedules,
-relationships and statistics; they are simply absent from a v0.2 dict.
->>>>>>> 19fec63 (Phase 6: consumers read v0.3)
 """
 from __future__ import annotations
 
@@ -19,12 +10,7 @@ from typing import Any
 
 from shapely.geometry import Polygon
 
-<<<<<<< HEAD
 COLLECTIONS = ("levels", "units", "rooms", "walls", "openings", "objects", "texts", "edges", "systems", "types", "schedules")
-=======
-COLLECTIONS = ("levels", "units", "rooms", "walls", "openings", "objects", "texts", "edges",
-               "element_types", "materials", "material_layer_sets", "systems", "schedules", "relationships", "statistics")
->>>>>>> 19fec63 (Phase 6: consumers read v0.3)
 MEASURES = ("area_m2", "area_written_m2", "area_computed_m2", "height_m", "volume_m3", "length_m", "width_m", "thickness_m", "net_side_area_m2", "net_volume_m3")
 
 
@@ -78,18 +64,10 @@ def _coverage(data: dict, category: str) -> dict:
 
 
 def query_entities(data: dict, collection: str, field: str = "", value: str = "", limit: int = 50) -> dict:
-<<<<<<< HEAD
     """Search active entities in one building collection. Filter by an exact string field, or search all if field is empty."""
     if collection not in COLLECTIONS:
         return {"error": f"Unknown collection: {collection}", "allowed": COLLECTIONS}
     if field and field not in ("id", "name", "label", "number", "type", "kind", "category", "unit_id", "level_id", "room_id", "text", "role", "is_entrance", "ifc_global_id", "ifc_class", "type_id", "type_mark", "system_type", "schedule_type", "fire_rating", "is_load_bearing"):
-=======
-    """Search active entities in one collection (v0.2, or v0.3 with its extra collections). Filter by an exact string field, or search all if field is empty."""
-    if collection not in COLLECTIONS:
-        return {"error": f"Unknown collection: {collection}", "allowed": COLLECTIONS}
-    if field and field not in ("id", "name", "label", "number", "type", "kind", "category", "unit_id", "level_id", "room_id", "text", "role", "is_entrance",
-                               "ifc_class", "discipline", "type_id", "global_id", "mark", "predefined_type"):
->>>>>>> 19fec63 (Phase 6: consumers read v0.3)
         return {"error": "Unsupported filter field"}
     items = [x for x in data.get(collection, []) if _active(x)]
     if field:

@@ -69,7 +69,7 @@ No viewer build/lint/typecheck scripts exist initially; start uses npx serve.
 
 - [x] 1. Inspection, dependency map, reference review, defect evidence.
 - [x] 2. Lifecycle stabilization and regression tests.
-- [ ] 3. Canonical data integration, API, storage and existing pipeline repairs.
+- [x] 3. Canonical data integration, API, storage and existing pipeline repairs.
 - [ ] 4. IFC floor/category visibility.
 - [ ] 5. Cached per-storey 2D plans.
 - [ ] 6. Synchronized parallel workspace.
@@ -79,3 +79,5 @@ No viewer build/lint/typecheck scripts exist initially; start uses npx serve.
 - [ ] 10. Integration tests, performance/lifecycle verification and architecture docs.
 
 Stage 2: generation-owned serialized imports, visibility restoration, teardown, stale-state reset and parser failure cleanup; session tests pass. Full cross-format browser matrix remains a stage 10 gate.
+
+Stage 3: canonical boundary, legacy/alternate adapter with source archive, repaired AI syntax and persistence, loopback document/extraction API. Canonical sample upload/validate/delete verified through HTTP. Runtime dependencies added: none.

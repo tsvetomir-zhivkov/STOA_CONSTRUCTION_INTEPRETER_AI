@@ -76,6 +76,7 @@ export function mergeBuildings(documents, buildingId) {
         const prev = existing.get(item.id);
         for (const [k, v] of Object.entries(item)) {
           if (['source_refs', 'observations', 'quantities', 'level_ids'].includes(k)) prev[k] = union(prev[k] ?? [], v);
+          else if (c === 'source_documents' && k === 'properties') { prev[k] = { ...prev[k], ...v, imported_pages: [...(prev[k]?.imported_pages ?? [prev[k]?.imported_v03].filter(Boolean)), ...(v.imported_pages ?? [v.imported_v03].filter(Boolean))] }; }
           else if ([...PIXELS, 'source_drawing_id', 'provenance', 'created_at'].includes(k)) continue;
           else if (prev[k] == null) prev[k] = v;
           else if (v != null && !equal(prev[k], v)) throw new Error(`Conflicting ${c}/${item.id}/${k}; reconcile sources explicitly`);
