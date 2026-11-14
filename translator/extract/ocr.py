@@ -17,8 +17,14 @@ fuse() adds to a CubiCasa document (translator.extract.cubicasa.to_parts output)
                are counted by label, not by segmentation fragment. Optional (merge, default off): same-class
                regions within MERGE_GAP_PX are merged, parts kept as superseded. On the dev split merging
                changed no kitchen count and cost bedrooms 2-4 points; label priority fixed the kitchens.
+  kitchens     (kitchen_fallback, default on) when no kitchen label was read, the segmentation Kitchen class
+               counts as one kitchen: the largest Kitchen region; the others step back (kitchen_fragment).
+  rotated      (rotation, default OFF) a second reading of a copy turned 90 degrees clockwise, for vertical
+               labels, run on the GPU only when needs_rotation() says so. Merged per box (merge_rotated).
+               On the dev split it found 16% more room labels but lowered bedrooms and kitchens, so it is off.
   levels[]     storey titles (1. KRS, KELLARI, ...); without titles, one level per building blob (connected
                wall/room mask). If titles and blobs disagree, coverage 'floors' is partial, low confidence.
+               floors_rule 'titles' (default) or 'max' (whichever counts more storeys; waiting for k).
 """
 
 from __future__ import annotations
@@ -44,6 +50,14 @@ BLOB_CLASSES_EXCLUDED = {"Background", "Outdoor", "Railing"}  # building mask = 
 BLOB_DILATE_FRAC = 0.01  # close small gaps in the building mask: 1% of the longest side
 BLOB_MIN_SHARE = 0.15  # a building blob counts if it is at least this share of the largest one
 
+# rotated pass (vertical labels): triggered from the as-drawn reading
+ROT_TALL_RATIO = 1.5  # a box at least this much taller than wide holds vertical text
+ROT_MIN_TALL = 2  # this many tall boxes trigger the rotated pass
+ROT_LOW_SCORE = 0.7  # ... or this share of boxes below this score
+ROT_LOW_SHARE = 0.4
+ROT_MIN_BOXES = 4
+ROT_OVERLAP = 0.3  # boxes overlap when the intersection covers this share of the smaller box
+
 _AREA = re.compile(r"\d+\s*([,.]\s*\d+)?\s*(m2|m²|m\^2|m\?)")
 _DIMENSION = re.compile(r"[\d\s.,x×*/+\-]+")
 
@@ -51,18 +65,26 @@ _DIMENSION = re.compile(r"[\d\s.,x×*/+\-]+")
 # ------------------------------------------------------------------ shared with the GPU side
 
 
-def to_original(poly, scale: float, flipped: bool, width_s: int) -> list[list[float]]:
-    """A box from the OCR input (upscaled by `scale`, maybe flipped left-right) -> original pixels."""
+def to_original(poly, scale: float, flipped: bool, width_s: int, rotated: bool = False) -> list[list[float]]:
+    """A box from the OCR input -> original pixels.
+
+    The input was upscaled by `scale`, and either flipped left-right or rotated 90 degrees clockwise
+    (cv2.ROTATE_90_CLOCKWISE). width_s is the width of the input image the box is in.
+    """
     out = []
     for x, y in poly:
-        x = float(x)
+        x, y = float(x), float(y)
         if flipped:
             x = width_s - x  # continuous coordinates: the flipped image's x maps to width - x
-        out.append([round(x / scale, 1), round(float(y) / scale, 1)])
+        if rotated:  # clockwise: (x, y) -> (H - y, x), so back: x = y_r, y = H - x_r (H = rotated width)
+            x, y = y, width_s - x
+        out.append([round(x / scale, 1), round(y / scale, 1)])
     return out
 
 
-def items_from_result(texts, scores, polys, scale: float, flipped: bool, width_s: int) -> list[dict]:
+def items_from_result(
+    texts, scores, polys, scale: float, flipped: bool, width_s: int, rotated: bool = False
+) -> list[dict]:
     """PaddleOCR rec_texts / rec_scores / rec_polys -> raw items in original pixels."""
     items = []
     for text, score, poly in zip(texts, scores, polys, strict=True):
@@ -72,7 +94,9 @@ def items_from_result(texts, scores, polys, scale: float, flipped: bool, width_s
             {
                 "text": str(text),
                 "score": round(float(score), 4),
-                "poly": to_original(np.asarray(poly).reshape(-1, 2).tolist(), scale, flipped, width_s),
+                "poly": to_original(
+                    np.asarray(poly).reshape(-1, 2).tolist(), scale, flipped, width_s, rotated
+                ),
             }
         )
     return items
@@ -129,6 +153,58 @@ def choose_orientation(raw: dict) -> tuple[str, list[dict], dict]:
     )
     stats = {"original": o, "flipped": f}
     return ("flipped", f_items, stats) if flipped else ("original", o_items, stats)
+
+
+def needs_rotation(items: list[dict]) -> tuple[bool, str]:
+    """Run the rotated pass? Yes when the as-drawn reading has tall boxes or mostly low-confidence boxes."""
+    tall = 0
+    for it in items:
+        x0, y0, x1, y1 = _bbox(it["poly"])
+        if (y1 - y0) >= ROT_TALL_RATIO * max(x1 - x0, 1e-6):
+            tall += 1
+    low = sum(it["score"] < ROT_LOW_SCORE for it in items)
+    share = low / len(items) if items else 0.0
+    if tall >= ROT_MIN_TALL:
+        return True, f"{tall} tall boxes"
+    if len(items) >= ROT_MIN_BOXES and share >= ROT_LOW_SHARE:
+        return True, f"{low}/{len(items)} boxes below {ROT_LOW_SCORE}"
+    return False, f"{tall} tall boxes, {low}/{len(items)} low-confidence"
+
+
+def _overlap(a, b) -> float:
+    ax0, ay0, ax1, ay1 = _bbox(a)
+    bx0, by0, bx1, by1 = _bbox(b)
+    iw, ih = min(ax1, bx1) - max(ax0, bx0), min(ay1, by1) - max(ay0, by0)
+    if iw <= 0 or ih <= 0:
+        return 0.0
+    small = min((ax1 - ax0) * (ay1 - ay0), (bx1 - bx0) * (by1 - by0))
+    return iw * ih / small if small > 0 else 0.0
+
+
+def merge_rotated(base: list[dict], rotated: list[dict]) -> tuple[list[dict], int]:
+    """Per box: a rotated-pass box replaces the overlapping normal-pass boxes when it scores higher than all
+    of them, or when it names a room and none of them does. A rotated box that overlaps nothing is kept
+    only if it names a room. Returns (items, number taken from the rotated pass)."""
+    out = [dict(b) for b in base]
+    taken = 0
+    for r in rotated:
+        over = [
+            i
+            for i, b in enumerate(out)
+            if b.get("orientation") != "rotated" and _overlap(b["poly"], r["poly"]) >= ROT_OVERLAP
+        ]
+        r_hit = bool(glossary.ocr_room_types(r["text"]))
+        if over:
+            higher = r["score"] > max(out[i]["score"] for i in over)
+            missed = r_hit and not any(glossary.ocr_room_types(out[i]["text"]) for i in over)
+            if not (higher or missed):
+                continue
+            out = [b for i, b in enumerate(out) if i not in over]
+        elif not r_hit:
+            continue
+        out.append({**r, "orientation": "rotated"})
+        taken += 1
+    return out, taken
 
 
 def _bbox(poly) -> list[float]:
@@ -222,7 +298,11 @@ def merge_rooms(rooms: list[dict], gap_px: float = MERGE_GAP_PX) -> tuple[list[d
 
 
 def name_rooms(
-    rooms: list[dict], texts: list[dict], read_from: str, label_priority: bool = False
+    rooms: list[dict],
+    texts: list[dict],
+    read_from: str,
+    label_priority: bool = False,
+    kitchen_fallback: bool = False,
 ) -> tuple[list[dict], dict]:
     """Attach room_label texts to rooms (see the module doc); sets texts' room_id. -> (rooms, stats)."""
     from shapely.geometry import Point
@@ -315,6 +395,18 @@ def name_rooms(
                 r["provenance"].setdefault("details", {})["seg_type"] = r["type"]
                 r["type"] = "unknown"
                 r["flags"] = sorted(set(r.get("flags", [])) | {"unlabelled_region"})
+    if kitchen_fallback:  # no kitchen label read: the segmentation Kitchen class counts as one kitchen
+        act = [r for r in out if r.get("status", "active") == "active"]
+        if not any(r["type"] == "kitchen" and r.get("text_ids") for r in act):
+            seg_k = [r for r in act if r["type"] == "kitchen" and r.get("polygon_px")]
+            if len(seg_k) > 1:
+                keep = max(seg_k, key=lambda r: _shape(r["polygon_px"]).area)
+                for r in seg_k:
+                    if r is not keep:
+                        r["provenance"].setdefault("details", {})["seg_type"] = r["type"]
+                        r["type"] = "unknown"
+                        r["flags"] = sorted(set(r.get("flags", [])) | {"kitchen_fragment"})
+                stats["kitchen_fragments"] = len(seg_k) - 1
     return out, stats
 
 
@@ -341,8 +433,18 @@ def building_blobs(seg_raw: dict) -> list[list[float]]:
     return [[float(x[i]), float(y[i]), float(x[i] + w_[i]), float(y[i] + h_[i])] for i in keep]
 
 
-def levels(texts: list[dict], blobs: list[list[float]], read_from: str) -> tuple[list[dict], dict]:
-    """levels[] and the 'floors' coverage record, from storey titles and building blobs."""
+FLOORS_RULES = ("titles", "max")
+
+
+def levels(
+    texts: list[dict], blobs: list[list[float]], read_from: str, rule: str = "titles"
+) -> tuple[list[dict], dict]:
+    """levels[] and the 'floors' coverage record, from storey titles and building blobs.
+
+    rule 'titles': storey titles when any were read, else the building blobs.
+    rule 'max': whichever signal counts more storeys (titles on a tie).
+    """
+    assert rule in FLOORS_RULES, rule
     titles: dict[str, dict] = {}
     for t in texts:
         if t["role"] == "level_title":
@@ -350,7 +452,7 @@ def levels(texts: list[dict], blobs: list[list[float]], read_from: str) -> tuple
     n_t, n_b = len(titles), len(blobs)
     agree = n_t == n_b
     out = []
-    if titles:
+    if titles and (rule == "titles" or n_t >= n_b):
         conf = 0.9 if agree else 0.4
         for i, (key, t) in enumerate(titles.items()):
             out.append(
@@ -371,7 +473,7 @@ def levels(texts: list[dict], blobs: list[list[float]], read_from: str) -> tuple
                 }
             )
     else:
-        conf = 0.6 if n_b == 1 else 0.4
+        conf = 0.6 if n_b == 1 and not titles else 0.4
         for i, b in enumerate(blobs):
             out.append(
                 {
@@ -385,9 +487,12 @@ def levels(texts: list[dict], blobs: list[list[float]], read_from: str) -> tuple
                         "extractor": "cubicasa5k",
                         "source_ref": f"blob:{i}",
                         "file": read_from,
-                        "details": {"from": "building blob in the wall/room mask, no storey title read"},
+                        "details": {
+                            "from": "building blob in the wall/room mask",
+                            "titles": [t["text"] for t in titles.values()],
+                        },
                     },
-                    "flags": ["unnamed"] + ([] if n_b == 1 else ["check_this"]),
+                    "flags": ["unnamed"] + ([] if n_b == 1 and not titles else ["check_this"]),
                 }
             )
     if titles and not agree:
@@ -398,6 +503,7 @@ def levels(texts: list[dict], blobs: list[list[float]], read_from: str) -> tuple
         status, cov_conf = "analysed", conf
     note = f"{n_t} storey title(s), {n_b} building blob(s)" + ("" if agree or not titles else ": disagree")
     by = EXTRACTOR if titles else "cubicasa5k"
+    note += f"; rule {rule}"
     cov = {"category": "floors", "region": "page", "status": status, "extractor": by,
            "confidence": cov_conf, "note": note}  # fmt: skip
     return out, cov
@@ -409,6 +515,7 @@ def levels(texts: list[dict], blobs: list[list[float]], read_from: str) -> tuple
 def texts_from_items(items: list[dict], orientation: str, read_from: str, model: str) -> list[dict]:
     out = []
     for i, it in enumerate(items):
+        side = it.get("orientation", orientation)
         out.append(
             {
                 "id": f"text-{i}",
@@ -421,9 +528,9 @@ def texts_from_items(items: list[dict], orientation: str, read_from: str, model:
                 "confidence": min(1.0, max(0.0, it["score"])),
                 "provenance": {
                     "extractor": EXTRACTOR,
-                    "source_ref": f"ocr:{orientation}:{i}",
+                    "source_ref": f"ocr:{side}:{i}",
                     "file": read_from,
-                    "details": {"orientation": orientation, "model": model},
+                    "details": {"orientation": side, "model": model},
                 },
                 "status": "active",
             }
@@ -442,6 +549,9 @@ def fuse(
     read_from: str,
     merge: bool = False,
     label_priority: bool = True,
+    kitchen_fallback: bool = True,
+    rotation: bool = False,
+    floors_rule: str = "titles",
 ) -> dict:
     """Add OCR texts, room names, merged rooms and levels to a CubiCasa document. Returns a summary."""
     summary: dict = {}
@@ -460,8 +570,20 @@ def fuse(
     else:
         orientation, items, stats = choose_orientation(ocr_raw)
         model = ocr_raw.get("model", {}).get("rec_model", LANG)
+        rot = ocr_raw["orientations"].get("rotated")
+        if rotation and rot:
+            items, taken = merge_rotated([{**i, "orientation": orientation} for i in items], rot)
+            summary["rotated_taken"] = taken
+            if taken:
+                doc["drawing"]["transforms"].append(
+                    {"kind": "other", "from": "original", "to": "ocr_input",
+                     "note": f"rotated 90 degrees clockwise for vertical text: {taken} box(es) read from "
+                             "the rotated copy, mapped back to original pixels"}
+                )  # fmt: skip
         texts = texts_from_items(items, orientation, read_from, model)
-        rooms, nstats = name_rooms(rooms, texts, read_from, label_priority=label_priority)
+        rooms, nstats = name_rooms(
+            rooms, texts, read_from, label_priority=label_priority, kitchen_fallback=kitchen_fallback
+        )
         summary.update(orientation=orientation, orientation_stats=stats, **nstats)
         if orientation == "flipped":
             doc["drawing"]["transforms"].append({"kind": "other", "note": "mirrored"})
@@ -486,7 +608,7 @@ def fuse(
                      f"{nstats['label_only']} label-only; label_priority={label_priority}"}
         )  # fmt: skip
 
-    lv, floors_cov = levels(texts, building_blobs(seg_raw), read_from)
+    lv, floors_cov = levels(texts, building_blobs(seg_raw), read_from, rule=floors_rule)
     doc["levels"] = lv
     doc["coverage"] = _replace_coverage(doc["coverage"], floors_cov)
     summary["levels"] = len(lv)

@@ -372,3 +372,87 @@ def test_ocr_size_mismatch_fails_loudly(plan):
     (raw_dir / "synthetic.ocr.json").write_text(json.dumps(raw), encoding="utf-8")
     with pytest.raises(ValueError, match="OCR size differs"):
         translate_all(str(path), str(root))
+
+
+# ------------------------------------------------------- rotated pass, kitchen fallback, floors rule
+
+
+def test_rotated_boxes_map_back_to_original_pixels():
+    # original 100 wide x 60 high, upscaled x2 -> 200 x 120; rotated clockwise -> 120 wide x 200 high
+    img = np.zeros((120, 200), np.uint8)
+    img[20:30, 50:90] = 255  # a box in the (upscaled) original
+    rot = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+    ys, xs = np.nonzero(rot)
+    poly = [
+        [xs.min(), ys.min()],
+        [xs.max() + 1, ys.min()],
+        [xs.max() + 1, ys.max() + 1],
+        [xs.min(), ys.max() + 1],
+    ]
+    back = ocr.to_original(poly, 2, False, rot.shape[1], rotated=True)
+    assert ocr._bbox(back) == [25, 10, 45, 15]  # x 50..90 / 2, y 20..30 / 2
+
+
+def _tall(text, score=0.9, x=0):
+    return {"text": text, "score": score, "poly": [[x, 0], [x + 10, 0], [x + 10, 40], [x, 40]]}
+
+
+def test_rotated_pass_trigger():
+    assert ocr.needs_rotation([_tall("E"), _tall("o", x=50)])[0]  # tall boxes: vertical text
+    assert ocr.needs_rotation([_item(t, 0.3) for t in "abcd"])[0]  # mostly low confidence
+    assert not ocr.needs_rotation([_item("MH", 0.95), _item("KH", 0.9), _tall("E")])[0]
+
+
+def test_rotated_boxes_merge_per_box():
+    base = [
+        {**_item("E", 0.6, (0, 0, 10, 40)), "orientation": "original"},  # misread vertical KH
+        {**_item("MH", 0.95, (50, 0, 70, 10)), "orientation": "original"},
+        {**_item("OH", 0.9, (100, 0, 120, 10)), "orientation": "original"},
+    ]
+    rotated = [
+        _item("KH", 0.99, (0, 0, 10, 40)),  # higher score over a misread: replaces it
+        _item("MN", 0.7, (50, 0, 70, 10)),  # lower score, no room name: the normal reading stays
+        _item("0H", 0.5, (100, 0, 120, 10)),  # names a room, but so does the normal reading: stays
+        _item("ET", 0.6, (200, 0, 210, 40)),  # overlaps nothing, names a room: added
+        _item("1200", 0.99, (300, 0, 310, 40)),  # overlaps nothing, no room name: dropped
+    ]
+    items, taken = ocr.merge_rotated(base, rotated)
+    assert taken == 2
+    assert sorted((i["text"], i["orientation"]) for i in items) == [
+        ("ET", "rotated"),
+        ("KH", "rotated"),
+        ("MH", "original"),
+        ("OH", "original"),
+    ]
+
+
+def test_kitchen_fallback_counts_the_segmentation_class_once():
+    rooms = [
+        _room("k0", "Kitchen", "kitchen", (0, 0, 80, 80)),
+        _room("k1", "Kitchen", "kitchen", (200, 0, 210, 10)),  # small fragment
+        _room("b0", "Bedroom", "bedroom", (300, 0, 380, 80)),
+    ]
+    texts = _texts(_item("MH", 0.9, (330, 30, 340, 40)))
+    out, stats = ocr.name_rooms(
+        [dict(r) for r in rooms], texts, "x.png", label_priority=True, kitchen_fallback=True
+    )
+    kitchens = [r for r in out if r["type"] == "kitchen"]
+    assert [r["id"] for r in kitchens] == ["k0"] and stats["kitchen_fragments"] == 1
+    assert "kitchen_fragment" in next(r for r in out if r["id"] == "k1")["flags"]
+    # with a kitchen label, the label decides (label priority); the fallback does nothing
+    texts = _texts(_item("K", 0.9, (205, 2, 208, 8)))
+    out, _ = ocr.name_rooms(
+        [dict(r) for r in rooms], texts, "x.png", label_priority=True, kitchen_fallback=True
+    )
+    assert [r["id"] for r in out if r["type"] == "kitchen"] == ["k1"]
+
+
+def test_floors_rule_max_takes_the_larger_count():
+    raw = _seg_raw([(10, 10, 150, 150), (220, 10, 380, 150)])
+    blobs = ocr.building_blobs(raw)
+    one_title = _texts(_item("1. KRS", 0.9, (20, 160, 60, 170)))
+    lv, cov = ocr.levels(one_title, blobs, "x.png", rule="titles")
+    assert len(lv) == 1 and cov["status"] == "partial"
+    lv, cov = ocr.levels(one_title, blobs, "x.png", rule="max")
+    assert len(lv) == 2 and cov["status"] == "partial" and cov["confidence"] <= 0.3  # still flagged
+    assert lv[0]["provenance"]["details"]["titles"] == ["1. KRS"]
