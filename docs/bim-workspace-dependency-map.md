@@ -74,7 +74,7 @@ No viewer build/lint/typecheck scripts exist initially; start uses npx serve.
 - [x] 5. Cached per-storey 2D plans.
 - [x] 6. Synchronized parallel workspace.
 - [x] 7. Dedicated DXF/SVG environments.
-- [ ] 8. Component inspection and removal.
+- [x] 8. Component inspection and removal.
 - [ ] 9. Reference-based UI, AI analysis and document library.
 - [ ] 10. Integration tests, performance/lifecycle verification and architecture docs.
 
@@ -87,3 +87,5 @@ Stage 5: worker-based IFC parsing/BVH generation, cached storey section/projecti
 Stage 6: real Chrome verification imported the existing two-storey IFC fixture through the API and worker, rendered 2 source records, produced per-storey plans, and selected a plan element in 3D. Canonical sample shows all four floors in parallel mode.
 
 Stage 7: DXF uses installed ezdxf SVG rendering with original handles, layers, transforms and original-file retention; SVG keeps sanitized native vectors/groups. Chrome verified DXF import and layer extraction; uncertain classifications remain explicitly unclassified.
+
+Stage 8: canonical category-aware inspector, SI measurements, null/zero distinction, material layers and provenance; identifiers collapsed; non-destructive component removal and restoration. Formatter regression tests pass.

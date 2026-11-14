@@ -1,3 +1,4 @@
+import {installInspector} from './inspector.js';
 import {showSource} from './sourceView.js';
 import {PlanCache} from './plans.js';
 import {PlanView} from './planView.js';
@@ -16,6 +17,7 @@ export class Workspace {
     this.sourceRecords=new Map();this.layerVisibility=new Map();this.typeVisibility=new Map();
     this.planView=new PlanView($('planSurface'),{onSelect:key=>this.selectPlan(key),onHover:key=>this.viewer?.setHovered(this.pickByKey.get(key) ?? null)});
     for(const button of document.querySelectorAll('[data-mode]'))button.addEventListener('click',()=>this.setMode(button.dataset.mode));
+    installInspector(this);
     $('floorSelect').addEventListener('change',()=>this.setFloor($('floorSelect').value));
     $('planCut').addEventListener('change',()=>this.showFloor());
     $('fitView').addEventListener('click',()=>{this.viewer?.frame();this.planView.fit();});
