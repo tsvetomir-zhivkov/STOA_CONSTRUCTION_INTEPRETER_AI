@@ -10,3 +10,5 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.tmp
+# model weights (they live in the Modal volume cubicasa-weights)
+*.pkl

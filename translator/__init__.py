@@ -6,7 +6,7 @@ Outputs go to index/<source>/<file>.json (see translator.store.index_path).
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 __version__ = "0.2.0"
@@ -95,7 +95,7 @@ def translate_all(path: str, data: str | None = None) -> list[dict]:
             "read_from": r["read_from"] or r["file"],
             "transforms": [],
             "translator_version": __version__,
-            "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
+            "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         },
         "levels": [],
         "units": [],
