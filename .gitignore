@@ -1,4 +1,38 @@
-.end
+# Union of our pre-merge .gitignore (5b5d99a), the teammate's (e134212) and the merge result (3fb2b30).
+
+# dataset lives outside the repo (set STOA_DATA); ignore it if copied in
+data/
+questions.jsonl
+
+# secrets and local config (".end" in 3fb2b30 was a typo for .env)
+.env
+.env.*
 .modal.toml
-index/
+
+# generated outputs: regenerate with python -m translator --source <name>; keep the folder itself
+index/*
+!index/.gitkeep
+
+# model weights (they live in the Modal volume cubicasa-weights)
+*.pkl
+
+# Python and tool caches
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.tmp
+
+# teammate: environment files
+node_modules
+uv.lock
+.python-version
+
+# teammate: local copies of the schema and an example at the repo root (answering_agent reads
+# ../sample_drawing.json). Anchored to the root so translator/schema/drawing.schema.json, the
+# schema v0.2 contract, is never matched.
+/drawing.schema.json
+/sample_drawing.json
+
+# local debug overlay, never committed (k)
 overlay_9385_crop.png*
