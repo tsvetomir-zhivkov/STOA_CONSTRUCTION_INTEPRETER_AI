@@ -75,16 +75,8 @@ LANGUAGE:
 
 def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
     """Answer one question using deterministic drawing tools and Gemini planning."""
-<<<<<<< HEAD
-    from translator.building import migrate
-    from translator.store import validate
-    validate(drawing_data)
-    drawing_data = migrate(drawing_data)
-    validate(drawing_data)
-=======
     if drawing_data.get("schema_version") not in ("0.2", "0.3"):
         raise ValueError("This agent expects Stoa drawing-index schema v0.2 or v0.3")
->>>>>>> 19fec63 (Phase 6: consumers read v0.3)
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
