@@ -66,6 +66,10 @@ image = (
 # paddleocr 3.0.3 pulls paddlex[ie,multimodal,ocr]; "ie" brings an unpinned langchain whose current release
 # has no langchain.docstore, and PaddleX imports it at start-up. So: paddleocr without its dependencies,
 # plus paddlex[ocr] only.
+# Working set (smoke test 2026-11-14, high_quality-5815, Paddle on gpu:0 Tesla T4): Python 3.11.18,
+# paddlepaddle-gpu 3.0.0 (CUDA 11.8, cuDNN 8.9.7), paddleocr 3.0.3, paddlex 3.0.3, opencv-contrib-python
+# 4.10.0.84, numpy 2.4.1; models PP-OCRv5_server_det, latin_PP-OCRv3_mobile_rec, PP-LCNet_x1_0_textline_ori.
+# The full pip freeze is in the image at /pip-freeze.txt and its pins are recorded in every raw OCR file.
 PADDLE_INDEX = "https://www.paddlepaddle.org.cn/packages/stable/cu118/"
 OCR_PIP = ["paddleocr==3.0.3"]
 OCR_DEPS = ["paddlex[ocr]==3.0.3", "PyYAML>=6", "typing-extensions>=4.12"]
@@ -79,6 +83,7 @@ OCR_KW = {
     "use_doc_unwarping": False,
     "use_textline_orientation": True,  # labels drawn upside down / rotated
 }
+OCR_WARMUP = f"from paddleocr import PaddleOCR; PaddleOCR(device='gpu', **{OCR_KW!r})"
 ocr_image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("libgl1", "libglib2.0-0", "libgomp1")
@@ -87,8 +92,9 @@ ocr_image = (
     .pip_install(*OCR_DEPS)
     .run_commands("pip freeze > /pip-freeze.txt")
     .env({"PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK": "True"})
-    # download the models at build time, so containers start without network fetches
-    .run_commands(f"python -c \"from paddleocr import PaddleOCR; PaddleOCR(device='cpu', **{OCR_KW!r})\"")
+    # download the models at build time, so containers start without network fetches; on a T4, because the
+    # GPU build of paddle cannot even be imported without the driver (libcuda.so.1)
+    .run_commands(f'python -c "{OCR_WARMUP}"', gpu="T4")
     .add_local_python_source("translator")
 )
 
