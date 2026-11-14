@@ -33,7 +33,10 @@ from translator.extract import ocr  # noqa: E402
         ("KEITTIÖ", ["kitchen"]),
         ("KK", ["kitchen"]),
         ("AVOK", ["kitchen"]),
-        ("TK", ["kitchen"]),
+        ("TK", ["entry"]),  # tuulikaappi (vestibule)
+        ("TUPAK", ["kitchen"]),
+        ("tupakeittiö", ["kitchen"]),
+        ("TPK", ["kitchen"]),
         ("KH", ["bathroom"]),
         ("KPH", ["bathroom"]),
         ("PESUH.", ["bathroom"]),

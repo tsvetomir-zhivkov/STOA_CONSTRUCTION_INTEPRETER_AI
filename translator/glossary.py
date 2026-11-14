@@ -77,8 +77,11 @@ def residential_unit_letter(text: str) -> str | None:
 _FI_SV: dict[str, list[str]] = {
     "bedroom": ["mh", "makuuhuone", "makuuh", "h", "huone", "sov", "sovrum", "sovr"],  # H = huone (room)
     "living": ["oh", "olohuone", "oleskelu", "tupa", "vardagsrum", "vardagsr", "allrum"],
-    # KK (keittokomero) and AVOK (avokeittio) are kitchenettes; TK as agreed with k (tyokeittio)
-    "kitchen": ["k", "kk", "keittio", "keitt", "tk", "avok", "avokeittio", "keittokomero", "kok", "kokvra"],
+    # KK (keittokomero) and AVOK (avokeittio) are kitchenettes; TUPAK/TPK = tupakeittio (farmhouse kitchen)
+    "kitchen": [
+        "k", "kk", "keittio", "keitt", "avok", "avokeittio", "keittokomero", "tupak", "tpk", "tupakeittio",
+        "kok", "kokvra",
+    ],
     "dining": ["rt", "ruokailu", "ruokailutila", "ruok", "matrum", "matplats"],
     "bathroom": [
         "kh", "kph", "ph", "pesuh", "pesuhuone", "kylpyhuone", "kylpyh", "sh", "suihkuhuone",
@@ -86,7 +89,7 @@ _FI_SV: dict[str, list[str]] = {
     ],
     "wc": ["wc", "vessa", "toalett"],
     "sauna": ["s", "sauna", "loylyhuone", "bastu"],
-    "entry": ["et", "eteinen", "tuulikaappi", "hall", "farstu", "vindfang"],
+    "entry": ["et", "eteinen", "tk", "tuulikaappi", "hall", "farstu", "vindfang"],  # TK = tuulikaappi (k)
     "closet": ["vh", "vaatehuone", "klk", "kladkammare"],
     "storage": ["var", "varasto", "forrad", "frd"],
     "utility": ["khh", "kodinhoitohuone", "kodinhoito", "tvattstuga", "tvatt"],
