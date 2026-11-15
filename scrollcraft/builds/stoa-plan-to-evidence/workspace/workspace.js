@@ -4,8 +4,9 @@
 // context; other formats are shown but not converted. Questions go to answering_agent on that JSON (POST /api/chat).
 // An IFC model is read by the existing blueprint
 // viewer (mounted in the right column): it renders a plan of every level, and is itself the 3D view behind the toggle.
-import { dxfSegments, renderPdfPages, sheetFormatOf } from '/workspace/viewer/sheets.js';
-import { parseDxf } from '/workspace/viewer/vendor/dxfParser.js';
+// File selection and image display must work even if an optional viewer dependency cannot load.
+const loadSheetHelpers = () => import('/workspace/viewer/sheets.js');
+const sheetFormatOf = name => name.split('.').pop().toLowerCase();
 
 const $ = (id) => document.getElementById(id);
 const ACCEPTED = /\.(ifc|dxf|dxr|svg|png|jpe?g|pdf)$/i;
@@ -24,6 +25,126 @@ let levelIndex = 0;
  * @type {{ outFile: string|null, context: object|null, history: Array<{ role: 'user'|'assistant', content: string }>, busy: boolean }}
  */
 const chat = { outFile: null, context: null, history: [], busy: false };
+
+// ---- deterministic source lookup and pixel geometry --------------------------------------------------------
+const highlights = { enabled: false, entities: new Map(), ids: [] };
+const validPoint = p => Array.isArray(p) && p.length >= 2 && p.slice(0, 2).every(Number.isFinite);
+const validRing = (points, minimum = 2) => Array.isArray(points) && points.length >= minimum && points.every(validPoint);
+
+function buildEntityLookup(data) {
+  const lookup = new Map();
+  for (const collection of ['rooms', 'walls', 'openings', 'objects', 'units', 'texts', 'edges',
+    'pipe_segments', 'pipe_fittings', 'pipe_equipment']) {
+    for (const entity of Array.isArray(data?.[collection]) ? data[collection] : []) {
+      if (entity && typeof entity.id === 'string' && (entity.status ?? 'active') === 'active') lookup.set(entity.id, entity);
+    }
+  }
+  return lookup;
+}
+
+function sourceDrawing(data, entity, pageIndex) {
+  const drawings = data?.drawing ? [data.drawing] : (Array.isArray(data?.drawings) ? data.drawings : []);
+  const page = drawings.filter(d => (d.page_index ?? 0) === pageIndex);
+  return page.find(d => d.id && d.id === entity.source_drawing_id)
+    ?? page.find(d => d.id && entity.observations?.some(o => o.drawing_id === d.id))
+    ?? (!entity.source_drawing_id ? page[0] : null);
+}
+
+function sourceShapes(entity, drawingId) {
+  const observation = drawingId && entity.observations?.find(o => o.drawing_id === drawingId);
+  if (drawingId && entity.source_drawing_id && entity.source_drawing_id !== drawingId && !observation) return [];
+  // Never fill missing observation fields with pixels from a different drawing.
+  const g = observation || entity;
+  if (validRing(g.polygon_px, 3)) return [{ kind: 'area', rings: [g.polygon_px,
+    ...(Array.isArray(g.holes_px) ? g.holes_px.filter(h => validRing(h, 3)) : [])] }];
+  for (const key of ['centerline_px', 'polyline_px']) {
+    if (validRing(g[key])) return [{ kind: 'line', rings: [g[key]] }];
+  }
+  if (Array.isArray(g.bbox_px) && g.bbox_px.length === 4 && g.bbox_px.every(Number.isFinite)) {
+    const [x0, y0, x1, y1] = g.bbox_px;
+    if (x1 > x0 && y1 > y0) return [{ kind: 'area', rings: [[[x0,y0], [x1,y0], [x1,y1], [x0,y1]]] }];
+    if (x1 >= x0 && y1 >= y0) return [{ kind: x0 === x1 && y0 === y1 ? 'point' : 'line', rings: [[[x0,y0], [x1,y1]]] }];
+  }
+  if (validPoint(g.center_px)) return [{ kind: 'point', rings: [[g.center_px]] }];
+  // Converted pipe objects can retain the original segment/fitting/equipment record here.
+  if (g.properties?.pipe_index && typeof g.properties.pipe_index === 'object') return sourceShapes(g.properties.pipe_index, null);
+  return [];
+}
+
+function inverseAffine(matrix, point) {
+  if (!Array.isArray(matrix) || matrix.length < 2 || !matrix.slice(0, 2).every(row =>
+    Array.isArray(row) && row.length >= 3 && row.slice(0, 3).every(Number.isFinite))) return null;
+  const [[a,b,c], [d,e,f]] = matrix, determinant = a*e - b*d;
+  if (Math.abs(determinant) < 1e-12) return null;
+  const x = point[0]-c, y = point[1]-f;
+  return [(e*x-b*y)/determinant, (a*y-d*x)/determinant];
+}
+
+function projectSourcePoint(point, drawing, view) {
+  if (view.project) return view.project(point, drawing);
+  const image = drawing.image;
+  if (!(image?.width_px > 0 && image?.height_px > 0)) return null;
+  // Vector extraction uses unrotated PDF points. The viewer's viewport includes crop and rotation.
+  const pdfResize = drawing.transforms?.find(t => t.from === 'pdf_points' && t.to === 'page_px' && t.kind === 'resize');
+  if (view.pdf && pdfResize) {
+    const { bounds, transform } = view.pdf;
+    const sx = pdfResize.scale_x, sy = pdfResize.scale_y;
+    if (!(sx > 0 && sy > 0)) return null;
+    const x = bounds[0]+point[0]/sx, y = bounds[3]-point[1]/sy;
+    return [transform[0]*x+transform[2]*y+transform[4], transform[1]*x+transform[3]*y+transform[5]];
+  }
+  if (view.svgHasViewBox === false) {
+    const resize = drawing.transforms?.find(t => t.from === 'svg_user_units' && t.to === 'page_px');
+    return resize?.scale_x > 0 && resize?.scale_y > 0 ? [point[0]/resize.scale_x, point[1]/resize.scale_y] : null;
+  }
+  if (view.svgAspect && !view.svgAspect.includes('none')) {
+    const scale = (view.svgAspect.includes('slice') ? Math.max : Math.min)(view.width/image.width_px, view.height/image.height_px);
+    const x = view.svgAspect.includes('xMin') ? 0 : view.svgAspect.includes('xMax') ? 1 : .5;
+    const y = view.svgAspect.includes('YMin') ? 0 : view.svgAspect.includes('YMax') ? 1 : .5;
+    return [point[0]*scale+(view.width-image.width_px*scale)*x, point[1]*scale+(view.height-image.height_px*scale)*y];
+  }
+  // Raster geometry is already mapped back to original image pixels by the translator.
+  // Do not apply original -> model_input preprocessing transforms again.
+  return [point[0]*view.width/image.width_px, point[1]*view.height/image.height_px];
+}
+// ---- end source geometry helpers ---------------------------------------------------------------------------
+
+function clearSourceHighlights() {
+  highlights.ids = [];
+  document.querySelectorAll('.source-overlay').forEach(svg => svg.replaceChildren());
+}
+
+function renderSourceHighlights() {
+  if (!highlights.enabled || !chat.context) return;
+  for (const sheet of document.querySelectorAll('.drawing-sheet')) {
+    const view = sheet.sourceView;
+    view.overlay.replaceChildren();
+    for (const id of highlights.ids) {
+      const entity = highlights.entities.get(id);
+      if (!entity) continue;
+      const drawing = sourceDrawing(chat.context, entity, view.pageIndex);
+      if (!drawing) continue;
+      for (const shape of sourceShapes(entity, drawing.id)) {
+        const rings = shape.rings.map(ring => ring.map(p => projectSourcePoint(p, drawing, view)));
+        if (rings.some(ring => ring.some(p => !validPoint(p)))) continue;
+        const node = document.createElementNS('http://www.w3.org/2000/svg', shape.kind === 'point' ? 'circle' : 'path');
+        if (shape.kind === 'point') {
+          node.setAttribute('cx', rings[0][0][0]);
+          node.setAttribute('cy', rings[0][0][1]);
+          node.setAttribute('r', Math.max(view.width, view.height)*.006);
+        } else {
+          node.setAttribute('d', rings.map(ring => 'M'+ring.map(p => p.join(',')).join(' L')+(shape.kind === 'area' ? ' Z' : '')).join(' '));
+          node.setAttribute('fill-rule', 'evenodd');
+        }
+        node.setAttribute('class', shape.kind === 'line' ? 'source-line' : 'source-area');
+        node.setAttribute('vector-effect', 'non-scaling-stroke');
+        node.dataset.sourceId = id;
+        view.overlay.append(node);
+      }
+    }
+  }
+}
+
 
 // ---- file selection (button, top-bar button, drop anywhere) --------------------------------------------------
 const input = $('fileInput');
@@ -45,6 +166,7 @@ function open(file, type = 'building') {
   $('error').textContent = '';
   const my = reset();
   const ext = file.name.split('.').pop().toLowerCase();
+  highlights.enabled = ext !== 'ifc';
   $('fileName').textContent = file.name;
   $('fileName').title = file.name;
   $('fileFormat').textContent = ext === 'jpeg' ? 'JPG' : ext.toUpperCase();
@@ -57,6 +179,9 @@ function open(file, type = 'building') {
 
 /** drop everything tied to the previous file: chat, blueprints, levels, the 3D viewer and the toggle */
 function reset() {
+  clearSourceHighlights();
+  highlights.enabled = false;
+  highlights.entities.clear();
   for (const u of urls) URL.revokeObjectURL(u);
   urls = [];
   levels = [];
@@ -118,6 +243,8 @@ async function startChat(file, type, my) {
     if (my !== token) { removeJson(out.file); return; }
     chat.outFile = out.file;
     chat.context = out.json;
+    if (highlights.enabled) highlights.entities = buildEntityLookup(out.json);
+    renderSourceHighlights();
     status.remove();
     const count = (k) => (out.json[k] ?? []).filter((e) => (e.status ?? 'active') === 'active').length;
     const found = [['levels', 'level'], ['rooms', 'room'], ['walls', 'wall'], ['openings', 'opening'], ['objects', 'object']]
@@ -137,6 +264,7 @@ $('chatForm').addEventListener('submit', async (e) => {
   const question = $('question').value.trim();
   if (!question || !chat.outFile || chat.busy) return;
   const my = token;
+  clearSourceHighlights();
   $('question').value = '';
   addMessage('user', question);
   const pending = addMessage('assistant pending', '…');
@@ -146,8 +274,13 @@ $('chatForm').addEventListener('submit', async (e) => {
     const res = await fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ file: chat.outFile, question, history: chat.history }) });
     if (my !== token) return;
     if (!res.ok) throw new Error(res.status === 405 ? 'the site was not started with npm start (in scrollcraft/builds/stoa-plan-to-evidence)' : await errorOf(res));
-    const { answer } = await res.json();
+    const result = await res.json();
     if (my !== token) return;
+    const answer = String(result.answer ?? '').replace(/^[ \t]*sources?\s*:.*$/gim, '').trim();
+    if (highlights.enabled) {
+      highlights.ids = Array.isArray(result.source_ids) ? [...new Set(result.source_ids.filter(id => typeof id === 'string'))] : [];
+      renderSourceHighlights();
+    }
     pending.className = 'assistant';
     // the agent writes **bold**: rendered as text nodes and <strong>, never as HTML
     pending.replaceChildren(...String(answer).split(/\*\*(.+?)\*\*/g).map((part, k) => (k % 2 ? Object.assign(document.createElement('strong'), { textContent: part }) : document.createTextNode(part))));
@@ -168,32 +301,77 @@ async function showDrawing(file, my) {
   const fmt = /\.dxr$/i.test(file.name) ? 'dxf' : sheetFormatOf(file.name); // .dxr is DXF content
   note(`Reading ${file.name} …`);
   if (fmt === 'pdf') {
+    const { renderPdfPages } = await loadSheetHelpers();
     const pages = await renderPdfPages(new Uint8Array(await file.arrayBuffer()));
     if (my !== token) return;
-    $('blueprint').replaceChildren(...pages.map((p) => figure(p.canvas, pages.length > 1 ? `Page ${p.n} of ${pages.length}` : '')));
+    $('blueprint').replaceChildren(...pages.map((p) => figure(p.canvas, pages.length > 1 ? `Page ${p.n} of ${pages.length}` : '', { pageIndex: p.n-1, pdf: p.pdf })));
   } else if (fmt === 'dxf') {
-    const canvas = drawDxf(await file.text());
+    const canvas = await drawDxf(await file.text());
     if (my !== token) return;
-    $('blueprint').replaceChildren(figure(canvas, ''));
+    $('blueprint').replaceChildren(figure(canvas, '', { project: canvas.sourceProjection }));
   } else {
     const url = URL.createObjectURL(file);
     urls.push(url);
     const img = Object.assign(document.createElement('img'), { src: url, alt: `Blueprint of ${file.name}` });
     await img.decode().catch(() => { throw new Error('the image could not be read'); });
     if (my !== token) return;
-    $('blueprint').replaceChildren(figure(img, ''));
+    const svgRoot = fmt === 'svg' ? new DOMParser().parseFromString(await file.text(), 'image/svg+xml').documentElement : null;
+    if (my !== token) return;
+    $('blueprint').replaceChildren(figure(img, '', {
+      svgAspect: svgRoot ? svgRoot.getAttribute('preserveAspectRatio') || 'xMidYMid meet' : null,
+      svgHasViewBox: svgRoot ? svgRoot.hasAttribute('viewBox') : null,
+    }));
   }
 }
 
-function figure(el, caption) {
+function figure(el, caption, options = null) {
   const fig = document.createElement('figure');
-  fig.append(el);
+  if (!options) {
+    // IFC level snapshots use the original figure path and never get source overlays.
+    fig.append(el);
+  } else {
+    const sheet = document.createElement('div');
+    sheet.className = 'drawing-sheet';
+    sheet.title = 'Ctrl + wheel to zoom; Shift + drag to pan; double-click to reset';
+    const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    overlay.classList.add('source-overlay');
+    overlay.setAttribute('aria-label', 'Answer sources');
+    const width = el.naturalWidth || el.width, height = el.naturalHeight || el.height;
+    overlay.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    overlay.setAttribute('preserveAspectRatio', 'none');
+    sheet.sourceView = { width, height, overlay, pageIndex: 0, ...options };
+    el.draggable = false;
+    sheet.append(el, overlay);
+    fig.append(sheet);
+    // A single container transform keeps the image and SVG aligned through zoom and pan.
+    let zoom = 1, x = 0, y = 0, drag = null;
+    const move = () => { sheet.style.transform = `translate(${x}px,${y}px) scale(${zoom})`; };
+    fig.addEventListener('wheel', e => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      zoom = Math.max(.5, Math.min(8, zoom*Math.exp(-e.deltaY*.002)));
+      move();
+    }, { passive: false });
+    sheet.addEventListener('pointerdown', e => {
+      if (!e.shiftKey || e.button !== 0) return;
+      e.preventDefault();
+      drag = [e.clientX-x, e.clientY-y];
+      sheet.setPointerCapture(e.pointerId);
+    });
+    sheet.addEventListener('pointermove', e => { if (drag) { x = e.clientX-drag[0]; y = e.clientY-drag[1]; move(); } });
+    for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) sheet.addEventListener(event, () => { drag = null; });
+    fig.addEventListener('dblclick', () => { zoom = 1; x = y = 0; move(); });
+    queueMicrotask(renderSourceHighlights);
+  }
   if (caption) fig.append(Object.assign(document.createElement('figcaption'), { textContent: caption }));
   return fig;
 }
 
 /** a DXF drawn as black lines on white, with the viewer's DXF reader (blocks expanded) */
-function drawDxf(text) {
+async function drawDxf(text) {
+  const [{ dxfSegments }, { parseDxf }] = await Promise.all([
+    loadSheetHelpers(), import('/workspace/viewer/vendor/dxfParser.js'),
+  ]);
   const segs = dxfSegments(parseDxf(text));
   if (segs.length < 2) throw new Error('no drawable lines in this DXF');
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -214,6 +392,11 @@ function drawDxf(text) {
     ctx.lineTo(pad + (segs[i + 1][0] - x0) * k, pad + (y1 - segs[i + 1][1]) * k);
   }
   ctx.stroke();
+  canvas.sourceProjection = (point, drawing) => {
+    const matrix = drawing.transforms?.find(t => t.kind === 'affine' && t.from === 'model_units' && t.to === 'page_px')?.matrix;
+    const model = inverseAffine(matrix, point);
+    return model ? [pad+(model[0]-x0)*k, pad+(y1-model[1])*k] : null;
+  };
   return canvas;
 }
 
