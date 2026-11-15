@@ -119,7 +119,7 @@ export async function renderPdfPages(bytes) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       await page.render({ canvasContext: ctx, viewport: vp }).promise;
       page.cleanup();
-      pages.push({ n, canvas, wPt: base.width, hPt: base.height });
+      pages.push({ n, canvas, wPt: base.width, hPt: base.height, pdf: { bounds: [...page.view], transform: [...vp.transform] } });
     }
     return pages;
   } finally {

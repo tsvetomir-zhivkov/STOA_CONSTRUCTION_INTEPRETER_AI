@@ -60,6 +60,10 @@ SITE_REL = "scrollcraft/builds/stoa-plan-to-evidence"
 SERVE_SITE = (REPO_LOCAL / SITE_REL / "scripts" / "start.mjs").exists()
 REPO = PurePosixPath("/repo")  # the repository subset inside the container (a Linux path)
 NODE_PORT = 3000
+NODE_VERSION = "v22.23.5"  # LTS "Jod", 2026-11-11
+NODE_SHA256 = (
+    "cdeb8670a0c81f51b4dc4ac61919f9b1ad917b304bf8221eb939570663d240f8"  # node-v22.23.5-linux-x64.tar.xz
+)
 MAX_SITE_UPLOAD_BYTES = 200 * 1024 * 1024  # IFC models can be large
 NODE_SKIP = {"node_modules", "lab", "vendor", "out", "__pycache__", ".git", "test", "tests"}
 
@@ -90,7 +94,14 @@ web_image = (
     )
 )
 if SERVE_SITE:
-    web_image = web_image.apt_install("nodejs", "npm")
+    # Node 22 LTS (pdfjs-dist 6.5 needs >= 22.13): the official build, pinned and checked against nodejs.org's SHASUMS256
+    tarball = f"node-{NODE_VERSION}-linux-x64.tar.xz"
+    web_image = web_image.apt_install("curl", "xz-utils", "ca-certificates").run_commands(
+        f"curl -fsSLo /tmp/{tarball} https://nodejs.org/dist/{NODE_VERSION}/{tarball}",
+        f"echo '{NODE_SHA256}  /tmp/{tarball}' | sha256sum -c -",
+        f"tar -xJf /tmp/{tarball} -C /usr/local --strip-components=1 && rm /tmp/{tarball}",
+        "node --version && npm --version",
+    )
     for rel in (SITE_REL, "blueprint-ingest", "blueprint-viewer", "translator", "answering_agent"):
         web_image = web_image.add_local_dir(REPO_LOCAL / rel, str(REPO / rel), copy=True, ignore=_ignore_node)
     for rel in ("package.json", "package-lock.json"):
