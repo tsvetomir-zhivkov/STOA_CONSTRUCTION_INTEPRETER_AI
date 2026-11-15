@@ -36,7 +36,7 @@ export function nativePlan(api,id,product,lenM,origin){
   const walk=(ref,depth=0)=>{
     if(depth>32)return;
     const item=api.GetLine(id,value(ref));if(!item)return;
-    const type=api.GetNameFromTypeCode(item.type);
+    const type=String(api.GetNameFromTypeCode(item.type)).toUpperCase();
     if(type==='IFCPOLYLINE')return line(item.Points.map(point));
     if(type==='IFCINDEXEDPOLYCURVE'){
       const pts=api.GetLine(id,value(item.Points))?.CoordList?.map(coords) ?? [];
@@ -53,11 +53,18 @@ export function nativePlan(api,id,product,lenM,origin){
     if(type==='IFCGEOMETRICCURVESET' || type==='IFCGEOMETRICSET'){for(const e of item.Elements ?? [])walk(e,depth+1);return;}
     if(type==='IFCTRIMMEDCURVE' || type==='IFCCIRCLE'){
       const circle=type==='IFCCIRCLE'?item:api.GetLine(id,value(item.BasisCurve));
-      if(api.GetNameFromTypeCode(circle?.type)!=='IFCCIRCLE')return;
-      const start=type==='IFCCIRCLE'?0:Number(value(item.Trim1?.[0]));
-      const end=type==='IFCCIRCLE'?2*Math.PI:Number(value(item.Trim2?.[0]));
-      if(!Number.isFinite(start)||!Number.isFinite(end))return;
+      if(String(api.GetNameFromTypeCode(circle?.type)).toUpperCase()!=='IFCCIRCLE')return;
       const local=axis(api,id,circle.Position),r=Number(value(circle.Radius));
+      const parameter=trims=>{
+        const trim=trims?.[0];
+        // web-ifc 0.0.68 represents inline numeric select values as string-valued
+        // Handles; only numeric Handles are references to Cartesian points.
+        if(trim?.type===5 && typeof trim.value==='number'){const p=point(trim);if(p.length<2)return NaN;const v=new THREE.Vector3(p[0],p[1],p[2]??0).applyMatrix4(local.clone().invert());return Math.atan2(v.y,v.x);}
+        return Number(value(trim));
+      };
+      const start=type==='IFCCIRCLE'?0:parameter(item.Trim1);
+      const end=type==='IFCCIRCLE'?2*Math.PI:parameter(item.Trim2);
+      if(!Number.isFinite(start)||!Number.isFinite(end))return;
       let sweep=end-start;const sense=value(item.SenseAgreement)!==false;
       if(type!=='IFCCIRCLE' && sense && sweep<0)sweep+=2*Math.PI;
       if(type!=='IFCCIRCLE' && !sense && sweep>0)sweep-=2*Math.PI;

@@ -19,7 +19,7 @@ import { loadConfig } from './config.js';
 import { createLogger } from './util/logger.js';
 import { UnsupportedFormatError, PipelineError } from './util/errors.js';
 import { classifyBlueprint } from './classifier/blueprintClassifier.js';
-import { extractIfcBuildings } from './extractors/ifcExtractor.js';
+import { extractIfc, extractIfcBuildings } from './extractors/ifcExtractor.js';
 import { extractPdf } from './extractors/pdfExtractor.js';
 import { extractDxf, extractSvg } from './extractors/cadExtractor.js';
 import { mapToSchema } from './mappers/schemaMapper.js';
@@ -85,7 +85,7 @@ export async function processBlueprint(opts) {
   const exOpts = { config, logger, corrections };
   /** @type {import('./extractors/bundle.js').Bundle[]} */
   let bundles;
-  if (fmt === 'ifc') {
+  if (fmt === 'ifc' && config.schemaVersion !== '0.2') {
     const documents = await extractIfcBuildings(inputFilePath, { ...exOpts, levels: opts.levels, file: opts.file, source: opts.source });
     const validator = await createValidator(config.schemaPath), outputs = [];
     for (const document of documents) {
@@ -95,6 +95,7 @@ export async function processBlueprint(opts) {
     }
     return { status: 'processed', route: classification.route, classification: summarize(classification), outputs };
   }
+  else if (fmt === 'ifc') bundles = await extractIfc(inputFilePath, { ...exOpts, levels: opts.levels, file: opts.file, source: opts.source });
   else if (fmt === 'dxf') bundles = await extractDxf(inputFilePath, exOpts);
   else if (fmt === 'svg') bundles = await extractSvg(inputFilePath, exOpts);
   else if (fmt === 'pdf') bundles = await extractPdf(inputFilePath, { ...exOpts, pages: vectorPages });

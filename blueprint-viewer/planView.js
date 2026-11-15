@@ -32,8 +32,8 @@ export class PlanView {
     }
     requestAnimationFrame(()=>this.fit());
   }
-  select(key){for(const [id,node]of this.nodes)node.classList.toggle('selected',id===key);return this.nodes.has(key);}
-  hover(key){for(const[id,node]of this.nodes)node.classList.toggle('hovered',id===key);}
+  select(key){this.nodes.get(this.selectedKey)?.classList.remove('selected');this.nodes.get(key)?.classList.add('selected');this.selectedKey=key;return this.nodes.has(key);}
+  hover(key){this.nodes.get(this.hoveredKey)?.classList.remove('hovered');this.nodes.get(key)?.classList.add('hovered');this.hoveredKey=key;}
   visible(key,on){const node=this.nodes.get(key);if(node)node.style.display=on?'':'none';}
   clear(){this.svg.replaceChildren();this.nodes.clear();this.content=null;this.box=null;}
 }

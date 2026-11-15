@@ -8,12 +8,14 @@
     "postinstall": "node scripts/vendor.mjs",
     "start": "node scripts/start.mjs",
     "test": "node --test test/*.test.mjs",
-    "check": "node --check workspace.js && node --check blueprintViewer.js && node --check ifcGeometry.js"
+    "check": "node scripts/check.mjs",
+    "test:browser": "node scripts/browser-check.mjs"
   },
   "dependencies": {
     "web-ifc": "0.0.68"
   },
   "devDependencies": {
+    "playwright-core": "1.55.0",
     "three": "0.160.0",
     "three-mesh-bvh": "0.7.8"
   }

@@ -1,4 +1,5 @@
 """Isolated, cancellable extraction process; stdout contains only result filenames."""
+
 import json
 import subprocess
 import sys
@@ -14,6 +15,7 @@ def extract(source, destination):
     destination.mkdir(parents=True, exist_ok=True)
     suffix = source.suffix.lower()
     from workspace.source_view import make_preview
+
     make_preview(source, destination.parent)
     if suffix == ".ifc":
         documents = translate_all(str(source))
@@ -31,11 +33,16 @@ def extract(source, destination):
             raise RuntimeError(result.stderr[-4000:])
         if not list(destination.glob("*.json")):
             # Unsupported vision extraction is an explicit outcome, never an empty success.
-            raise RuntimeError("No normalized building was produced; this format may need a configured vision extractor")
+            raise RuntimeError(
+                "No normalized building was produced; this format may need a configured vision extractor"
+            )
     results = sorted(destination.glob("*.json"))
     if results and not (destination.parent / "preview.svg").exists():
         from workspace.source_view import building_preview
-        building_preview(json.loads(results[0].read_text(encoding="utf-8")), destination.parent / "preview.svg")
+
+        building_preview(
+            json.loads(results[0].read_text(encoding="utf-8")), destination.parent / "preview.svg"
+        )
     return [p.name for p in results]
 
 

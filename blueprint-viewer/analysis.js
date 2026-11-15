@@ -2,7 +2,25 @@ import {api} from './workspace.js';
 const $=id=>document.getElementById(id);
 function text(tag,value,cls=''){const node=document.createElement(tag);node.textContent=value;node.className=cls;return node;}
 export function installAnalysis(workspace){
+  const renderAnswer=(answer,index)=>{
+    const response=text('article',answer,'chat-answer');
+    if(index)for(const [id,{entity}]of index.entities)if(answer.includes(id)){
+      const button=text('button',`Locate ${entity.name??entity.category??entity.ifc_class??'component'}`,'ghost small');button.onclick=()=>workspace.locateEntity(id,index);response.append(button);
+    }
+    return response;
+  };
+  workspace.loadAnalysisHistory=async()=>{
+    const meta=workspace.activeDocument,selected=Number($('analysisBuilding').value)||0;
+    $('chatMessages').replaceChildren();if(!meta)return;
+    const index=workspace.indexes.get(meta.id)?.[selected];if(!index)return;
+    try{
+      const history=await api(`/api/documents/${meta.id}/analysis`);
+      if(workspace.activeDocument?.id!==meta.id || Number($('analysisBuilding').value)!==selected)return;
+      for(const entry of history.filter(e=>e.building_id===index.building.building_id))$('chatMessages').append(text('p',entry.question,'chat-question'),renderAnswer(entry.answer,index));
+    }catch(error){workspace.message(`Analysis history unavailable: ${error.message}`);}
+  };
   workspace.locateEntity=(id,index)=>{
+    if(!workspace.activeDocument){workspace.message('Open the source document to locate this component.');return;}
     const entity=index.entities.get(id)?.entity;if(!entity)return;
     const key=`${workspace.activeDocument.id}|${entity.ifc_global_id??id}`;
     const pick=workspace.pickByKey.get(key);
@@ -15,6 +33,7 @@ export function installAnalysis(workspace){
     select.replaceChildren(...indexes.map((index,i)=>new Option(index.building.project.building_name??index.building.project.name??`Building ${i+1}`,String(i))));
     if([...select.options].some(o=>o.value===previous))select.value=previous;
     workspace.renderAnalysisFacts();
+    workspace.loadAnalysisHistory();
   };
   workspace.renderAnalysisFacts=()=>{
     const index=(workspace.indexes.get(workspace.activeDocument?.id)??[])[Number($('analysisBuilding').value)||0];
@@ -35,7 +54,7 @@ export function installAnalysis(workspace){
       button.onclick=()=>workspace.locateEntity(entity.id,index);target.append(button);
     }
   };
-  $('analysisBuilding').onchange=()=>workspace.renderAnalysisFacts();
+  $('analysisBuilding').onchange=()=>{workspace.renderAnalysisFacts();workspace.loadAnalysisHistory();};
   $('analysisOpen').onclick=()=>{
     const on=document.body.classList.toggle('analysis-open');$('analysisPanel').hidden=!on;
     if(on){workspace.refreshAnalysis();workspace.setMode(workspace.activeDocument?.type==='ifc'?'parallel':'2d');}

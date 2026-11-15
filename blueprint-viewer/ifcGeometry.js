@@ -134,8 +134,10 @@ function loadIfcModelInner(api, W, bytes, o, t0) {
   const storeys = new Map();
   for (let i = 0; i < storeyIds.size(); i++) {
     const sid = storeyIds.get(i), s = api.GetLine(modelID, sid);
-    const elev = Number(val(s.Elevation));
-    storeys.set(sid, { expressID: sid, name: String(val(s.Name) ?? val(s.LongName) ?? `storey ${sid}`), elevation: Number.isFinite(elev) ? elev * lenM : null, worldZ: placementZ(api, modelID, s.ObjectPlacement) * lenM, globalId: val(s.GlobalId) });
+    const rawElevation=val(s.Elevation),elev=rawElevation==null?NaN:Number(rawElevation);
+    let building=null,ancestor=parent.get(sid);
+    for(let depth=0;ancestor!=null&&depth<32;depth++){const candidate=api.GetLine(modelID,ancestor);if(candidate?.type===W.IFCBUILDING){building=candidate;break;}ancestor=parent.get(ancestor);}
+    storeys.set(sid, { expressID: sid, name: String(val(s.Name) ?? val(s.LongName) ?? `storey ${sid}`), elevation: Number.isFinite(elev) ? elev * lenM : null, worldZ: placementZ(api, modelID, s.ObjectPlacement) * lenM, globalId: val(s.GlobalId),buildingName:val(building?.Name)??null,buildingGuid:val(building?.GlobalId)??null });
   }
   // vertical datum: storey world z minus its elevation (site / project base height, e.g. +14.3 m), used for elements without a storey
   const datum = [...storeys.values()].map((s) => s.worldZ - (s.elevation ?? s.worldZ)).sort((a, b) => a - b)[0] ?? 0;
@@ -203,8 +205,21 @@ function loadIfcModelInner(api, W, bytes, o, t0) {
     elements.push(el);
   });
 
+  // Native 2D-only products never enter StreamAllMeshes. Retain them separately,
+  // without inventing a solid or adding a duplicate mesh to the scene.
+  const planOnly=[],meshed=new Set(elements.map(e=>e.expressID));
+  for(const type of [W.IFCELEMENT,W.IFCANNOTATION]){
+    const ids=api.GetLineIDsWithType(modelID,type,true);
+    for(let i=0;i<ids.size();i++){
+      const expressID=ids.get(i);if(meshed.has(expressID))continue;
+      const product=api.GetLine(modelID,expressID),native=nativePlan(api,modelID,product,lenM,origin??{x:0,y:0});
+      if(!native.length)continue;
+      const pts=native.flat(),xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+      planOnly.push({expressID,globalId:val(product.GlobalId),name:val(product.Name),ifcType:nameOfType(product.type),storeyId:storeyOf(expressID),ranges:[],nativePlan:native,bbox:{min:[Math.min(...xs),0,Math.min(...ys)],max:[Math.max(...xs),0,Math.max(...ys)]}});
+    }
+  }
   return {
-    modelID, lenM, origin, datum, elements, storeys: [...storeys.values()],
+    modelID, lenM, origin:origin??{x:0,y:0}, datum, elements,planOnly, storeys: [...storeys.values()],
     batches: [...batches.values()].map((b) => ({ key: b.key, storeyId: b.storeyId, group: b.group, category: b.category, rgba: b.rgba, position: b.pos.done(), normal: b.nrm.done(), elementIndex: b.elem.done(), index: b.idx.done() })),
     stats: { elements: elements.length, geometries, triangles, batches: batches.size, ms: Date.now() - t0, unsupported: 0, unsupportedSamples: [] },
   };

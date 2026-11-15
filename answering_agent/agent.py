@@ -3,6 +3,7 @@
 Install: uv add google-genai python-dotenv shapely
 Set GEMINI_API_KEY in .env and optionally GEMINI_MODEL.
 """
+
 from __future__ import annotations
 
 import os
@@ -14,13 +15,13 @@ from google.genai import types
 
 from answering_agent.tools import (
     aggregate,
-    connected_rooms,
+    building_summary,
     check_coverage,
+    connected_rooms,
     detect_gap,
     geometry_operation,
     get_entity,
     query_entities,
-    building_summary,
 )
 
 load_dotenv()
@@ -52,7 +53,8 @@ COVERAGE AND GAP DETECTION:
   an entity ID. Do not confuse lack of evidence with evidence of absence.
 - Do not infer room access from touching polygons.
 ASSUMED VALUES:
-- If a tool marks an entity as assumed_prior, disclose that its information is assumed, not verified from the drawing.
+- If a tool marks an entity as assumed_prior, disclose that its information is assumed,
+  not verified from the drawing.
 - For counts and measurements, disclose if any contributing entities are assumed.
 - Never present assumed information as a confirmed fact.
 RESPONSE STYLE:
@@ -77,6 +79,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
     """Answer one question using deterministic drawing tools and Gemini planning."""
     from translator.building import migrate
     from translator.store import validate
+
     validate(drawing_data)
     drawing_data = migrate(drawing_data)
     validate(drawing_data)
@@ -105,7 +108,9 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         """
         return get_entity(drawing_data, entity_id)
 
-    def aggregate_tool(collection: str, operation: str, measure: str = "area_m2", field: str = "", value: str = "") -> dict:
+    def aggregate_tool(
+        collection: str, operation: str, measure: str = "area_m2", field: str = "", value: str = ""
+    ) -> dict:
         """Count or aggregate active entities, optionally filtering by exact field/value.
         Operations: count, sum, min, max, average. For numeric operations,
         choose a measurement such as area_m2, width_m, height_m or length_m.
@@ -137,8 +142,9 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         """
         return check_coverage(drawing_data, category, region)
 
-    def detect_gap_tool(category: str, entity_ids: list[str] | None = None,
-                        region: list[float] | None = None) -> dict:
+    def detect_gap_tool(
+        category: str, entity_ids: list[str] | None = None, region: list[float] | None = None
+    ) -> dict:
         """Evaluate evidence for an answer about a category and optional pixel
         region. Supply supporting entity IDs if available. Returns
         supported_entities, verified_absence, or gap. A gap means further

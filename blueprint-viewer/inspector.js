@@ -39,7 +39,7 @@ export function installInspector(workspace){
     return null;
   };
   const render=(entity,collection,index,title)=>{
-    $('panel').classList.add('open');document.body.classList.add('inspector-open');requestAnimationFrame(()=>workspace.viewer?.resize());$('panelTitle').textContent=entity?.name??entity?.label??title??'Component';
+    $('panel').classList.add('open');document.body.classList.add('inspector-open');requestAnimationFrame(()=>workspace.viewer?.resize());$('panelTitle').textContent=entity?.name??entity?.label??entity?.properties?.original_name??entity?.properties?.name??entity?.type_name??title??'Component';
     const dl=$('panelRows');dl.replaceChildren();extra.replaceChildren();
     if(!entity){row(dl,'Component information','No validated semantic record is linked to this source element.');return;}
     const type=index.entities.get(entity.type_id)?.entity;
@@ -66,9 +66,19 @@ export function installInspector(workspace){
     const match=workspace.entityForPick(pick);
     render(match?.entity,match?.collection,match?.index,match?.record?.el?.name??'Selected component');
   };
+  workspace.inspectPlanEntity=key=>{
+    if(!key)return false;
+    const [scope,id]=key.split('|');
+    for(const index of workspace.indexes.get(scope)??[]){
+      const match=index.entities.get(index.byGuid.get(id)??id);
+      if(match){workspace.viewer?.select(null);workspace.selectedSource=key;render(match.entity,match.collection,index);$('panelCorrect').hidden=true;$('panelConf').hidden=true;return true;}
+    }
+    return false;
+  };
   workspace.inspectSource=record=>{
     if(!record)return;
     workspace.viewer?.select(null);workspace.selectedSource=record.key;$('panelCorrect').hidden=true;$('panelConf').hidden=true;
+    $('panelNotes').replaceChildren();$('panelFlags').replaceChildren();$('panelPartOf').hidden=true;
     $('panelSource').textContent=workspace.activeDocument?.name??'';
     let match=null;
     for(const index of workspace.indexes.get(workspace.activeDocument?.id)??[])for(const value of index.entities.values()){
@@ -81,7 +91,7 @@ export function installInspector(workspace){
   };
   remove.onclick=()=>{
     const key=workspace.selectedSource;
-    if(key){workspace.removedSource.add(key);workspace.filterSource();workspace.selectedSource=null;}
+    if(key){workspace.removedSource.add(key);workspace.filterSource();workspace.planView.visible(key,false);workspace.selectedSource=null;}
     else {const record=workspace.viewer?.bp.pickIndex.get(workspace.viewer.selected);if(record){workspace.viewer.bp.removedEntities.add(identityOfRecord(record));workspace.viewer.bp.applyEntityVisibility();workspace.viewer.select(null);workspace.syncPlanVisibility();}}
     $('panel').classList.remove('open');document.body.classList.remove('inspector-open');workspace.viewer?.resize();workspace.message('Component removed from this workspace. Original source retained.');
   };

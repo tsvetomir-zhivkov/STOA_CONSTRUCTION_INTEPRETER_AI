@@ -30,12 +30,12 @@ test('create, then merge into the same file', async () => {
   assert.equal(first.outputs.length, 1);
   assert.equal(first.outputs[0].action, 'created');
   assert.equal('usage' in first, false);
-  assert.deepEqual(Object.keys(first.outputs[0]).sort(), ['action', 'drawingId', 'outputJsonPath', 'report']);
+  assert.deepEqual(Object.keys(first.outputs[0]).sort(), ['action', 'buildingId', 'drawingId', 'outputJsonPath', 'report']);
   const created = JSON.parse(await fs.readFile(out, 'utf8'));
   assert.ok(validate(created).valid);
   assert.equal(created.schema_version, '0.3');
-  assert.equal(created.drawing.file, 'data/demo_set/plan.dxf');
-  assert.equal(created.drawing.route, 'dxf');
+  assert.equal(created.drawings[0].file, 'data/demo_set/plan.dxf');
+  assert.equal(created.drawings[0].route, 'dxf');
 
   const second = await mapToSchema({ inputFilePath: fx.dxf, outputJsonPath: out, mode: 'auto', bundles: await extractDxf(fx.dxf, { config, logger: silentLogger }), config, logger: silentLogger });
   assert.equal(second.outputs[0].action, 'merged');

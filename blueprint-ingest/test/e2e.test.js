@@ -17,14 +17,14 @@ const validate = (d) => { const r = versioned.validate(d); if (!r.valid) console
 const run = (input, out) => processBlueprint({ inputFilePath: input, outputJsonPath: path.join(dir, 'out', out), env: { CORRECTIONS_FILE: path.join(dir, 'no-corrections.json') }, logger: silentLogger });
 const read = async (p) => JSON.parse(await fs.readFile(p, 'utf8'));
 
-test('IFC: one valid document per storey with levels, number/name split and psets', async () => {
+test('IFC: one valid document per building with levels, number/name split and psets', async () => {
   const res = await run(fx.ifc, 'house.json');
   assert.equal(res.status, 'processed');
   assert.equal('usage' in res, false);
   assert.equal(res.outputs.length, 1);
   const doc = await read(res.outputs[0].outputJsonPath);
   assert.ok(validate(doc).valid);
-  assert.equal(doc.drawing.route, 'ifc');
+  assert.equal(doc.drawings[0].route, 'ifc');
   assert.equal(doc.levels[0].name, '1.korrus');
   const room = doc.rooms[0];
   assert.deepEqual([room.name, room.number, room.label, room.type], ['Kitchen', '3-1', 'Kitchen (3-1)', 'kitchen']);
@@ -49,19 +49,20 @@ test('SVG: valid document with scale from the 1:100 note', async () => {
   const res = await run(fx.svg, 'svg.json');
   const doc = await read(res.outputs[0].outputJsonPath);
   assert.ok(validate(doc).valid);
-  assert.equal(doc.drawing.route, 'svg');
-  assert.equal(doc.drawing.scale.source, 'scale_note');
+  assert.equal(doc.drawings[0].route, 'svg');
+  assert.equal(doc.drawings[0].scale.source, 'scale_note');
   assert.ok(doc.rooms.length >= 2);
 });
 
-test('vector PDF: one valid document per page', async () => {
+test('vector PDF: one building containing every page', async () => {
   const res = await run(fx.pdf, 'sheet.json');
-  assert.equal(res.outputs.length, 2);
+  assert.equal(res.outputs.length, 1);
   for (const o of res.outputs) {
     const doc = await read(o.outputJsonPath);
     assert.ok(validate(doc).valid);
-    assert.equal(doc.drawing.route, 'vector_pdf');
-    assert.equal(doc.drawing.page_count, 2);
+    assert.equal(doc.drawings[0].route, 'vector_pdf');
+    assert.equal(doc.drawings.length, 2);
+    assert.deepEqual(doc.drawings.map(d=>d.page_index).sort(), [0,1]);
     assert.equal(doc.rooms.find((r) => r.name === 'Kitchen')?.type, 'kitchen');
   }
 });

@@ -3,12 +3,14 @@
 Run: python -m workspace.server --port 4600
 Uses the existing Python/Node pipelines; no new runtime dependencies.
 """
-import hashlib
+
 import argparse
+import hashlib
 import json
 import mimetypes
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -43,6 +45,50 @@ def metadata(folder):
     return json.loads((folder / "document.json").read_text(encoding="utf-8"))
 
 
+def own_process_tree(process):
+    """Put Windows descendants in an owned Job Object (no taskkill privilege required)."""
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+        kernel.CreateJobObjectW.restype = wintypes.HANDLE
+        kernel.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        handle = kernel.CreateJobObjectW(None, None)
+        if not handle or not kernel.AssignProcessToJobObject(handle, int(process._handle)):
+            if handle:
+                kernel.CloseHandle(handle)
+            process.terminate()
+            raise ctypes.WinError(ctypes.get_last_error())
+        process.workspace_job = handle
+    return process
+
+
+def stop_process(process):
+    """Stop the owned extraction tree, including the Node parser child."""
+    if process is None:
+        return
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+
+        handle = getattr(process, "workspace_job", None)
+        if handle:
+            kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+            kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+            kernel.TerminateJobObject(handle, 1)
+            kernel.CloseHandle(handle)
+            process.workspace_job = None
+        elif process.poll() is None:
+            process.terminate()
+    elif process.poll() is None:
+        os.killpg(process.pid, signal.SIGTERM)
+    process.wait(timeout=10)
+
+
 def run_job(identity):
     folder = directory(identity)
     with LOCK:
@@ -53,12 +99,24 @@ def run_job(identity):
         meta.update(state="PROCESSING", error=None)
         atomic(folder / "document.json", meta)
         process = subprocess.Popen(
-            [sys.executable, "-m", "workspace.extract", str(folder / meta["stored_name"]), str(folder / "buildings")],
-            cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True, encoding="utf-8",
+            [
+                sys.executable,
+                "-m",
+                "workspace.extract",
+                str(folder / meta["stored_name"]),
+                str(folder / "buildings"),
+            ],
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            start_new_session=os.name != "nt",
         )
+        own_process_tree(process)
         job["process"] = process
     stdout, stderr = process.communicate()
+    stop_process(process)
     with LOCK:
         if job["cancelled"] or not folder.exists():
             return
@@ -66,11 +124,20 @@ def run_job(identity):
         if process.returncode:
             meta.update(state="ERROR", error=(stderr or stdout)[-4000:])
         else:
-            meta.update(state="READY", buildings=json.loads(stdout.strip().splitlines()[-1]))
+            try:
+                meta.update(state="READY", buildings=json.loads(stdout.strip().splitlines()[-1]))
+            except (ValueError, IndexError):
+                meta.update(state="ERROR", error="Extractor did not return a valid document list")
         meta["has_preview"] = (folder / "preview.svg").exists() or (folder / "thumbnail.png").exists()
         docs = [json.loads(p.read_text(encoding="utf-8")) for p in (folder / "buildings").glob("*.json")]
-        meta["building_names"] = [d.get("project", {}).get("building_name") for d in docs if d.get("project", {}).get("building_name")]
-        meta["floor_names"] = [level["name"] for d in docs for level in d.get("levels", []) if level.get("name")]
+        meta["building_names"] = [
+            d.get("project", {}).get("building_name")
+            for d in docs
+            if d.get("project", {}).get("building_name")
+        ]
+        meta["floor_names"] = [
+            level["name"] for d in docs for level in d.get("levels", []) if level.get("name")
+        ]
         atomic(folder / "document.json", meta)
         job["process"] = None
 
@@ -80,7 +147,7 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(VIEWER), **kwargs)
 
     def log_message(self, format, *args):
-        if len(args)>1 and str(args[1]).startswith(("4", "5")):
+        if len(args) > 1 and str(args[1]).startswith(("4", "5")):
             super().log_message(format, *args)
 
     def reply(self, value, status=200):
@@ -90,7 +157,10 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
-        self.wfile.write(data)
+        try:
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass  # Browser cancelled a document session.
 
     def same_origin(self):
         origin = self.headers.get("Origin")
@@ -112,7 +182,9 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             if path == "/api/documents":
                 with LOCK:
-                    docs = [metadata(p) for p in DATA.iterdir() if p.is_dir() and (p / "document.json").exists()]
+                    docs = [
+                        metadata(p) for p in DATA.iterdir() if p.is_dir() and (p / "document.json").exists()
+                    ]
                 return self.reply(docs)
             parts = path.strip("/").split("/")
             folder = directory(parts[2])
@@ -120,12 +192,18 @@ class Handler(SimpleHTTPRequestHandler):
             if len(parts) == 3:
                 return self.reply(meta)
             if parts[3] == "buildings":
-                docs = [json.loads((folder / "buildings" / name).read_text(encoding="utf-8")) for name in meta.get("buildings", [])]
+                docs = [
+                    json.loads((folder / "buildings" / name).read_text(encoding="utf-8"))
+                    for name in meta.get("buildings", [])
+                ]
                 for document in docs:
                     validate(document)
                 return self.reply(docs)
             if parts[3] == "source-info":
                 return self.reply(json.loads((folder / "preview.json").read_text(encoding="utf-8")))
+            if parts[3] == "analysis":
+                file = folder / "analysis.json"
+                return self.reply(json.loads(file.read_text(encoding="utf-8")) if file.exists() else [])
             if parts[3] in ("source", "preview", "thumbnail"):
                 file = folder / (meta["stored_name"] if parts[3] == "source" else "preview.svg")
                 if parts[3] == "thumbnail" and (folder / "thumbnail.png").exists():
@@ -134,10 +212,15 @@ class Handler(SimpleHTTPRequestHandler):
                     return self.reply({"error": "Preview not generated"}, 404)
                 data = file.read_bytes()
                 self.send_response(200)
-                self.send_header("Content-Type", mimetypes.guess_type(file.name)[0] or "application/octet-stream")
+                self.send_header(
+                    "Content-Type", mimetypes.guess_type(file.name)[0] or "application/octet-stream"
+                )
                 self.send_header("Content-Length", str(len(data)))
                 self.send_header("X-Content-Type-Options", "nosniff")
-                self.send_header("Content-Security-Policy", "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:")
+                self.send_header(
+                    "Content-Security-Policy",
+                    "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:",
+                )
                 self.end_headers()
                 self.wfile.write(data)
                 return
@@ -161,7 +244,17 @@ class Handler(SimpleHTTPRequestHandler):
                 folder.mkdir(parents=True)
                 stored = "source" + suffix
                 (folder / stored).write_bytes(payload)
-                meta = {"id": identity, "name": name, "stored_name": stored, "type": suffix[1:], "size": len(payload), "sha256": hashlib.sha256(payload).hexdigest(), "state": "UPLOADING", "buildings": [], "error": None}
+                meta = {
+                    "id": identity,
+                    "name": name,
+                    "stored_name": stored,
+                    "type": suffix[1:],
+                    "size": len(payload),
+                    "sha256": hashlib.sha256(payload).hexdigest(),
+                    "state": "UPLOADING",
+                    "buildings": [],
+                    "error": None,
+                }
                 with LOCK:
                     atomic(folder / "document.json", meta)
                     JOBS[identity] = {"cancelled": False, "process": None}
@@ -173,16 +266,25 @@ class Handler(SimpleHTTPRequestHandler):
                 body = json.loads(self.body(1024 * 1024))
                 meta = metadata(folder)
                 index = int(body.get("building", 0))
-                document = json.loads((folder / "buildings" / meta["buildings"][index]).read_text(encoding="utf-8"))
+                document = json.loads(
+                    (folder / "buildings" / meta["buildings"][index]).read_text(encoding="utf-8")
+                )
                 validate(document)
                 from answering_agent.agent import answer_question
+
                 answer = answer_question(str(body["question"]), document)
-                result = {"question": str(body["question"]), "answer": answer, "building_id": document["building_id"]}
+                result = {
+                    "question": str(body["question"]),
+                    "answer": answer,
+                    "building_id": document["building_id"],
+                }
                 with LOCK:
                     if not folder.exists():
                         return self.reply({"error": "Document was removed"}, 409)
                     history_path = folder / "analysis.json"
-                    history = json.loads(history_path.read_text(encoding="utf-8")) if history_path.exists() else []
+                    history = (
+                        json.loads(history_path.read_text(encoding="utf-8")) if history_path.exists() else []
+                    )
                     history.append(result)
                     atomic(history_path, history)
                 return self.reply(result)
@@ -201,8 +303,7 @@ class Handler(SimpleHTTPRequestHandler):
                 if job:
                     job["cancelled"] = True
                     if job["process"] and job["process"].poll() is None:
-                        job["process"].terminate()
-                        job["process"].wait(timeout=10)
+                        stop_process(job["process"])
                 # folder is a validated UUID child of DATA, never a user path.
                 shutil.rmtree(folder)
                 JOBS.pop(identity, None)
@@ -220,7 +321,10 @@ def main():
         if folder.is_dir() and (folder / "document.json").exists():
             meta = metadata(folder)
             if meta["state"] in ("UPLOADING", "PROCESSING"):
-                meta.update(state="ERROR", error="Processing was interrupted by server shutdown; upload again to retry")
+                meta.update(
+                    state="ERROR",
+                    error="Processing was interrupted by server shutdown; upload again to retry",
+                )
                 atomic(folder / "document.json", meta)
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     print(f"Stoa workspace: http://127.0.0.1:{args.port}", flush=True)
@@ -232,7 +336,7 @@ def main():
         server.server_close()
         for job in JOBS.values():
             if job["process"] and job["process"].poll() is None:
-                job["process"].terminate()
+                stop_process(job["process"])
 
 
 if __name__ == "__main__":

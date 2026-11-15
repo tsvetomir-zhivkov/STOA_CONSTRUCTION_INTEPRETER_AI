@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Stoa ? Building workspace</title>
+  <title>Stoa | Building workspace</title>
   <script type="importmap">
     {
       "imports": {
@@ -332,6 +332,7 @@
         for (const c of checks) c.checked = true;
         explode.value = '0'; sep.value = '0'; cut.value = cut.max;
         $('explodeOut').textContent = 'off'; $('sepOut').textContent = 'off'; $('cutOut').textContent = 'off';
+        for(const id of ['fileList','levelList','categoryList','legendList','contentsBody','unitsBody','banners'])$(id).replaceChildren();
         return;
       }
       document.body.classList.add('viewing');
@@ -350,18 +351,24 @@
         return li;
       }));
       // levels
-      $('levelList').replaceChildren(...sum.levels.map((lv) => {
+      const buildings=new Map();
+      for(const level of sum.levels){const group=buildings.get(level.buildingKey)??[];group.push(level);buildings.set(level.buildingKey,group);}
+      $('levelList').replaceChildren(...[...buildings.values()].flatMap(levels=>{
+        const title=Object.assign(document.createElement('li'),{className:'building-heading',textContent:levels[0].buildingName});
+        return [title,...levels.map((lv) => {
         const li = document.createElement('li');
         const cb = Object.assign(document.createElement('input'), { type: 'checkbox', checked: !viewer.bp.view.hiddenLevels.has(lv.key) });
-        cb.addEventListener('change', () => viewer.setLevelVisible(lv.key, cb.checked));
+        cb.addEventListener('change', () => {viewer.bp.view.isolateLevel=null;isolatedLevel=null;viewer.setLevelVisible(lv.key, cb.checked);render(viewer.summary());workspace.syncPlanVisibility();});
         const label = Object.assign(document.createElement('label'), { className: 'check' });
         label.append(cb, ` ${lv.name} · ${lv.known ? `${lv.elevation >= 0 ? '+' : ''}${lv.elevation.toFixed(2)} m` : 'elevation unknown (0 m)'}`);
         const iso = Object.assign(document.createElement('button'), { className: 'small ghost', type: 'button', textContent: isolatedLevel === lv.key ? 'Show all' : 'Isolate' });
         iso.addEventListener('click', () => { isolatedLevel = isolatedLevel === lv.key ? null : lv.key; viewer.isolateLevel(isolatedLevel); render(viewer.summary()); });
-        li.append(label, iso);
+        const plan=Object.assign(document.createElement('button'),{className:'small ghost',textContent:'Plan'});
+        plan.onclick=()=>{const floor=workspace.floors.find(f=>f.levelKey===lv.key);if(floor){workspace.setMode('parallel');workspace.setFloor(floor.key);}};
+        li.append(label,iso,plan);
         for (const n of lv.notes) li.append(Object.assign(document.createElement('span'), { className: 'warn', textContent: n }));
         return li;
-      }));
+      })];}));
       $('categoryList').replaceChildren(...(sum.categories ?? []).map(c=>{
         const label=document.createElement('label'); label.className='check';
         const checkbox=Object.assign(document.createElement('input'),{type:'checkbox',checked:c.visible});

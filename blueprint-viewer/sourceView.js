@@ -7,9 +7,10 @@ export function sanitizeSvg(text){
   for(const node of document.querySelectorAll('*')){
     for(const attribute of [...node.attributes]){
       const name=attribute.name.toLowerCase(),value=attribute.value.trim();
-      if(name.startsWith('on') || name==='xml:base' || (name.endsWith('href') && !value.startsWith('#') && !/^data:image\/(png|jpeg|webp);/i.test(value)) || /url\(\s*['"]?(?!#)/i.test(value))node.removeAttribute(attribute.name);
+      const externalUrl=[...value.matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)/gi)].some(m=>!m[2].trim().startsWith('#'));
+      if(name.startsWith('on') || name==='xml:base' || (name.endsWith('href') && !value.startsWith('#') && !/^data:image\/(png|jpeg|webp);/i.test(value)) || externalUrl)node.removeAttribute(attribute.name);
     }
-    if(node.localName==='style')node.textContent=node.textContent.replace(/@import[^;]+;?/gi,'').replace(/url\(\s*['"]?(?!#)[^)]*\)/gi,'none');
+    if(node.localName==='style')node.textContent=node.textContent.replace(/@import[^;]+;?/gi,'').replace(/url\(\s*(['"]?)(.*?)\1\s*\)/gi,(match,quote,url)=>url.trim().startsWith('#')?match:'none');
   }
   return document.documentElement;
 }

@@ -155,7 +155,7 @@ test('A6 + A7 end to end: a DXF re-run with a correction file; rooms keep a null
   const before = JSON.parse(await fs.readFile(out, 'utf8'));
   const fixture = before.objects.find((o) => o.category === 'toilet' || o.category === 'other');
   assert.ok(before.rooms.every((r) => r.height_m === null));
-  await fs.writeFile(path.join(dir, 'corr.json'), JSON.stringify({ [`ref:${before.drawing.file}#${fixture.provenance.source_ref}`]: { category: 'bathtub' } }));
+  await fs.writeFile(path.join(dir, 'corr.json'), JSON.stringify({ [`ref:${before.drawings[0].file}#${fixture.provenance.source_ref}`]: { category: 'bathtub' } }));
   await run({ CORRECTIONS_FILE: path.join(dir, 'corr.json') });
   const after = JSON.parse(await fs.readFile(out, 'utf8'));
   const active = after.objects.filter((o) => o.status === 'active');

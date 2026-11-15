@@ -353,7 +353,7 @@ class IfcModel {
           const zMin = Math.min(...ends.map((p) => p[2]));
           return { ring: ring.map((p) => [p[0], p[1], zMin]), depth: Math.max(...ends.map((p) => p[2])) - zMin || null, source: 'swept' };
         }
-        return { ring: prof.map((q) => apply3(pos, [q[0], q[1], 0])), depth: depthU || null, source: 'extrusion' };
+        return { ring: prof.map((q) => apply3(pos, [q[0], q[1], 0])), depth: depthU || null, extrusion:dLocal.map(v=>v*depthU), source: 'extrusion' };
       }
       case 'IFCBOOLEANCLIPPINGRESULT':
       case 'IFCBOOLEANRESULT':

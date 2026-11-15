@@ -51,6 +51,7 @@ export class PlanCache {
     if(this.entries.has(key))return this.entries.get(key);
     const model=source.model;
     const data={elements:model.elements.map(e=>({globalId:e.globalId,expressID:e.expressID,name:e.name,ifcType:e.ifcType,storeyId:e.storeyId,bbox:e.bbox,ranges:e.ranges,nativePlan:e.nativePlan})),batches:model.batches.map(b=>({key:b.key,position:source.meshes.find(m=>m.userData.ifc.batch.key===b.key)?.userData.explodeBase ?? b.position,index:source.meshes.find(m=>m.userData.ifc.batch.key===b.key)?.userData.originalIndex ?? b.index})),storeys:model.storeys,storeyId:storey.expressID,elevation:storey.elevation ?? 0,cutHeight};
+    data.elements.push(...(model.planOnly??[]));
     const promise=new Promise((resolve,reject)=>{
       const worker=new Worker(new URL('./plan.worker.js',import.meta.url),{type:'module'});
       const handle={cancel:()=>{worker.terminate();reject(new DOMException('Plan cancelled','AbortError'));}};

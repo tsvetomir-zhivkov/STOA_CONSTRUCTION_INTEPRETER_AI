@@ -156,6 +156,10 @@ export function normalizeIfc(model, filePath, opts, footprint) {
         item.finishes = [['floor', 'FloorCovering'], ['wall', 'WallCovering'], ['ceiling', 'CeilingCovering']].filter(([, key]) => typeof flat[key] === 'string').map(([surface, key]) => ({ surface, description: flat[key], source_refs: item.source_refs }));
       } else if (bucket === 'walls') {
         Object.assign(item, { length_m: q('Length'), thickness_m: q('Width'), height_m: q('Height') ?? fp?.depthM ?? null, net_side_area_m2: q('NetSideArea'), gross_area_m2: q('GrossSideArea'), net_volume_m3: q('NetVolume'), gross_volume_m3: q('GrossVolume'), is_external: typeof flat.IsExternal === 'boolean' ? flat.IsExternal : null, room_ids: [] });
+        if(item.thickness_m==null && item.material_layers.length && item.material_layers.every(l=>l.thickness_m!=null)){
+          item.thickness_m=item.material_layers.reduce((n,l)=>n+l.thickness_m,0);
+          item.quantities.push({name:'thickness_m',value:item.thickness_m,unit:'m',origin:'calculated',method:'sum of IfcMaterialLayer.LayerThickness',source_refs:item.source_refs});
+        }
       } else if (bucket === 'openings') {
         item.kind = f.isA(e, 'IFCDOOR') ? 'door' : f.isA(e, 'IFCWINDOW') ? 'window' : 'void'; item.is_physical = item.kind !== 'void';
         item.width_m = f.attr(e, 'OverallWidth') == null ? null : f.attr(e, 'OverallWidth') * length;
@@ -191,6 +195,14 @@ export function normalizeIfc(model, filePath, opts, footprint) {
       }
     }
     const known = new Set([out.building_id, ...indexed.keys(), ...out.types.map(t => t.id), ...out.systems.map(s => s.id)]);
+    const unresolved=[];
+    for(const rel of model.e.values())if(f.isA(rel,'IFCRELSPACEBOUNDARY')){
+      const room=indexed.get(f.id(f.get(f.attr(rel,'RelatingSpace')))),target=f.attr(rel,'RelatedBuildingElement'),entity=f.get(target);
+      if(room && !known.has(f.id(entity))){
+        const record={field:'boundary_ids',global_id:f.attr(entity,'GlobalId'),ifc_class:entity?.type??null,express_id:target?.ref??null,reason:!entity?'entity_not_in_file':f.isA(entity,'IFCVIRTUALELEMENT')?'not_emitted_class':'outside_document'};
+        (room.properties.unresolved_references??=[]).push(record);unresolved.push(record);
+      }
+    }
     const add = (e, kind, a, b) => { const from = f.id(f.get(a)), to = f.id(f.get(b)); if (known.has(from) && known.has(to)) out.relationships.push({ id: `ifc-rel:${f.attr(e, 'GlobalId')}:${from}:${to}`, kind, from_id: from, to_id: to, source_refs: [sourceRef(f.attr(e, 'GlobalId'))] }); };
     for (const e of model.e.values()) {
       if (f.isA(e, 'IFCRELAGGREGATES') || f.isA(e, 'IFCRELNESTS')) for (const child of f.attr(e, 'RelatedObjects') ?? []) add(e, 'aggregates', f.attr(e, 'RelatingObject'), child);
@@ -225,6 +237,7 @@ export function normalizeIfc(model, filePath, opts, footprint) {
     }
     out.drawings[0].level_ids = out.levels.map(l => l.id);
     out.coverage = ['rooms', 'walls', 'doors', 'windows', 'fixtures'].map(category => ({ category, drawing_id: did, region: 'page', status: 'analysed', extractor: 'vector_ifc', confidence: 1, note: 'All source instances retained, including those without geometry' }));
+    if(unresolved.length)out.coverage.push({category:'relationships',drawing_id:did,region:'page',status:'partial',extractor:'vector_ifc',confidence:1,note:`${unresolved.length} space-boundary reference(s) unresolved: ${[...new Set(unresolved.map(u=>u.ifc_class??'unknown'))].map(c=>`${c} ${unresolved.filter(u=>(u.ifc_class??'unknown')===c).length}`).join(', ')}`});
     out.history = [{ extractor: 'vector_ifc', action: 'extract', note: `${model.schema}; complete building; source units normalized to SI` }];
     return out;
   });

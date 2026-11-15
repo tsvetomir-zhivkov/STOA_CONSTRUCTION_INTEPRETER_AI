@@ -805,13 +805,14 @@ export class BlueprintScene {
     if (!doc || typeof doc !== 'object' || Array.isArray(doc)) throw new Error('not a drawing JSON object');
     if (!doc.drawing && !['rooms', 'walls', 'openings', 'objects'].some((k) => Array.isArray(doc[k]))) throw new Error('not a blueprint-ingest drawing JSON (no drawing, rooms, walls, openings or objects)');
     doc = renderProjection(doc);
-    const vocabulary = normalizeVocabulary(doc);
+    const vocabulary = doc._canonical ? {changed:[],unmapped:[]} : normalizeVocabulary(doc);
     const frame = docFrame(doc);
     const report = fileReport(doc);
     if (!this.origin) { const b = worldBounds(doc, frame); if (b) this.origin = { x: Math.round((b[0] + b[2]) / 2), y: Math.round((b[1] + b[3]) / 2) }; }
     const src = { id: ++this.nextSourceId, name, kind: 'json', doc, frame, report, vocabulary, scope };
     this.sources.push(src);
-    this.assemble();
+    try { this.assemble(); }
+    catch(error) { this.remove(src.id); throw error; }
     return src;
   }
 
@@ -827,6 +828,7 @@ export class BlueprintScene {
     const c = model.elements.reduce((b, e) => [Math.min(b[0], e.bbox.min[0]), Math.min(b[1], e.bbox.min[2]), Math.max(b[2], e.bbox.max[0]), Math.max(b[3], e.bbox.max[2])], [Infinity, Infinity, -Infinity, -Infinity]);
     const meshes = ifcMeshes(model, { lift: GROUP_LIFT, centre: { x: (c[0] + c[2]) / 2 || 0, z: (c[1] + c[3]) / 2 || 0 }, categoryColor: Object.fromEntries(Object.entries(FIXTURE_STYLE).map(([k, v]) => [k, v.color])) });
     const heavy = model.stats.triangles > 500000;
+    try {
     for (const m of meshes) {
       // BVH so picking stays fast on millions of triangles. `indirect`: the BVH must NOT reorder the index buffer, because every
       // element keeps its own index ranges (highlight overlays, outlines)
@@ -841,10 +843,16 @@ export class BlueprintScene {
     this.sources.push(src);
     this.assemble();
     return src;
+    } catch(error) {
+      const src=this.sources.find(s=>s.model===model);
+      if(src){src.api=null;this.remove(src.id);}
+      else {for(const mesh of meshes){mesh.geometry.disposeBoundsTree?.();mesh.geometry.dispose();mesh.material.dispose();}if(!this.sources.length)this.origin=null;}
+      throw error;
+    }
   }
 
   /** remove a source; an IFC model is closed in web-ifc (its WASM memory is released for reuse) */
-  remove(id) {
+  remove(id, rebuild = true) {
     const i = this.sources.findIndex((s) => s.id === id);
     if (i < 0) return;
     const [s] = this.sources.splice(i, 1);
@@ -853,10 +861,10 @@ export class BlueprintScene {
       s.api?.CloseModel(s.model.modelID);
     }
     if (!this.sources.length) this.origin = null;
-    this.assemble();
+    if(rebuild)this.assemble();
   }
 
-  clearAll() { for (const s of [...this.sources]) this.remove(s.id); }
+  clearAll() { for (const s of [...this.sources]) this.remove(s.id,false); this.assemble(); }
 
   // ---- assembly --------------------------------------------------------------------------------------------
 
@@ -872,10 +880,13 @@ export class BlueprintScene {
     const levelFor = (name, elevation, src, known = Number.isFinite(elevation), identity = null) => {
       const scope = src.scope ?? String(src.doc?.drawing?.read_from ?? src.name).replaceAll('\\','/').split('/').pop().replace(/\.json$/i,'');
       const key = `${scope}:${identity ?? levelKeyOf(name)}`;
+      const storey=src.model?.storeys.find(s=>(s.globalId??s.expressID)===identity);
+      const buildingName=src.doc?.project?.building_name??storey?.buildingName??src.name;
       let lv = levels.get(key);
       if (!lv) {
         lv = { key, name: name ?? '(no level)', elevation: known ? elevation : 0, known, sources: new Set(), group: new THREE.Group(), cats: {}, notes: new Set(), rank: 0 };
         lv.group.name = `level ${lv.name}`;
+        lv.buildingName=buildingName;lv.buildingKey=`${scope}:${storey?.buildingGuid??src.doc?.building_id??buildingName}`;
         for (const g of GROUP_NAMES) { const c = new THREE.Group(); c.name = g; lv.cats[g] = c; lv.group.add(c); }
         levels.set(key, lv);
       } else if (known && !lv.known) { lv.elevation = elevation; lv.known = true; }
@@ -1144,7 +1155,7 @@ export class BlueprintScene {
         report: s.report ?? null, contents: s.report ? contentsSummary(s.report) : null, vocabulary: s.vocabulary ? { changed: s.vocabulary.changed.length, unmapped: s.vocabulary.unmapped } : null,
         ifc: s.kind === 'ifc' ? { stats: s.model.stats, storeys: s.model.storeys.map((x) => ({ name: x.name, elevation: x.elevation })), groups: countBy(s.model.elements, (e) => e.group), types: topTypes(s.model.elements, 8) } : null,
       })),
-      levels: [...this.levels.values()].sort((a, b) => a.rank - b.rank).map((lv) => ({ key: lv.key, name: lv.name, elevation: lv.elevation, known: lv.known, notes: [...lv.notes], visible: lv.group.visible, sources: [...lv.sources] })),
+      levels: [...this.levels.values()].sort((a, b) => a.rank - b.rank).map((lv) => ({ key: lv.key, name: lv.name,buildingName:lv.buildingName,buildingKey:lv.buildingKey, elevation: lv.elevation, known: lv.known, notes: [...lv.notes], visible: lv.group.visible, sources: [...lv.sources] })),
       legend: this.legend(),
       unitCheck: this.unitCheck,
     };
@@ -1454,6 +1465,7 @@ export class BlueprintViewer {
   dropHidden() {
     if (this.hovered && !this.bp.isShown(this.hovered)) this.setHovered(null);
     if (this.selected && !this.bp.isShown(this.selected)) this.select(null);
+    this.onVisibilityChange?.();
   }
 
   // ---- corrections (JSON elements only: a lookup table for blueprint-ingest) --------------------------------
@@ -1514,6 +1526,7 @@ export class BlueprintViewer {
   setHovered(id) {
     if (id === this.hovered) return;
     this.hovered = id;
+    this.onHover?.(id);
     this.renderer.domElement.style.cursor = id ? 'pointer' : '';
     this.refreshTints();
   }

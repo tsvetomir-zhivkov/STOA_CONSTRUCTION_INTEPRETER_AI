@@ -3,7 +3,8 @@
     python -m translator.to_v03                      # index/ -> index_v03/ (same relative paths)
     python -m translator.to_v03 a.json b.json --out DIR [--now 2026-11-14T00:00:00Z]
 
-index/ itself is never modified (v0.2 stays the hand-off contract). Every output is validated against the v0.3 schema
+The input directory is never modified. Outputs use the historical drawing-based v0.3 schema.
+The workspace instead reads the canonical building contract through translator.store.
 and the relationship check before it is written; an invalid document raises and nothing is written for it.
 """
 
@@ -56,7 +57,11 @@ def main(argv: list[str] | None = None) -> int:
         inputs, base = [Path(x) for x in a.inputs], None
     else:
         base = INDEX_DIR
-        inputs = [p for p in sorted(INDEX_DIR.rglob("*.json")) if "_raw" not in p.relative_to(INDEX_DIR).parts] if INDEX_DIR.exists() else []
+        inputs = (
+            [p for p in sorted(INDEX_DIR.rglob("*.json")) if "_raw" not in p.relative_to(INDEX_DIR).parts]
+            if INDEX_DIR.exists()
+            else []
+        )
     out_dir = Path(a.out) if a.out else INDEX_V03_DIR
     written = convert(inputs, out_dir, base, a.now)
     print(f"{len(written)} document(s) written to {out_dir}", file=sys.stderr)

@@ -76,7 +76,7 @@ No viewer build/lint/typecheck scripts exist initially; start uses npx serve.
 - [x] 7. Dedicated DXF/SVG environments.
 - [x] 8. Component inspection and removal.
 - [x] 9. Reference-based UI, AI analysis and document library.
-- [ ] 10. Integration tests, performance/lifecycle verification and architecture docs.
+- [x] 10. Integration tests, performance/lifecycle verification and architecture docs.
 
 Stage 2: generation-owned serialized imports, visibility restoration, teardown, stale-state reset and parser failure cleanup; session tests pass. Full cross-format browser matrix remains a stage 10 gate.
 
@@ -89,3 +89,7 @@ Stage 6: real Chrome verification imported the existing two-storey IFC fixture t
 Stage 7: DXF uses installed ezdxf SVG rendering with original handles, layers, transforms and original-file retention; SVG keeps sanitized native vectors/groups. Chrome verified DXF import and layer extraction; uncertain classifications remain explicitly unclassified.
 
 Stage 8: canonical category-aware inspector, SI measurements, null/zero distinction, material layers and provenance; identifiers collapsed; non-destructive component removal and restoration. Formatter regression tests pass.
+
+Stage 9: local workspace redesign, actual document gallery, source-linked analysis and responsive panels.
+
+Stage 10: 86 Python tests, 51 ingestion tests, 7 viewer tests and 18 core Chrome scenarios plus a targeted native-only IFC scenario passed; Ruff and application syntax checks passed. See bim-workspace-architecture.md for exact commands, measured resource/performance evidence, skipped dataset checks and live-AI limits.
