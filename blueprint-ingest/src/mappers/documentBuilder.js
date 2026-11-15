@@ -184,7 +184,7 @@ export function buildDocument(bundle, opts) {
     return {
       ...base(id, r, 0.6, r.floorElevationM != null ? { floor_elevation_m: r.floorElevationM } : {}),
       name: null, number: r.rawNumber ?? null, label: null, type: 'unknown', subtype: null, unit_id: null, parent_room_id: null, is_outdoor: false,
-      polygon_px: r.polygonPx ?? null, polygon_m: null, holes_px: [], holes_m: [],
+      polygon_px: r.polygonPx ?? null, polygon_m: null, holes_px: r.holesPx ?? [], holes_m: [],
       area_m2: null, area_written_m2: r.writtenAreaM2 ?? null, area_computed_m2: null, height_m: r.heightM ?? null, volume_m3: null, text_ids: [],
     };
   });
@@ -203,7 +203,7 @@ export function buildDocument(bundle, opts) {
     t.room_id = r.id;
     const slot = byRoom.get(r.id);
     if (t.role === 'area') slot.areas.push(t);
-    else if (!t.role && looksLikeRoomNumber(t.text)) slot.numbers.push(t);
+    else if (!t.role && (looksLikeRoomNumber(t.text) || numberCaption(t.text))) slot.numbers.push(t);
     else if (!t.role && hasWord(t.text) && t.text.length <= 40) slot.names.push(t);
   }
 
@@ -224,7 +224,7 @@ export function buildDocument(bundle, opts) {
     if (numbers.length && r.number == null) {
       const pick = [...numbers].sort((a, b) => dist(a) - dist(b))[0];
       pick.role = 'room_number';
-      r.number = pick.text.trim();
+      r.number = numberCaption(pick.text) ?? pick.text.trim();
       r.text_ids.push(pick.id);
     }
     if (areas.length) {
@@ -243,6 +243,9 @@ export function buildDocument(bundle, opts) {
         pendingNames.push({ id: r.id, raw });
       }
     }
+    // an outline the extractor marked as a shaft / void (X marker), when its label did not say otherwise
+    const hint = bundle.rooms.find((b) => ids.rooms.get(b.key) === r.id)?.typeHint;
+    if (hint && (r.type === 'unknown' || r.type === 'other')) applyRoomType(r, hint, { ...(r.properties?.name_resolution ?? {}), resolved_by: 'void_marker' });
     r.label = roomLabel(r);
   }
 
@@ -286,16 +289,64 @@ export function buildDocument(bundle, opts) {
     if (!r.flags.includes('inferred_from_contents')) r.flags.push('inferred_from_contents');
   }
 
-  // ---- units (apartments) from unit-label texts -----------------------------------------------------------------------------------
+  // ---- an UNLABELLED room holding sanitary fixtures is a wet room (DXF only) ------------------------------------------------------
+  // Swiss Dwellings draw bathrooms without a name: the only evidence is what stands inside. Only rooms with no name and type
+  // "unknown" change; the name stays null (questions about labels still see no label), the type is flagged as inferred.
+  //   toilet + bathtub or shower -> bathroom;  bathtub or shower without a toilet -> bathroom;  toilet (+ washbasin) -> wc
+  if (bundle.format === 'dxf') {
+    const inRoom = new Map();
+    for (const o of objects) if (o.room_id && ['toilet', 'bathtub', 'shower', 'sink'].includes(o.category)) {
+      if (!inRoom.has(o.room_id)) inRoom.set(o.room_id, new Set());
+      inRoom.get(o.room_id).add(o.category);
+    }
+    for (const r of rooms) {
+      const has = inRoom.get(r.id);
+      if (!has || r.name || r.type !== 'unknown') continue;
+      const wet = has.has('bathtub') || has.has('shower');
+      const type = wet ? 'bathroom' : has.has('toilet') ? 'wc' : null;
+      if (!type) continue; // a washbasin alone (kitchen-like niche, corridor basin) says too little
+      applyRoomType(r, type, { ...(r.properties?.name_resolution ?? {}), resolved_by: 'contains_fixtures', contains: [...has].sort().join(', '), type_before: 'unknown' });
+      if (!r.flags.includes('inferred_from_contents')) r.flags.push('inferred_from_contents');
+      r.confidence = Math.min(r.confidence, 0.7);
+    }
+  }
+
+  // ---- units (apartments) ---------------------------------------------------------------------------------------------------------
+  // 1. outlines (DXF UNIT_OUTLINE): one unit per outline, labelled by the unit-label text inside it; an outline without a label
+  //    is kept as a unit flagged "unlabelled" (shared or non-apartment space), several labels inside one outline -> check_this.
+  // 2. unit-label texts outside every outline (formats without outlines): a label-only unit, as before.
   const units = [];
-  for (const [tid, label] of unitLabels) {
-    if (units.some((u) => u.label === label)) continue;
-    const t = texts.find((x) => x.id === tid);
+  const labelTexts = [...unitLabels].map(([tid, label]) => ({ tid, label, t: texts.find((x) => x.id === tid) })).filter((l) => l.t);
+  const claimed = new Set();
+  for (const u of bundle.units ?? []) {
+    if (!hasPoly(u.polygonPx)) continue;
+    const inside = labelTexts.filter((l) => pointInPolygon(center(l.t.bbox_px), u.polygonPx));
+    for (const l of inside) claimed.add(l.tid);
+    const first = inside[0] ?? null;
+    const b = base(mk('unit_', u.key), u, 0.9);
+    if (first) b.provenance.details = { ...(b.provenance.details ?? {}), label_text: first.tid };
+    else b.confidence = Math.min(b.confidence, 0.5);
+    b.flags.push(...(!first ? ['unlabelled'] : inside.length > 1 ? ['check_this'] : []));
+    units.push({ ...b, level_id: levelId, label: first?.label ?? '', label_raw: first?.t.text ?? null, polygon_px: u.polygonPx, polygon_m: null, area_m2: null });
+  }
+  for (const { tid, label, t } of labelTexts) {
+    if (claimed.has(tid) || units.some((u) => u.label === label)) continue;
     units.push({
       id: mk('unit_', label), confidence: 0.6, provenance: { extractor: extId, source_ref: tid, details: { from_text: tid } },
       status: 'active', superseded_by: null, level_id: levelId, flags: [],
       label, label_raw: t.text, polygon_px: null, polygon_m: null, area_m2: null,
     });
+  }
+  // rooms -> the smallest unit outline containing a point inside the room, within 5 cm of its outline (outlines and room
+  // polygons are drawn separately and touch); nested outlines: the most specific one
+  const unitAreas = units.filter((u) => hasPoly(u.polygon_px)).map((u) => ({ u, a: Math.abs(polygonArea(u.polygon_px)) })).sort((x, y) => x.a - y.a);
+  const touchPx = bundle.scale?.metresPerPx > 0 ? 0.05 / bundle.scale.metresPerPx : 0;
+  const nearOutline = (pt, poly) => poly.some((a, i) => { const b = poly[(i + 1) % poly.length], dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
+    const t = l2 ? Math.max(0, Math.min(1, ((pt[0] - a[0]) * dx + (pt[1] - a[1]) * dy) / l2)) : 0; return Math.hypot(pt[0] - a[0] - t * dx, pt[1] - a[1] - t * dy) <= touchPx; });
+  if (unitAreas.length) for (const r of rooms) {
+    const pt = interiorPoint(r.polygon_px);
+    const hit = pt && unitAreas.find(({ u }) => pointInPolygon(pt, u.polygon_px) || (touchPx && nearOutline(pt, u.polygon_px)));
+    if (hit) r.unit_id = hit.u.id;
   }
 
   // ---- scale ------------------------------------------------------------------------------------------------------------------------
@@ -347,6 +398,26 @@ export function buildDocument(bundle, opts) {
     pending: { roomNames: pendingNames },
     ids,
   };
+}
+
+/** "Rum nr. K08", "Room no. 2.10", "Raum Nr. 1.04" -> the number ("K08"); null when the text is not such a caption */
+function numberCaption(raw) {
+  const m = /^(?:rum|room|raum|zimmer|huone|ruum|piece|pièce|locale|local|space)?\s*(?:nr|no|n°|nro|num|number|nummer)\.?\s*(\S+)$/i.exec(String(raw ?? '').trim());
+  return m && looksLikeRoomNumber(m[1]) ? m[1] : null;
+}
+
+/** A point inside the polygon: its vertex mean when that lies inside, else the midpoint of the widest span on the middle scan line. */
+function interiorPoint(poly) {
+  if (!Array.isArray(poly) || poly.length < 3) return null;
+  const c = [poly.reduce((a, p) => a + p[0], 0) / poly.length, poly.reduce((a, p) => a + p[1], 0) / poly.length];
+  if (pointInPolygon(c, poly)) return c;
+  const ys = poly.map((p) => p[1]), y = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const xs = [];
+  for (let i = 0; i < poly.length; i++) { const [a, b] = [poly[i], poly[(i + 1) % poly.length]]; if ((a[1] > y) !== (b[1] > y)) xs.push(a[0] + ((y - a[1]) * (b[0] - a[0])) / (b[1] - a[1])); }
+  xs.sort((p, q) => p - q);
+  let best = null;
+  for (let i = 0; i + 1 < xs.length; i += 2) if (!best || xs[i + 1] - xs[i] > best[1] - best[0]) best = [xs[i], xs[i + 1]];
+  return best ? [(best[0] + best[1]) / 2, y] : null;
 }
 
 /**

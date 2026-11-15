@@ -13,7 +13,7 @@ Geometry comes from two sources, and both end up in one scene.
 
 **The drawing JSON is always the semantic layer.** Types, confidence, flags, provenance and coverage come from it. A web-ifc mesh and a JSON element are linked by IFC GlobalId:
 
-- The viewer matches on `provenance.source_ref`, which holds the raw GUID. It never matches on the element id, which is sanitised.
+- The viewer matches on the element's `global_id`, which holds the raw GUID. It never matches on the element id, which is sanitised.
 - When both are loaded, a matched element is drawn from the mesh and described from the JSON. Nothing is reconstructed from 2D that web-ifc can read in 3D.
 
 **Frame.** Everything lives in the IFC world frame, in metres:
@@ -23,11 +23,17 @@ Geometry comes from two sources, and both end up in one scene.
 - web-ifc already returns **Y-up** geometry, so the IFC group is *not* rotated. A −90° rotation would lay the building on its side.
 - The scene origin is fixed by the first file loaded. Georeferenced models (esplanades sits 538 km east and 6 591 km north) keep full precision, because every vertex is shifted in double precision before it becomes float32.
 
-**Schema versions.** v0.2 and v0.3 files both load: v0.3 is a superset ([docs/schema-v0.3.md](../docs/schema-v0.3.md)).
+**Schema version: v0.3 only.** The viewer reads schema v0.3 drawing documents, the default output of blueprint-ingest ([schema](../blueprint-ingest/schema/building.schema.v0.3.json), [docs/schema-v0.3.md](../docs/schema-v0.3.md)). There is no v0.2 fallback. A file is refused, with the reason shown on the page, when:
 
-- The GlobalId link uses `global_id` when the file has it, else `provenance.source_ref`.
+- `schema_version` is `"0.2"`: re-run blueprint-ingest on the source file and open that output instead;
+- `schema_version` is missing or any other value;
+- it has no `drawing` object (for example the translator building model, with `building_id` and `drawings[]`);
+- one of the arrays every v0.3 document has is missing (`sources`, `levels`, `rooms`, `element_types`, `materials`, …).
+
+Within a v0.3 file:
+
 - Elements without plan geometry (`polygon_px: null`, flag `no_plan_geometry`) are counted but not drawn.
-- For a v0.3 file, the inspector also shows:
+- The inspector shows:
   - `ifc_class` and the type (name, predefined type, instance count)
   - `mark` and `operation`
   - the material layers with their thicknesses, the systems and the room finishes
@@ -125,11 +131,11 @@ With a room, opening or object selected (one that has a JSON record), the inspec
 node scripts/verify.mjs ../blueprint-ingest/out/samples ../data
 ```
 
-This runs the Phase 5 checks on the viewer's own scene and picking code (`BlueprintScene`, which has no renderer) with web-ifc's Node build: levels, alignment, real pipes, match rates, unit check, selectability, the wall under a window, raster/unscaled mode, the single-file regression, WASM memory and console errors. Frame rate and look need a browser; the status line shows fps live.
+The samples directory holds schema v0.3 outputs of blueprint-ingest, laid out as `ifc_models/` (clinic and esplanades) and `swiss_dwellings/site1000_bldg2082_floor9385.json`. This runs the Phase 5 checks on the viewer's own scene and picking code (`BlueprintScene`, which has no renderer) with web-ifc's Node build: levels, alignment, real pipes, match rates, unit check, selectability, the wall under a window, raster/unscaled mode, v0.3-only loading (v0.2 and other files are refused), the single-file regression, WASM memory and console errors. Frame rate and look need a browser; the status line shows fps live.
 
 ## Limits
 
 - web-ifc 0.0.68 cannot mesh some representation types: 26 in the clinic model, 12 372 in molio, 28 299 in hitos. They are counted and shown in a banner, and those parts are missing from the 3D view. The per-line web-ifc messages are kept out of the console.
 - web-ifc does not stream `IfcSpace`, so rooms in IFC files are drawn from the JSON polygons.
 - A drawing JSON loaded without its `.ifc` is drawn from 2D footprints (a banner says so). Load both for real geometry.
-- No raster route exists in this repository yet. Unscaled mode (a nominal 1 px = 1 cm, with a no-scale banner) and the vocabulary mapping are tested with a synthetic CubiCasa-shaped file.
+- No raster route exists in this repository yet. Unscaled mode (a nominal 1 px = 1 cm, with a no-scale banner) and the vocabulary mapping are tested with a synthetic CubiCasa-shaped v0.3 file (`scripts/syntheticRaster.mjs`).

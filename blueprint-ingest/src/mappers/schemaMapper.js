@@ -44,7 +44,12 @@ export async function mapToSchema(opts) {
   const logger = opts.logger ?? silentLogger;
   const version = opts.schemaVersion ?? config.schemaVersion ?? DEFAULT_OUTPUT_VERSION;
   if (version !== '0.2' && version !== '0.3') throw new PipelineError(`unsupported output schema ${version} (0.2 or 0.3)`, 'BAD_ARGS');
-  const validator = await createVersionedValidator({ schemaPaths: config.schemaPath ? { '0.2': config.schemaPath } : {} });
+  // DXF and SVG write schema v0.3 only (their fixtures, units, holes and GlobalIds have no v0.2 form): refuse, never downgrade
+  const v03Only = [...new Set(bundles.map((b) => b.format).filter((f) => f === 'dxf' || f === 'svg'))];
+  if (version === '0.2' && v03Only.length) throw new PipelineError(`${v03Only.join('/').toUpperCase()} output is schema v0.3 only; schema 0.2 was requested (--schema / SCHEMA_VERSION). Drop that option to write v0.3.`, 'BAD_ARGS');
+  // per-version schema files come from schema/versions.js; config.schemaPath is the building-model schema (vision adapter),
+  // not the v0.2 drawing schema, so it must not override '0.2'
+  const validator = await createVersionedValidator();
   if (!bundles.length) throw new PipelineError('No bundles to map', 'NO_BUNDLES');
   const fileInfo = version === '0.3' ? await fileFacts(inputFilePath) : null;
 

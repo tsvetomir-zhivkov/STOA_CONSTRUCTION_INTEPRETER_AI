@@ -1,5 +1,5 @@
 /**
- * One vocabulary for every route. Schema v0.2 defines the enums for room types and object categories; any other name a
+ * One vocabulary for every route. Schema v0.3 defines the enums for room types and object categories; any other name a
  * route (or an older translator, or a raster model) produces is mapped here, at the END of extraction, and anything that
  * does not map is REPORTED, never passed through silently.
  *

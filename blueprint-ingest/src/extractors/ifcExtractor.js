@@ -591,9 +591,11 @@ function worldFootprint(model, r, lenM, meshBounds) {
     const ring = r.shape.outline.ring.map((p) => apply3(r.world, p));
     const vector = r.shape.outline.extrusion ? apply3({ ...r.world, t: [0, 0, 0] }, r.shape.outline.extrusion) : null;
     if (vector && (Math.abs(vector[0]) > 1e-6 || Math.abs(vector[1]) > 1e-6)) return null;
-    const points = vector ? [...ring, ...ring.map(p => p.map((x, i) => x + vector[i]))] : ring;
+    // a swept solid's outline carries its vertical extent as `depth` (no `extrusion` vector): keep it as the height
+    const depthU = vector ? Math.abs(vector[2]) : r.shape.outline.depth ?? null;
+    const points = vector ? [...ring, ...ring.map(p => p.map((x, i) => x + vector[i]))] : depthU ? [...ring, ...ring.map(p => [p[0], p[1], p[2] + depthU])] : ring;
     const bbox = [...[0, 1, 2].map(i => Math.min(...points.map(p => p[i])) * lenM), ...[0, 1, 2].map(i => Math.max(...points.map(p => p[i])) * lenM)];
-    return { ring: cleanRing(ring.map((p) => [p[0] * lenM, p[1] * lenM]), 1e-9), holes: (r.shape.outline.holes ?? []).map(h => h.map(p => apply3(r.world, p).slice(0, 2).map(x => x * lenM))), bbox, z: bbox[2], depthM: vector ? Math.abs(vector[2]) * lenM : null, method: r.shape.outline.approximate ? 'approximate_profile' : 'extrusion', confidence: r.shape.outline.approximate ? .6 : .95 };
+    return { ring: cleanRing(ring.map((p) => [p[0] * lenM, p[1] * lenM]), 1e-9), holes: (r.shape.outline.holes ?? []).map(h => h.map(p => apply3(r.world, p).slice(0, 2).map(x => x * lenM))), bbox, z: bbox[2], depthM: depthU != null ? depthU * lenM : null, method: r.shape.outline.approximate ? 'approximate_profile' : 'extrusion', confidence: r.shape.outline.approximate ? .6 : .95 };
   }
   const mb = meshBounds.get(r.id);
   if (mb) {
@@ -979,6 +981,8 @@ export async function webIfcBounds(filePath, ids) {
   const modelId = api.OpenModel(data, { COORDINATE_TO_ORIGIN: false });
   const out = new Map();
   try {
+    // StreamAllMeshes, not StreamMeshes(ids): it skips IfcSpace, so mesh-only spaces get no axis-aligned box footprint
+    // (a box overstates non-rectangular rooms ~2x). Switching needs a real mesh footprint for spaces first.
     api.StreamAllMeshes(modelId, (mesh) => {
       if (!ids.has(mesh.expressID)) return;
       let b = null;

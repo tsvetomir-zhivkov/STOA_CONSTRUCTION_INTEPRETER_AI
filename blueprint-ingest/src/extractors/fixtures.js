@@ -8,7 +8,7 @@ import { foldText } from '../mappers/glossary.js';
 
 const RULES = [
   ['toilet', ['wc', 'toilette', 'toilet', 'klo']],
-  ['sink', ['lavabo', 'waschbecken', 'sink', 'evier']],
+  ['sink', ['lavabo', 'waschbecken', 'washbasin', 'basin', 'washstand', 'sink', 'evier', 'lavandino']],
   ['shower', ['douche', 'dusche', 'shower']],
   ['bathtub', ['baignoire', 'wanne', 'bathtub', 'bath']],
   ['stove', ['cuisiniere', 'herd', 'stove', 'cooker']],

@@ -16,9 +16,10 @@ import { bboxOfPoints, polygonArea, minAreaRect, cleanRing, circlePolygon, round
 import { wallsFromSegments } from './dxfWalls.js';
 import { detectFlights, assembleStaircases, STAIR_LAYER_RE } from './stairs.js';
 import { classifyFixture } from './fixtures.js';
+import { classifyFixturePrimitives } from './dxfFixtures.js';
 import { policyConfidence, FLAGS } from './confidence.js';
 import { lookupRoomName, foldText } from '../mappers/glossary.js';
-import { classifyTextContent, parseScaleDenominator, cleanText } from './textRoles.js';
+import { classifyTextContent, parseScaleDenominator, cleanText, looksLikeRoomNumber } from './textRoles.js';
 
 // ---- name -> class ------------------------------------------------------------------------------------------
 
@@ -26,6 +27,8 @@ const CLASS_RULES = [
   ['window', /window|ikkuna|fenster|fen[eê]tre|ventana|glaz/i],
   ['door', /door|ovi\b|\bovet\b|t[uü]r\b|porte|puerta|dr\b|\bdoor/i],
   ['wall', /wall|sein[aä]|mur\b|wand|muro|a-wall|partition|v[aä]ggar?/i],
+  // apartment outlines (before 'room': an apartment is not a room). Swiss Dwellings: UNIT_OUTLINE
+  ['unit', /unit[ _-]?outline|^units?$|apartment|wohnung|logement|appartamento|huoneisto/i],
   ['room', /\broom|space|zone|huone|tila|raum|pi[eè]ce|habitaci|a-area|a-room|\barea\b/i],
   ['stair', STAIR_LAYER_RE],
   ['dimension', /dim|mitta|bema|cotation/i],
@@ -82,7 +85,9 @@ function addCoverage(b, flags) {
   cov('windows', classified(b.openings.some((o) => o.kind === 'window')), 0.8);
   cov('text', b.texts.length ? 'analysed' : 'partial', 0.9);
   cov('dimensions', flags.dimensions ? 'analysed' : 'partial', 0.8);
-  cov('fixtures', b.objects.length ? 'partial' : 'not_analysed', 0.5);
+  // fixtures: analysed where every primitive of a fixture layer went through the shape rules (a zero count is then a finding)
+  if (flags.fixtures) cov('fixtures', 'analysed', 0.7, `shape rules on layer ${flags.fixtures.layers.join(', ')}: ${flags.fixtures.primitives} primitive(s) -> ${Object.entries(flags.fixtures.counts).map(([k, v]) => `${v} ${k}`).join(', ') || 'no fixtures'}`);
+  else cov('fixtures', b.objects.length ? 'partial' : 'not_analysed', 0.5);
   cov('scale', b.scale.source === 'vector_units' ? 'analysed' : b.scale.source === 'none' ? 'not_analysed' : 'partial', b.scale.confidence);
   cov('stairs', stairs.status, stairs.confidence, stairs.note);
   cov('symbols', 'not_analysed', 0.3);
@@ -168,11 +173,11 @@ export async function extractDxf(filePath, { config, logger, corrections }) {
       case 'LINE':
       case 'LWPOLYLINE':
         for (let i = 1; i < e.pts.length + (e.closed ? 1 : 0); i++) allSegs.push({ a: e.pts[i - 1], b: e.pts[i % e.pts.length], layer: e.layer, cls });
-        if (cls) polys.push({ kind: 'poly', pts: e.pts, closed: e.closed, layer: e.layer, cls });
+        if (cls) polys.push({ kind: 'poly', pts: e.pts, closed: e.closed, layer: e.layer, cls, handle: e.handle ?? null, type: e.type });
         else unclassified[e.layer] = (unclassified[e.layer] ?? 0) + 1;
         break;
       case 'CIRCLE':
-        if (cls) polys.push({ kind: 'poly', pts: circlePolygon(e.c, e.r, 16), closed: true, layer: e.layer, cls });
+        if (cls) polys.push({ kind: 'poly', pts: circlePolygon(e.c, e.r, 16), closed: true, layer: e.layer, cls, handle: e.handle ?? null, type: e.type, circle: { c: e.c, r: e.r } });
         break;
       case 'TEXT': case 'MTEXT':
         if (e.text) rawTexts.push(e);
@@ -229,36 +234,62 @@ export async function extractDxf(filePath, { config, logger, corrections }) {
 
   // ---- rooms, openings, objects from polylines; wall segments are collected for line pairing ----------------------
   // confidences follow ./confidence.js (policy values are caps: nothing rises without new evidence)
-  const minRoomM2 = 1.0;
+  // a closed outline on a room layer is a room however small (a 0.95 m2 "Reduit" is a numbered room); only degenerate slivers go
+  const minRoomM2 = 0.01;
   const roomRings = []; // world rings of emitted rooms, for the stair search
   const wallSegs = [];
   const stairLayerSegs = [];
+  /** fixture-layer primitives whose layer name names no fixture: classified by shape after the stairs (./dxfFixtures.js) */
+  const fixturePrims = new Map();
+  const roomCandidates = [], roomSegs = [];
   for (const p of polys) {
     const ring = cleanRing(p.pts, 1e-9);
     const corr = correction(p.layer);
-    if (p.cls === 'room' && p.closed && ring.length >= 3) {
-      if (polygonArea(ring) * mPerUnit * mPerUnit < minRoomM2) continue;
-      bundle.rooms.push({ layer: p.layer, key: key('room'), polygonPx: ring.map(P), rawName: null, confidence: policyConfidence({ classRead: true, measured: true }, 0.8), correctedBy: corr });
-      roomRings.push(ring);
+    const shut = p.closed || (p.pts.length >= 3 && Math.hypot(p.pts[0][0] - p.pts.at(-1)[0], p.pts[0][1] - p.pts.at(-1)[1]) < 1e-6); // closed flag, or first = last vertex
+    if (p.cls === 'room' && shut && ring.length >= 3) {
+      roomCandidates.push({ p, ring, corr });
+    } else if (p.cls === 'room' && p.pts.length >= 2) {
+      roomSegs.push(p.pts); // open lines on a room layer: an X of two crossing lines inside an outline marks a shaft / void
     } else if (p.cls === 'wall') {
       const closed = p.closed && ring.length >= 3;
       const r = closed ? minAreaRect(ring) : null;
       const thinRing = !!(r && r.width * mPerUnit <= 0.6); // was already measured (0.8) before line pairing
       const pts = closed ? [...ring, ring[0]] : p.pts;
       for (let i = 1; i < pts.length; i++) wallSegs.push({ a: pts[i - 1], b: pts[i], layer: p.layer, ring: closed ? ring : null, thinRing });
+    } else if (p.cls === 'unit') {
+      // apartment outline: labelled from the unit-label text inside it (documentBuilder); rooms are linked by containment
+      if (shut && ring.length >= 3) bundle.units.push({ layer: p.layer, key: key('unit'), sourceRef: p.handle, polygonPx: ring.map(P), confidence: policyConfidence({ classRead: true, measured: true }), correctedBy: corr });
     } else if (p.cls === 'door' || p.cls === 'window') {
       if (ring.length >= 3) bundle.openings.push({ layer: p.layer, key: key(p.cls), kind: p.cls, polygonPx: ring.map(P), widthPx: null, confidence: policyConfidence({ classRead: true, measured: true }, 0.7), correctedBy: corr });
     } else if (p.cls === 'stair') {
       const pts = p.closed ? [...p.pts, p.pts[0]] : p.pts;
       for (let i = 1; i < pts.length; i++) stairLayerSegs.push({ a: pts[i - 1], b: pts[i], layer: p.layer, ring: ring.length >= 3 && p.closed ? ring : null });
     } else if (p.cls === 'object') {
-      if (ring.length < 3) continue;
       const fx = classifyFixture({ block: null, layer: p.layer });
+      if (!fx.category) {
+        // the layer name does not say which fixture: every primitive (closed or open, circles too) goes to the shape rules
+        if (!fixturePrims.has(p.layer)) fixturePrims.set(p.layer, []);
+        fixturePrims.get(p.layer).push(p.circle ? { handle: p.handle, type: 'CIRCLE', c: p.circle.c, r: p.circle.r } : { handle: p.handle, type: p.type, pts: p.pts, closed: p.closed });
+        continue;
+      }
+      if (ring.length < 3) continue;
       bundle.objects.push({
         layer: p.layer, key: key('obj'), category: fx.category ?? 'other', subtype: humanize(p.layer).toLowerCase(), polygonPx: ring.map(P),
         confidence: policyConfidence({ classRead: !!fx.category, measured: true }, 0.6), correctedBy: corr,
       });
     }
+  }
+
+  // ---- rooms: every closed outline on a room layer (X-marked ones are shafts) ------------------------------------------------
+  const tol = 0.05 / mPerUnit;
+  for (const { p, ring, corr } of roomCandidates) {
+    const shaft = hasCrossInside(ring, roomSegs, tol);
+    if (!shaft && polygonArea(ring) * mPerUnit * mPerUnit < minRoomM2) continue;
+    bundle.rooms.push({
+      layer: p.layer, key: key('room'), sourceRef: p.handle, polygonPx: ring.map(P), rawName: null, confidence: policyConfidence({ classRead: true, measured: true }, 0.8), correctedBy: corr,
+      ...(shaft ? { typeHint: 'shaft', properties: { void_marker: 'two crossing lines inside the outline' } } : {}),
+    });
+    roomRings.push(ring);
   }
 
   // ---- walls: line pairing (measured), unpaired lines fall back to an assumed 0.2 m ------------------------------------
@@ -320,12 +351,74 @@ export async function extractDxf(filePath, { config, logger, corrections }) {
   bundle.objects.push(...stairs.objects);
   if (stairs.objects.length || stairs.note) logger?.info?.(`stairs: ${stairs.objects.length} staircase(s), ${stairs.flights} flight(s), ${stairs.landings} landing(s) (${stairs.byLayer} by layer, ${stairs.byRoom} by tread lines in stair rooms)`);
 
+  // ---- fixtures by shape (fixture layers whose name names no fixture, e.g. Swiss Dwellings "FIXTURE") -------------------------
+  const fixtureStats = emitShapeFixtures({ fixturePrims, bundle, mPerUnit, P, key, correction });
+  if (fixtureStats.layers.length) logger?.info?.(`fixtures by shape on ${fixtureStats.layers.join(', ')}: ${Object.entries(fixtureStats.counts).map(([k, v]) => `${v} ${k}`).join(', ')}${fixtureStats.mergedStairs ? ` (${fixtureStats.mergedStairs} stair group(s) joined to a stair already found)` : ''}`);
+
   linkOpeningsToWalls(bundle);
-  addCoverage(bundle, { dimensions: rawDims.length > 0, stairs: stairs.coverage });
+  addCoverage(bundle, { dimensions: rawDims.length > 0, stairs: stairs.coverage, fixtures: fixtureStats.layers.length ? fixtureStats : null });
   bundle.stats = { wallsMeasured: wr.stats.measured, wallsAssumed: wr.stats.assumed, wallsMerged: wr.stats.merged, wallJunctions: wr.stats.junctions, stairs: stairs.objects.length, entities: dxf.entities.length, rooms: bundle.rooms.length, walls: bundle.walls.length, openings: bundle.openings.length, objects: bundle.objects.length, texts: bundle.texts.length, metresPerUnit: mPerUnit };
   bundle.semantic = { insUnits: dxf.insUnits, layers: [...dxf.layers].slice(0, 60), unclassifiedLayers: unclassified, unsupportedEntities: dxf.skipped, pxPerMetre: round(ppm, 3) };
   bundle.warnings = warnings;
   return [bundle];
+}
+
+/** a point list that ends where it starts (a path closed without Z, a polyline drawn back to its start) */
+const isShut = (pts) => pts.length >= 4 && Math.hypot(pts[0][0] - pts.at(-1)[0], pts[0][1] - pts.at(-1)[1]) < 1e-6;
+
+/** two of the open lines lying inside `ring` (within tol of it) cross each other: the X that marks a shaft / void */
+function hasCrossInside(ring, lines, tol) {
+  const inside = lines.filter((pts) => pts.every((q) => pointInPolygon(q, ring) || ring.some((a, i) => distToSeg(q, a, ring[(i + 1) % ring.length]) <= tol)));
+  for (let i = 0; i < inside.length; i++) for (let j = i + 1; j < inside.length; j++) {
+    const A = inside[i], B = inside[j];
+    for (let a = 1; a < A.length; a++) for (let b = 1; b < B.length; b++) if (properCross(A[a - 1], A[a], B[b - 1], B[b])) return true;
+  }
+  return false;
+}
+function distToSeg(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
+  const t = l2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2)) : 0;
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+}
+function properCross(a, b, c, d) {
+  const x = (o, p, q) => (p[0] - o[0]) * (q[1] - o[1]) - (p[1] - o[1]) * (q[0] - o[0]);
+  const d1 = x(c, d, a), d2 = x(c, d, b), d3 = x(a, b, c), d4 = x(a, b, d);
+  return d1 * d2 < 0 && d3 * d4 < 0;
+}
+
+/**
+ * Fixture-layer primitives -> fixture objects (./dxfFixtures.js). Each object's source_ref is the DXF handle of its anchor
+ * primitive; properties.part_handles lists every primitive it was built from and properties.fixture_rule the rule used.
+ * A stair group that overlaps a stair already found (stair layer / stair room) is joined to that stair, not emitted twice.
+ */
+function emitShapeFixtures({ fixturePrims, bundle, mPerUnit, P, key, correction }) {
+  const counts = {}, layers = [];
+  let primitives = 0, mergedStairs = 0;
+  const centre = (ring) => ring.reduce((a, p) => [a[0] + p[0] / ring.length, a[1] + p[1] / ring.length], [0, 0]);
+  for (const [layer, prims] of fixturePrims) {
+    layers.push(layer); primitives += prims.length;
+    for (const f of classifyFixturePrimitives(prims, mPerUnit)) {
+      const polygonPx = f.ring.map(P);
+      if (f.category === 'stair') {
+        const c = centre(polygonPx);
+        const twin = bundle.objects.find((o) => o.category === 'stair' && o.polygonPx?.length >= 3 && (pointInPolygon(c, o.polygonPx) || pointInPolygon(centre(o.polygonPx), polygonPx)));
+        if (twin) {
+          twin.properties = { ...(twin.properties ?? {}), part_handles: [...new Set([...(twin.properties?.part_handles ?? []), ...f.parts])] };
+          mergedStairs++;
+          counts.stair = (counts.stair ?? 0) + 1;
+          continue;
+        }
+      }
+      const label = f.subtype ? `${f.category} (${f.subtype})` : f.category;
+      counts[label] = (counts[label] ?? 0) + 1;
+      bundle.objects.push({
+        layer, key: key('obj'), sourceRef: f.handle, category: f.category, subtype: f.subtype, polygonPx,
+        confidence: policyConfidence({ classRead: false, measured: true }, f.confidence), correctedBy: correction(layer),
+        properties: { part_handles: f.parts, fixture_rule: f.rule, detected_by: 'shape' },
+      });
+    }
+  }
+  return { layers, counts, primitives, mergedStairs };
 }
 
 /**
@@ -484,13 +577,20 @@ export async function extractSvg(filePath, { config }) {
   const texts = [];
   let groupSeq = 0;
 
-  const walk = (node, m, ctx) => {
-    const own = `${node.attrs.class ?? ''} ${node.attrs.id ?? ''} ${node.attrs['data-type'] ?? ''}`.trim();
+  // <use href="#id"> draws the referenced <symbol>/<g>/shape; symbols are only drawn through a <use>
+  const byId = new Map();
+  const index = (node) => { if (node.attrs?.id) byId.set(node.attrs.id, node); for (const c of node.children ?? []) index(c); };
+  index(svg);
+  const walk = (node, m, ctx, depth = 0) => {
+    const own = `${node.attrs.class ?? ''} ${node.attrs.id ?? ''} ${node.attrs['data-type'] ?? ''} ${node.attrs['data-name'] ?? ''}`.trim();
     const t = parseTransform(node.attrs.transform);
     const mm = matMul(t, m);
     const ownCls = own ? classifyName(own) : null;
-    const nextCtx = { cls: ownCls ?? ctx.cls, names: own ? [...ctx.names, own] : ctx.names, group: ['g', 'svg', 'symbol'].includes(node.name) && own ? ++groupSeq : ctx.group };
-    const emit = (subs) => { for (const sp of subs) items.push({ cls: nextCtx.cls, names: nextCtx.names, group: nextCtx.group, pts: sp.pts.map((p) => matApply(mm, p)), closed: sp.closed, tag: node.name }); };
+    // the nearest element that names itself: its class (an IFC class in IFC-rendered plans), data-name, data-guid
+    const named = node.attrs['data-guid'] || node.attrs['data-name'] || (node.name === 'use' && node.attrs.id);
+    const meta = named ? { svgClass: node.attrs.class ?? null, name: node.attrs['data-name'] ?? null, guid: node.attrs['data-guid'] ?? null, elementId: node.attrs.id ?? null } : ctx.meta;
+    const nextCtx = { cls: ownCls ?? ctx.cls, names: own ? [...ctx.names, own] : ctx.names, group: ['g', 'svg', 'symbol', 'use'].includes(node.name) && own ? ++groupSeq : ctx.group, meta };
+    const emit = (subs) => { for (const sp of subs) items.push({ cls: nextCtx.cls, names: nextCtx.names, group: nextCtx.group, meta: nextCtx.meta, pts: sp.pts.map((p) => matApply(mm, p)), closed: sp.closed || isShut(sp.pts), tag: node.name }); };
     switch (node.name) {
       case 'polygon': case 'polyline': {
         const nums = (node.attrs.points ?? '').split(/[\s,]+/).filter(Boolean).map(Number);
@@ -511,6 +611,18 @@ export async function extractSvg(filePath, { config }) {
         break;
       }
       case 'path': if (node.attrs.d) emit(parsePathData(node.attrs.d)); break;
+      case 'use': {
+        const ref = String(node.attrs.href ?? node.attrs['xlink:href'] ?? '').replace(/^#/, '');
+        const target = byId.get(ref);
+        if (target && depth < 8) {
+          const at = matMul([1, 0, 0, 1, numAttr(node.attrs.x), numAttr(node.attrs.y)], mm);
+          // the referenced name (symbol id, its class) classifies the use too: <use href="#wc-bowl"> is a toilet
+          const tOwn = `${target.attrs.class ?? ''} ${target.attrs.id ?? ''} ${target.attrs['data-name'] ?? ''}`.trim();
+          const useCtx = { ...nextCtx, cls: nextCtx.cls ?? classifyName(tOwn), names: [...nextCtx.names, tOwn], meta: { ...(nextCtx.meta ?? {}), name: nextCtx.meta?.name ?? target.attrs['data-name'] ?? target.attrs.id ?? null, symbol: ref } };
+          for (const c of target.name === 'symbol' || target.name === 'g' ? target.children : [target]) walk(c, at, useCtx, depth + 1);
+        }
+        break;
+      }
       case 'text': {
         const raw = cleanText(node.text + node.children.map((c) => c.text).join(' '));
         if (raw) texts.push({ raw, at: matApply(mm, [numAttr(node.attrs.x), numAttr(node.attrs.y)]), fs: numAttr(node.attrs['font-size'], 12) * Math.hypot(mm[0], mm[1]) });
@@ -518,9 +630,9 @@ export async function extractSvg(filePath, { config }) {
       }
       default:
     }
-    if (!['text', 'defs', 'style', 'metadata', 'title', 'desc'].includes(node.name)) for (const c of node.children) walk(c, mm, nextCtx);
+    if (!['text', 'defs', 'style', 'metadata', 'title', 'desc', 'symbol', 'use'].includes(node.name)) for (const c of node.children) walk(c, mm, nextCtx, depth);
   };
-  walk(svg, IDENTITY, { cls: null, names: [], group: 0 });
+  walk(svg, IDENTITY, { cls: null, names: [], group: 0, meta: null });
 
   // ---- scale -----------------------------------------------------------------------------------------------------------------
   const scaleTxt = texts.find((t) => classifyTextContent(t.raw).role === 'scale_note');
@@ -541,7 +653,9 @@ export async function extractSvg(filePath, { config }) {
   const byGroup = new Map();
   for (const it of items) {
     if (!it.cls) continue;
-    const k = ['door', 'window', 'object', 'stair'].includes(it.cls) ? `g${it.group}:${it.cls}` : `i${byGroup.size}`;
+    // doors/windows/objects/stairs: one per semantic group; rooms: one per named element (its subpaths are outline + holes)
+    const k = ['door', 'window', 'object', 'stair'].includes(it.cls) ? `g${it.group}:${it.cls}`
+      : it.cls === 'room' && (it.meta?.guid || it.meta?.elementId) ? `room:${it.meta.guid ?? ''}|${it.meta.elementId ?? ''}` : `i${byGroup.size}`;
     (byGroup.get(k) ?? byGroup.set(k, []).get(k)).push(it);
   }
   let n = 0;
@@ -554,37 +668,78 @@ export async function extractSvg(filePath, { config }) {
     }
     return null;
   };
-  let wallEdges = 0;
+  /** source fields of an SVG element: GlobalId / IFC class when the plan was rendered from IFC, its name, its element id */
+  const GUID = /^[0-9A-Za-z_$]{22}$/;
+  const src = (meta) => {
+    if (!meta) return {};
+    const ifcClass = /^Ifc[A-Za-z]+$/.test(meta.svgClass ?? '') ? meta.svgClass.toUpperCase() : null;
+    const guid = meta.guid && GUID.test(meta.guid) ? meta.guid : null;
+    const properties = Object.fromEntries(Object.entries({ svg_class: meta.svgClass, svg_name: meta.name, svg_symbol: meta.symbol ?? null, svg_element_id: meta.elementId }).filter(([, v]) => v != null && v !== ''));
+    return {
+      sourceRef: guid ?? meta.elementId ?? null,
+      ...(Object.keys(properties).length ? { properties } : {}),
+      ...(ifcClass || guid ? { v03: { ...(guid ? { globalId: guid } : {}), ...(ifcClass ? { ifcClass } : {}) } } : {}),
+    };
+  };
+  /** "Rum nr. K08" -> "K08": the last token of an element name that reads as a room number */
+  const numberFrom = (name) => (name ? (String(name).split(/\s+/).reverse().find((t) => looksLikeRoomNumber(t)) ?? null) : null);
+  let wallEdges = 0, objCapped = 0;
   for (const grp of byGroup.values()) {
     const it0 = grp[0];
     const allPts = grp.flatMap((g) => g.pts);
     if (allPts.length < 2) continue;
     if (it0.cls === 'room') {
-      for (const g of grp) {
-        const ring = cleanRing(g.pts, 1e-9);
-        if (g.closed && ring.length >= 3 && polygonArea(ring) > 100) bundle.rooms.push({ key: key('room'), polygonPx: ring.map(P), rawName: roomName(g.names), confidence: 0.8 });
+      // the rings of ONE named element (an IfcSpace drawn as one path with several subpaths) are one room: the largest ring is
+      // its outline, rings inside it are holes, a disjoint ring is kept in properties.extra_parts_px (never a second room
+      // with the same GlobalId). Unnamed shapes stay one room per ring.
+      const rings = grp.map((g) => ({ g, ring: cleanRing(g.pts, 1e-9) })).filter(({ g, ring }) => g.closed && ring.length >= 3 && Math.abs(polygonArea(ring)) > 100);
+      const owner = (g) => (g.meta && (g.meta.guid || g.meta.elementId)) ? `${g.meta.guid ?? ''}|${g.meta.elementId ?? ''}` : null;
+      const parts = new Map();
+      rings.forEach((x, i) => { const k = owner(x.g) ?? `ring${i}`; (parts.get(k) ?? parts.set(k, []).get(k)).push(x); });
+      for (const list of parts.values()) {
+        list.sort((a, b) => Math.abs(polygonArea(b.ring)) - Math.abs(polygonArea(a.ring)));
+        const [outer, ...rest] = list;
+        const holes = rest.filter((x) => x.ring.every((q) => pointInPolygon(q, outer.ring)));
+        const extra = rest.filter((x) => !holes.includes(x));
+        const sr = src(outer.g.meta);
+        if (extra.length) sr.properties = { ...(sr.properties ?? {}), extra_parts_px: extra.map((x) => x.ring.map(P)) };
+        bundle.rooms.push({
+          key: key('room'), ...sr, polygonPx: outer.ring.map(P), ...(holes.length ? { holesPx: holes.map((x) => x.ring.map(P)) } : {}),
+          rawName: roomName(outer.g.names), rawNumber: numberFrom(outer.g.meta?.name), confidence: 0.8,
+        });
       }
     } else if (it0.cls === 'wall') {
       for (const g of grp) {
         const ring = cleanRing(g.pts, 1e-9);
         if (g.closed && ring.length >= 3) {
           const r = minAreaRect(ring);
-          bundle.walls.push({ key: key('wall'), polygonPx: ring.map(P), centerlinePx: null, thicknessPx: r ? round(r.width * s, 2) : null, confidence: 0.75 });
+          bundle.walls.push({ key: key('wall'), ...src(g.meta), polygonPx: ring.map(P), centerlinePx: null, thicknessPx: r ? round(r.width * s, 2) : null, confidence: 0.75 });
         } else if (g.pts.length >= 2) {
           wallEdges++;
-          bundle.walls.push({ key: key('wall'), polygonPx: rectFromSegment(g.pts[0], g.pts.at(-1), 4).map(P), centerlinePx: [P(g.pts[0]), P(g.pts.at(-1))], thicknessPx: null, confidence: 0.4 });
+          bundle.walls.push({ key: key('wall'), ...src(g.meta), polygonPx: rectFromSegment(g.pts[0], g.pts.at(-1), 4).map(P), centerlinePx: [P(g.pts[0]), P(g.pts.at(-1))], thicknessPx: null, confidence: 0.4 });
         }
       }
     } else if (it0.cls === 'door' || it0.cls === 'window') {
       const r = minAreaRect(allPts);
       if (!r) continue;
-      bundle.openings.push({ key: key(it0.cls), kind: it0.cls, subtype: null, polygonPx: r.corners.map(P), widthPx: round(r.length * s, 2), confidence: 0.7 });
+      bundle.openings.push({ key: key(it0.cls), ...src(it0.meta), kind: it0.cls, subtype: null, polygonPx: r.corners.map(P), widthPx: round(r.length * s, 2), confidence: 0.7 });
     } else if (it0.cls === 'object' || it0.cls === 'stair') {
       const r = minAreaRect(allPts);
-      if (r && bundle.objects.length < config.cad.maxObjects) bundle.objects.push({ key: key('obj'), category: it0.cls === 'stair' ? 'stair' : humanize(it0.names.at(-1) ?? 'object').toLowerCase().slice(0, 40), polygonPx: r.corners.map(P), confidence: 0.55 });
+      if (!r) continue;
+      if (bundle.objects.length >= config.cad.maxObjects) { objCapped++; continue; }
+      // category: the element's own name / symbol, then its class ("IfcSanitaryTerminal", "toilet-bowl", data-name "WC");
+      // anything unmatched stays "other" with the source name kept as subtype and in properties
+      const nm = it0.meta?.name ?? it0.meta?.symbol ?? null;
+      const fx = it0.cls === 'stair' ? { category: 'stair' } : classifyFixture({ block: nm ?? it0.meta?.symbol, layer: it0.meta?.svgClass ?? it0.names.at(-1) });
+      const fallback = humanize(it0.meta?.svgClass ?? it0.names.at(-1)?.split(/\s+/)[0] ?? 'object').toLowerCase().slice(0, 40);
+      bundle.objects.push({
+        key: key('obj'), ...src(it0.meta), category: fx.category ?? fallback, subtype: nm ? String(nm).slice(0, 60) : null, ...(nm ? { name: String(nm) } : {}),
+        polygonPx: r.corners.map(P), confidence: fx.category ? 0.7 : 0.55,
+      });
     }
   }
   if (wallEdges) warnings.push(`${wallEdges} open wall lines were given an assumed thickness (low confidence)`);
+  if (objCapped) warnings.push(`${objCapped} objects beyond the cap of ${config.cad.maxObjects} were not emitted`);
 
   for (const t of texts) {
     const w = t.raw.length * t.fs * 0.55;

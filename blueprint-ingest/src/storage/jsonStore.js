@@ -10,10 +10,10 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { SchemaValidationError } from '../util/errors.js';
-import { referenceErrors } from './building.js';
+import { isBuildingModel, referenceErrors } from './building.js';
 import { SCHEMA_PATH } from '../config.js';
 
-let writeValidator;
+let writeValidator, documentValidator;
 
 const DATE_TIME = /^\d{4}-\d{2}-\d{2}[Tt ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})$/;
 
@@ -35,7 +35,9 @@ export async function createValidator(schemaPath) {
   const fn = ajv.compile(schema);
   const validate = (doc) => {
     const valid = fn(doc);
-    const errors = valid && doc.schema_version === '0.3'
+    // the building-model reference check only applies to building-model documents; a per-drawing v0.3 document fails this
+    // schema's additionalProperties above, or (validated against its own schema) gets validateRelationships in versions.js
+    const errors = valid && doc.schema_version === '0.3' && isBuildingModel(doc)
       ? referenceErrors(doc).map(message => ({ instancePath: '', keyword: 'reference', message, params: {} }))
       : valid ? [] : [...(fn.errors ?? [])];
     return { valid: !!valid && errors.length === 0, errors };
@@ -65,8 +67,14 @@ export async function readJsonIfExists(filePath) {
  * @param {string} filePath @param {any} data
  */
 export async function writeJsonAtomic(filePath, data) {
-  writeValidator ??= createValidator(SCHEMA_PATH);
-  (await writeValidator).assertValid(data);
+  // every write is validated against the schema of the document's own model (both strict; nothing is skipped)
+  if (isBuildingModel(data)) {
+    writeValidator ??= createValidator(SCHEMA_PATH);
+    (await writeValidator).assertValid(data);
+  } else {
+    documentValidator ??= import('../schema/versions.js').then((m) => m.createVersionedValidator());
+    (await documentValidator).assertValid(data, path.basename(filePath));
+  }
   const dir = path.dirname(filePath);
   await fs.mkdir(dir, { recursive: true });
   const tmp = path.join(dir, `.${path.basename(filePath)}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`);

@@ -70,6 +70,7 @@
  * @property {BundleOpening[]} openings
  * @property {BundleText[]} texts
  * @property {BundleObject[]} objects
+ * @property {Array<BundleCommon & { key:string, polygonPx:number[][], confidence?:number }>} [units] apartment outlines (label from the unit-label text inside)
  * @property {BundleCoverage[]} coverage
  * @property {Record<string, any>} semantic compact extras that have no home in the schema (materials, layer names...)
  * @property {Record<string, number|string|boolean>} stats
@@ -86,7 +87,7 @@ export function emptyBundle(partial) {
     page: { widthPx: 1, heightPx: 1, renderDpi: null, pageIndex: 0, pageCount: 1, transforms: [] },
     level: null,
     scale: { metresPerPx: null, source: 'none', confidence: 0 },
-    rooms: [], walls: [], openings: [], texts: [], objects: [], coverage: [],
+    rooms: [], walls: [], openings: [], texts: [], objects: [], units: [], coverage: [],
     semantic: {}, stats: {}, warnings: [],
     ...partial,
   };
