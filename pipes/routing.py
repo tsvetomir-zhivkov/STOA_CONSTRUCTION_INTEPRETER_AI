@@ -74,7 +74,7 @@ def publish(pipe_json: str | Path, pipes_dir: Path = PIPES_INDEX) -> Path:
     """Validate a traced sheet and write it to the hand-off layout from its own sheet.source_file / page_index."""
     doc = json.loads(Path(pipe_json).read_text(encoding="utf-8"))
     doc = finalize(doc)
-    out = pipe_index_path(doc["sheet"]["source_file"], doc["sheet"]["page_index"], pipes_dir)
+    out = pipe_index_path(doc["drawing"]["file"], doc["drawing"].get("page_index") or 0, pipes_dir)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
     return out

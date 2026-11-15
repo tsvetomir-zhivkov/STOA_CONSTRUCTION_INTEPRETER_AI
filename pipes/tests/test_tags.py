@@ -2,6 +2,7 @@ import copy
 
 import pytest
 
+from pipes.schema.convert import graph
 from pipes.tags import attach_tags, classify, normalise
 from pipes.tests.test_graph_metrics import make
 from pipes.tests.test_tools import idx
@@ -29,7 +30,7 @@ def tagged(texts):
     doc = copy.deepcopy(CHAIN)
     doc["texts"] = texts
     stats = attach_tags(doc)
-    return finalize(doc), stats
+    return graph(finalize(doc)), stats
 
 
 @pytest.mark.parametrize(

@@ -15,10 +15,13 @@ import networkx as nx
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
+from pipes.schema.convert import graph
+
 STRUCTURAL = {"tee", "junction", "elbow", "cross", "open_end"}
 
 
 def symbols(doc: dict) -> list[dict]:
+    doc = graph(doc)
     return [
         n
         for n in doc["nodes"]
@@ -27,6 +30,8 @@ def symbols(doc: dict) -> list[dict]:
 
 
 def match_symbols(pred: dict, gt: dict, radius_frac: float = 0.5) -> dict:
+    pred = graph(pred)
+    gt = graph(gt)
     p, g = symbols(pred), symbols(gt)
     pairs: list[tuple[int, int]] = []
     if p and g:
@@ -65,6 +70,7 @@ def prf(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
 
 def _graph(doc: dict) -> tuple[nx.Graph, set[str]]:
     """Whole sheet as a graph (nodes = all node ids, edges = traced pipes); unsnapped ends are dead ends."""
+    doc = graph(doc)
     g = nx.Graph()
     sym_ids = {n["id"] for n in symbols(doc)}
     g.add_nodes_from(n["id"] for n in doc["nodes"])
@@ -79,6 +85,7 @@ def _graph(doc: dict) -> tuple[nx.Graph, set[str]]:
 
 def adjacency(doc: dict) -> set[frozenset]:
     """Symbol pairs joined directly: a path that passes only through structural nodes (tee, junction, ...)."""
+    doc = graph(doc)
     g, syms = _graph(doc)
     pairs: set[frozenset] = set()
     for s in syms:
@@ -97,6 +104,7 @@ def adjacency(doc: dict) -> set[frozenset]:
 
 
 def _raster(doc: dict, shape: tuple[int, int]) -> np.ndarray:
+    doc = graph(doc)
     m = np.zeros(shape, np.uint8)
     for e in doc["edges"]:
         if e["provenance"].get("status", "active") == "active":
@@ -106,6 +114,8 @@ def _raster(doc: dict, shape: tuple[int, int]) -> np.ndarray:
 
 def pipe_pixels(pred: dict, gt: dict, tol: float) -> tuple[float, float]:
     """(precision, recall) of pipe pixels: share of predicted pixels within tol of a GT pixel, and the reverse."""
+    pred = graph(pred)
+    gt = graph(gt)
     shape = (gt["frame"]["height_px"], gt["frame"]["width_px"])
     p, g = _raster(pred, shape), _raster(gt, shape)
 
@@ -121,6 +131,7 @@ def pipe_pixels(pred: dict, gt: dict, tol: float) -> tuple[float, float]:
 
 
 def has_edges(doc: dict) -> bool:
+    doc = graph(doc)
     cov = [c for c in doc["coverage"] if c["category"] == "pipes"]
     return bool(doc["edges"]) and any(c["status"] == "analysed" for c in cov)
 
@@ -132,6 +143,8 @@ def graph_metrics(pred: dict, gt: dict, tol: float = 8.0) -> dict:
     missed and spurious symbols to the edges (end-to-end). Connectivity accuracy is over all pairs of matched GT
     symbols: do both graphs agree on connected / not connected (any path, through symbols too)?
     """
+    pred = graph(pred)
+    gt = graph(gt)
     m = match_symbols(pred, gt)
     p_syms, g_syms = symbols(pred), symbols(gt)
     p2g = {p_syms[i]["id"]: g_syms[j]["id"] for i, j in m["pairs"]}

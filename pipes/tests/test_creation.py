@@ -22,6 +22,7 @@ from ezdxf import units
 from pipes.extract.dxf_pipes import extract
 from pipes.ingest.pid_dataset import gt_document
 from pipes.raster.pipeline import run_sheet
+from pipes.schema.convert import graph
 from pipes.tools import PipeIndex
 from pipes.write import finalize
 
@@ -69,7 +70,7 @@ def scan(tmp_path, img, boxes, texts=(), name="c"):
     doc = run_sheet(d, "gt", texts=list(texts))
     doc.pop("_debug", None)
     json.dumps(doc)  # serialisable
-    return finalize(doc)  # and still schema-valid
+    return graph(finalize(doc))  # and still schema-valid
 
 
 def structural(doc, kind=None):
@@ -339,7 +340,7 @@ def line(msp, *pts):
 
 def vector(d, path):
     d.saveas(path)
-    return extract(path, "creation/c.dxf")
+    return graph(extract(path, "creation/c.dxf"))
 
 
 def test_10_dxf_case1_two_blocks_one_line(tmp_path):

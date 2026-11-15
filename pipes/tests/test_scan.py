@@ -17,6 +17,7 @@ from pipes import scan
 from pipes.__main__ import main as cli_main
 from pipes.raster import ocr_run, regions
 from pipes.routing import route_page
+from pipes.schema.convert import graph
 from pipes.tests.test_creation import A, B, box, canvas, pipe
 from pipes.tests.test_creation import scan as scan_gt
 from pipes.tools import PipeIndex
@@ -58,7 +59,7 @@ def run(env, path=FIX / "sheet.jpg", **kw):
 
 def test_pipw_sheet_is_traced_and_its_border_is_not_erased(env):
     r = run(env)
-    doc = r["doc"]
+    doc = graph(r["doc"])
     assert len(doc["edges"]) > 0  # before the fix: 0 edges, the whole drawing was erased as a "title block"
     page = doc["frame"]["width_px"] * doc["frame"]["height_px"]
     for reg in doc["sheet"]["regions"]:
@@ -113,11 +114,11 @@ def test_low_resolution_is_warned_and_recorded_so_the_tools_say_unknown(env):
     assert "resolution too low, results unreliable" in r["warnings"][0]
     gap = [
         c
-        for c in r["doc"]["coverage"]
+        for c in graph(r["doc"])["coverage"]
         if c["category"] == "connectivity" and c["region"] == "page" and c["status"] == "partial"
     ]
     assert len(gap) == 1 and "resolution too low" in gap[0]["note"]
-    idx = PipeIndex(r["doc"])
+    idx = PipeIndex(graph(r["doc"]))
     syms = sorted(idx.symbol_ids)
     answer = idx.path_between(syms[0], syms[-1])  # unconnected symbols: before, a confident "not connected"
     assert (
@@ -143,10 +144,10 @@ def test_a_sharp_page_gets_no_warning(tmp_path, monkeypatch):
     monkeypatch.setattr(scan, "fetch_ocr", lambda sid, png: [])
     r = scan.translate_scan(src, pipes_dir=tmp_path / "idx")
     assert r["warnings"] == [] and r["stroke_width_px"] >= 3
-    assert len(r["doc"]["edges"]) == 1 and not any(
-        c["note"] and "resolution" in c["note"] for c in r["doc"]["coverage"]
+    assert len(graph(r["doc"])["edges"]) == 1 and not any(
+        c["note"] and "resolution" in c["note"] for c in graph(r["doc"])["coverage"]
     )
-    assert PipeIndex(r["doc"]).connected_to("node_1")["answer"]["connected"] == ["node_2"]
+    assert PipeIndex(graph(r["doc"])).connected_to("node_1")["answer"]["connected"] == ["node_2"]
 
 
 def test_webp_png_and_jpeg_inputs_all_work_and_the_page_is_kept_losslessly(env, tmp_path):
@@ -155,13 +156,13 @@ def test_webp_png_and_jpeg_inputs_all_work_and_the_page_is_kept_losslessly(env, 
         src = tmp_path / name
         img.save(src, lossless=True) if name.endswith("webp") else img.save(src)
         r = run(env, src)
-        assert r["doc"]["frame"]["width_px"] == 768 and r["doc"]["frame"]["height_px"] == 497
+        assert graph(r["doc"])["frame"]["width_px"] == 768 and graph(r["doc"])["frame"]["height_px"] == 497
     kept = Image.open(scan.work_dir("page") / "sheet.png")
     assert kept.size == (768, 497)  # the page grid is untouched
-    webp_doc = run(env, tmp_path / "page.webp")["doc"]
+    webp_doc = graph(run(env, tmp_path / "page.webp")["doc"])
     assert (
         webp_doc["sheet"]["file_format"] == "other"
-        and run(env, tmp_path / "page.png")["doc"]["sheet"]["file_format"] == "png"
+        and graph(run(env, tmp_path / "page.png")["doc"])["sheet"]["file_format"] == "png"
     )
 
 
@@ -176,7 +177,7 @@ def test_the_result_is_published_where_the_router_finds_it_with_an_overlay(env):
         published.exists()
         and published.with_name(published.name.removesuffix(".pipe.json") + ".png").exists()
     )
-    doc = json.loads(published.read_text(encoding="utf-8"))
+    doc = graph(json.loads(published.read_text(encoding="utf-8")))
     assert doc["sheet"]["source_file"] == "site/pipw test.webp" and doc["sheet"]["route"] == "raster_pipeline"
     assert doc["sheet"]["source_dataset"] is None and "pid_dataset" not in doc["sheet"]["id"]
 

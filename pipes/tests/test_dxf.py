@@ -10,6 +10,7 @@ from PIL import Image
 from pipes.extract.dxf_pipes import extract, translate_dxf
 from pipes.ingest.gt_to_dxf import pipe_json_to_dxf
 from pipes.routing import route_page
+from pipes.schema.convert import graph
 from pipes.tools import PipeIndex
 
 EXAMPLE = Path(__file__).parent.parent / "schema" / "example_standalone_heating_schematic.json"
@@ -25,7 +26,7 @@ def new(tmp_path, unit=units.MM, layers=("P-HEAT-SUPPLY",)):
 
 def run(d, path, **kw):
     d.saveas(path)
-    return extract(path, "unit/t.dxf", **kw)
+    return graph(extract(path, "unit/t.dxf", **kw))
 
 
 def box_block(d, name, w=100, h=100, attdef=True):
@@ -46,7 +47,7 @@ def comps(doc):
 def heating(tmp_path_factory):
     tmp = tmp_path_factory.mktemp("heating")
     dxf = pipe_json_to_dxf(json.loads(EXAMPLE.read_text(encoding="utf-8")), tmp / "LVI-heating.dxf")
-    doc = translate_dxf(dxf, "hypothetical/LVI-heating.dxf", pipes_dir=tmp / "idx")
+    doc = graph(translate_dxf(dxf, "hypothetical/LVI-heating.dxf", pipes_dir=tmp / "idx"))
     return doc, tmp
 
 

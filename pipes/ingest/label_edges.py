@@ -18,6 +18,7 @@ import json
 from pathlib import Path
 
 from pipes.ingest.pid_dataset import DS, gt_document
+from pipes.schema.convert import graph
 from pipes.write import finalize
 
 TEMPLATE = Path(__file__).with_name("label_edges.html")
@@ -86,7 +87,7 @@ def _edge_doc(i: int, a: dict, b: dict, wp: list, conf: float = 1.0) -> dict:
 def apply(sheet_dir: Path, connections: Path) -> dict:
     """connections.json -> gt.edges.json + gt.pipe.json (finalize-validated), in the dev dir and in ds/."""
     conns = json.loads(connections.read_text(encoding="utf-8"))
-    doc = json.loads((sheet_dir / "gt.pipe.json").read_text(encoding="utf-8"))
+    doc = graph(json.loads((sheet_dir / "gt.pipe.json").read_text(encoding="utf-8")))
     nodes = {n["id"]: n for n in doc["nodes"]}
     edges = []
     for i, c in enumerate(conns, 1):
@@ -102,7 +103,7 @@ def apply(sheet_dir: Path, connections: Path) -> dict:
         if d.is_dir():
             (d / "gt.edges.json").write_text(json.dumps(edges, indent=1), encoding="utf-8")
             (d / "gt.pipe.json").write_text(json.dumps(new, ensure_ascii=False, indent=1), encoding="utf-8")
-    return new["summary"]
+    return graph(new)["summary"]
 
 
 def main(argv: list[str] | None = None) -> int:

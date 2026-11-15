@@ -1,1533 +1,465 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://stoa-junction.local/pipe.schema.json",
-  "title": "Stoa pipe index (v0.1 draft)",
-  "description": "One file per sheet/page that shows pipes (schematic, pipe plan or isometric). Separate from the drawing index (drawing.schema.json): a page may have only a drawing file, only a pipe file, or both. The pipe network is a graph: nodes are symbols, fittings and junctions; edges are pipe segments between two nodes. Geometry is stored in pixels of the page raster (source of truth) and in metres (*_m fields, written by code from scale). Every element has provenance with a confidence. Linking to a drawing file is optional and lives in `links`.",
+  "$id": "https://stoa.local/piping.schema.v0.1.json",
+  "title": "Stoa piping plan index, schema v0.1",
+  "description": "Separate piping/MEP plan index aligned with building schema v0.3 conventions. One document per drawing page or IFC model. SI lengths in metres, diameters in metres, areas in m2, flow in m3/s, pressure in Pa, temperature in Celsius. Pixel coordinates reference the original drawing image. Unknown values are null; no inferred geometry or totals without evidence. Entity IDs are document-unique. Quantities record explicit/calculated/inferred/not_available. Cross-document joins use building_entity_id when available. This schema validates shape, not reference integrity or extraction completeness.",
   "type": "object",
+  "additionalProperties": false,
   "required": [
     "schema_version",
-    "kind",
-    "sheet",
-    "frame",
-    "scale",
-    "metres_scale_revision",
-    "links",
-    "extractors",
-    "nodes",
-    "edges",
-    "markers",
+    "project",
+    "site",
+    "building",
+    "drawing",
+    "sources",
+    "levels",
+    "pipe_systems",
+    "pipe_types",
+    "pipe_segments",
+    "pipe_fittings",
+    "pipe_equipment",
+    "pipe_connections",
     "texts",
-    "relations",
-    "coverage"
+    "coverage",
+    "history"
   ],
-  "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "0.1"
+      "const": "piping-0.1"
     },
-    "kind": {
-      "const": "pipe_index",
-      "description": "Lets a loader tell a pipe file from a drawing file without looking at the filename."
-    },
-    "sheet": {
-      "description": "The page this file describes. sheet_id and level_id use the same values as drawing.sheet_id / drawing.level_id in a drawing file, so the two can be joined.",
-      "type": "object",
-      "required": [
-        "id",
-        "source_file",
-        "file_format",
-        "page_index",
-        "diagram_type",
-        "route"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Stable id of this pipe file, e.g. 'molio/VVS-101#0'."
-        },
-        "source_file": {
-          "type": "string",
-          "description": "Path of the original file, relative to the dataset root."
-        },
-        "source_dataset": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "file_format": {
-          "enum": [
-            "png",
-            "jpg",
-            "pdf",
-            "svg",
-            "dxf",
-            "dwg",
-            "ifc",
-            "other"
-          ]
-        },
-        "page_index": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "0 for single-image files and DXF model space."
-        },
-        "dxf_layout": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "DXF/DWG layout or 'Model'. null for rasters."
-        },
-        "diagram_type": {
-          "enum": [
-            "schematic",
-            "pipe_plan",
-            "isometric",
-            "riser_diagram",
-            "detail",
-            "other"
-          ],
-          "description": "schematic and riser_diagram are usually NOT to scale: lengths must come from written labels. pipe_plan is drawn to scale over (or as) a floor plan."
-        },
-        "is_to_scale": {
-          "type": [
-            "boolean",
-            "null"
-          ],
-          "description": "false means geometry lengths are meaningless; only written lengths may be reported."
-        },
-        "route": {
-          "enum": [
-            "vector_parser",
-            "raster_pipeline",
-            "vision_fallback"
-          ],
-          "description": "vector_parser for DXF / vector PDF (read lines, blocks, text directly). raster_pipeline for scans: detect symbols + OCR, erase them, trace lines, snap ends."
-        },
-        "sheet_id": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "Sheet number from the title block, e.g. 'VVS-101'. Join key with drawing files."
-        },
-        "level_id": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "Floor / level, e.g. 'K', '1'. Join key with drawing files."
-        },
-        "title": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "systems_shown": {
-          "type": "array",
-          "items": {
-            "enum": [
-              "cold_water",
-              "hot_water",
-              "hot_water_circulation",
-              "heating_supply",
-              "heating_return",
-              "cooling_supply",
-              "cooling_return",
-              "waste",
-              "soil",
-              "vent",
-              "rainwater",
-              "gas",
-              "sprinkler",
-              "fire_main",
-              "compressed_air",
-              "ventilation_duct",
-              "other",
-              "unknown"
-            ]
-          },
-          "description": "Systems the global pass sees on the sheet (from legend/title)."
-        },
-        "languages": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "regions": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": [
-              "kind",
-              "bbox_px"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "kind": {
-                "enum": [
-                  "diagram_area",
-                  "legend",
-                  "title_block",
-                  "scale_note",
-                  "notes",
-                  "schedule_table",
-                  "other"
-                ]
-              },
-              "bbox_px": {
-                "$ref": "#/$defs/bbox"
-              },
-              "provenance": {
-                "$ref": "#/$defs/provenance"
-              }
-            }
-          }
-        },
-        "provenance": {
-          "$ref": "#/$defs/provenance"
-        }
-      }
-    },
-    "frame": {
-      "description": "The coordinate frame every *_px value refers to: the page raster. For DXF/vector PDF the page is rendered and source_to_px maps source units to pixels, so vector coordinates stay exact. Two files with equal frame.frame_key share pixel coordinates directly.",
-      "type": "object",
-      "required": [
-        "frame_key",
-        "width_px",
-        "height_px"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "frame_key": {
-          "type": "string",
-          "description": "Identifies the raster: '<source_file>#<page_index>@<width_px>x<height_px>'. Same key in a drawing file = same pixels, identity transform."
-        },
-        "width_px": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "height_px": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "render_dpi": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "source_units": {
-          "enum": [
-            "px",
-            "pt",
-            "mm",
-            "m",
-            "inch",
-            "unitless"
-          ],
-          "description": "Units of the original file (DXF $INSUNITS, PDF points, image pixels)."
-        },
-        "source_to_px": {
-          "oneOf": [
-            {
-              "$ref": "#/$defs/affine"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Affine from source coordinates to page pixels. Identity for rasters. For DXF it also flips y (DXF y goes up)."
-        }
-      }
-    },
-    "scale": {
-      "description": "Same meaning as in drawing.schema.json. For DXF in mm, source is vector_units and is exact. For schematics that are not to scale, metres_per_px is null and source is 'not_to_scale'.",
-      "type": "object",
-      "required": [
-        "metres_per_px",
-        "source",
-        "confidence",
-        "revision"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "metres_per_px": {
-          "type": [
-            "number",
-            "null"
-          ],
-          "exclusiveMinimum": 0
-        },
-        "source": {
-          "enum": [
-            "vector_units",
-            "scale_note",
-            "dimension_line",
-            "linked_drawing",
-            "manual",
-            "not_to_scale",
-            "none"
-          ],
-          "description": "linked_drawing = copied from a linked drawing file with the same frame (or through links[].transform)."
-        },
-        "confidence": {
-          "$ref": "#/$defs/confidence"
-        },
-        "scale_text": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "evidence_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "revision": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "provenance": {
-          "$ref": "#/$defs/provenance"
-        }
-      }
-    },
-    "metres_scale_revision": {
+    "building_schema_version": {
       "type": [
-        "integer",
+        "string",
         "null"
       ],
-      "description": "Scale revision all *_m fields were computed with. If it differs from scale.revision, recompute every *_m field before answering."
+      "description": "Related building index version, usually 0.3"
     },
-    "links": {
-      "description": "Optional links to drawing files (floor plans, sections) for the same place. Empty array = standalone pipe file; the pipe file must be fully answerable on its own. Links are stored only here (pipe -> drawing); a drawing file needs no change. To find the pipe files of a drawing, scan pipe files for links[].drawing_id or join on sheet.level_id.",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "drawing_id",
-          "relation",
-          "transform",
-          "provenance"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^link_"
-          },
-          "drawing_id": {
-            "type": "string",
-            "description": "drawing.id of the linked drawing file."
-          },
-          "drawing_file": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Path of the drawing JSON, relative to the index root."
-          },
-          "relation": {
-            "enum": [
-              "same_page",
-              "overlay_sheet",
-              "same_level_other_sheet",
-              "reference_only"
-            ],
-            "description": "same_page: pipes and floor plan are on one raster (identity transform). overlay_sheet: separate pipe sheet of the same plan, registered by transform. same_level_other_sheet: same floor but not registered (e.g. schematic); only sheet/level join, no geometry. reference_only: the sheet cites the drawing (e.g. 'see A-101')."
-          },
-          "transform": {
-            "oneOf": [
-              {
-                "$ref": "#/$defs/affine"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Pipe page px -> drawing page px. Identity for same_page. null when not registered (schematic, reference_only): then no room lookup is allowed."
-          },
-          "transform_method": {
-            "enum": [
-              "same_frame",
-              "title_block_grid",
-              "wall_registration",
-              "manual_points",
-              "none"
-            ]
-          },
-          "transform_residual_px": {
-            "type": [
-              "number",
-              "null"
-            ],
-            "description": "Mean registration error over control points. Above ~10 px treat room lookups as low confidence."
-          },
-          "provenance": {
-            "$ref": "#/$defs/provenance"
-          }
+    "project": {
+      "$ref": "#/$defs/project"
+    },
+    "site": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/site"
         }
+      ]
+    },
+    "building": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/building"
+        }
+      ]
+    },
+    "drawing": {
+      "$ref": "#/$defs/drawing"
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/source"
       }
     },
-    "extractors": {
+    "levels": {
       "type": "array",
       "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "kind",
-          "name"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "kind": {
-            "enum": [
-              "global_pass",
-              "vector_parser",
-              "symbol_detector",
-              "ocr",
-              "symbol_text_eraser",
-              "line_tracer",
-              "graph_builder",
-              "llm_namer",
-              "scale_recovery",
-              "linker",
-              "vision_fallback",
-              "geometry_code",
-              "human"
-            ]
-          },
-          "name": {
-            "type": "string"
-          },
-          "version": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "run_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "cost_usd": {
-            "type": [
-              "number",
-              "null"
-            ],
-            "minimum": 0
-          }
-        }
+        "$ref": "#/$defs/level"
       }
     },
-    "nodes": {
-      "description": "Graph nodes: symbols (valves, pumps, meters...), fittings (tees, elbows, reducers), implicit junctions where traced lines meet, open ends, and off-sheet connectors. Every pipe edge ends at a node or at null (unsnapped).",
+    "pipe_systems": {
       "type": "array",
       "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "type",
-          "bbox_px",
-          "center_px",
-          "provenance"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^node_"
-          },
-          "type": {
-            "enum": [
-              "gate_valve",
-              "ball_valve",
-              "globe_valve",
-              "butterfly_valve",
-              "check_valve",
-              "control_valve",
-              "balancing_valve",
-              "pressure_reducing_valve",
-              "safety_valve",
-              "shutoff_valve",
-              "valve_other",
-              "pump",
-              "meter",
-              "backflow_preventer",
-              "strainer",
-              "filter",
-              "expansion_vessel",
-              "tank",
-              "heat_exchanger",
-              "boiler",
-              "radiator",
-              "fixture",
-              "floor_drain",
-              "cleanout",
-              "gauge",
-              "sensor",
-              "instrument_other",
-              "reducer",
-              "tee",
-              "elbow",
-              "cross",
-              "cap",
-              "flange",
-              "union",
-              "pipe_down",
-              "pipe_up",
-              "riser",
-              "junction",
-              "open_end",
-              "off_sheet_connector",
-              "equipment_other",
-              "unknown"
-            ],
-            "description": "Fixed list so counts ('how many ball valves') are exact. Detector classes map here, e.g. paper classes ACV->control_valve, CBV->balancing_valve, 'Capped pipe'->cap, 'V&C provision'->valve_other with subtype."
-          },
-          "subtype": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Free text, e.g. 'commissioning set', 'wc', 'washbasin', 'v_and_c_provision'."
-          },
-          "tag": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Equipment tag as written, e.g. 'V-101', 'P1'."
-          },
-          "tag_text_id": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "label": {
-            "oneOf": [
-              {
-                "$ref": "#/$defs/label"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Name from legend/glossary, as in drawing.schema resolved_name but free typed."
-          },
-          "bbox_px": {
-            "$ref": "#/$defs/bbox"
-          },
-          "center_px": {
-            "$ref": "#/$defs/point"
-          },
-          "rotation_deg": {
-            "type": [
-              "number",
-              "null"
-            ]
-          },
-          "ports_px": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/point"
-            },
-            "description": "Connection points on the symbol outline (vector blocks give them exactly; detectors estimate from bbox + rotation). Snapping uses these first, then the bbox."
-          },
-          "nominal_size": {
-            "oneOf": [
-              {
-                "$ref": "#/$defs/size"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Size written at the symbol, if any."
-          },
-          "system": {
-            "enum": [
-              "cold_water",
-              "hot_water",
-              "hot_water_circulation",
-              "heating_supply",
-              "heating_return",
-              "cooling_supply",
-              "cooling_return",
-              "waste",
-              "soil",
-              "vent",
-              "rainwater",
-              "gas",
-              "sprinkler",
-              "fire_main",
-              "compressed_air",
-              "ventilation_duct",
-              "other",
-              "unknown",
-              null
-            ],
-            "description": "Inherited from connected edges by the graph builder if not written."
-          },
-          "attributes": {
-            "type": "object",
-            "description": "Anything else read for this node, e.g. {'kv': 2.5, 'make': '...'}."
-          },
-          "in_room_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Code-written through a link with a transform: id of the room polygon (in the linked drawing) containing center_px. null if no registered link."
-          },
-          "in_room_link_id": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "provenance": {
-            "$ref": "#/$defs/provenance"
-          },
-          "center_m": {
-            "oneOf": [
-              {
-                "$ref": "#/$defs/point"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Code-written."
-          },
-          "bbox_m": {
-            "oneOf": [
-              {
-                "$ref": "#/$defs/bbox"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Code-written."
-          }
-        }
+        "$ref": "#/$defs/pipe_system"
       }
     },
-    "edges": {
-      "description": "Pipe segments between two nodes. A tagged line (e.g. 'CW-50-001') is usually several edges; group by line_tag to answer 'total length of line X'.",
+    "pipe_types": {
       "type": "array",
       "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "ends",
-          "polyline_px",
-          "system",
-          "diameter",
-          "length",
-          "provenance"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^pipe_"
-          },
-          "ends": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 2,
-            "items": {
-              "$ref": "#/$defs/end"
-            },
-            "description": "[start, end] in polyline order. Direction of the polyline is NOT flow direction; see flow."
-          },
-          "polyline_px": {
-            "type": "array",
-            "items": {
-              "$ref": "#/$defs/point"
-            },
-            "minItems": 2
-          },
-          "line_tag": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Pipe/line tag as written, e.g. 'KV-32-001'."
-          },
-          "line_tag_text_id": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "system": {
-            "enum": [
-              "cold_water",
-              "hot_water",
-              "hot_water_circulation",
-              "heating_supply",
-              "heating_return",
-              "cooling_supply",
-              "cooling_return",
-              "waste",
-              "soil",
-              "vent",
-              "rainwater",
-              "gas",
-              "sprinkler",
-              "fire_main",
-              "compressed_air",
-              "ventilation_duct",
-              "other",
-              "unknown"
-            ]
-          },
-          "system_raw": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Abbreviation as written, e.g. 'KV', 'VV', 'VVC', 'CW'."
-          },
-          "diameter": {
-            "type": "object",
-            "required": [
-              "value",
-              "source"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "value": {
-                "oneOf": [
-                  {
-                    "$ref": "#/$defs/size"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "source": {
-                "enum": [
-                  "label",
-                  "vector_attribute",
-                  "legend",
-                  "propagated",
-                  "line_weight",
-                  "unknown"
-                ],
-                "description": "propagated = copied along the run from a label on a neighbouring edge (no reducer/tee between). Answers should say so."
-              },
-              "text_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "confidence": {
-                "$ref": "#/$defs/confidence"
-              }
-            }
-          },
-          "material": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "insulation": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "line_style": {
-            "enum": [
-              "solid",
-              "dashed",
-              "dash_dot",
-              "dotted",
-              "double",
-              "other",
-              null
-            ]
-          },
-          "layer": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "DXF/PDF layer name, if any (often encodes the system)."
-          },
-          "flow": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "direction": {
-                "enum": [
-                  "start_to_end",
-                  "end_to_start",
-                  "both",
-                  "unknown"
-                ]
-              },
-              "evidence_ids": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "Flow-arrow marker ids, pump node ids, or texts."
-              },
-              "confidence": {
-                "$ref": "#/$defs/confidence"
-              }
-            }
-          },
-          "length": {
-            "type": "object",
-            "required": [
-              "geometry_m",
-              "written_m",
-              "flag"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "geometry_m": {
-                "type": [
-                  "number",
-                  "null"
-                ],
-                "description": "Polyline length x scale. Code-written. null when not to scale or no scale."
-              },
-              "written_m": {
-                "type": [
-                  "number",
-                  "null"
-                ],
-                "description": "Length written on the drawing."
-              },
-              "written_text_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "difference_pct": {
-                "type": [
-                  "number",
-                  "null"
-                ]
-              },
-              "flag": {
-                "enum": [
-                  "ok",
-                  "check_this",
-                  "no_written_length",
-                  "no_scale",
-                  "not_to_scale"
-                ],
-                "description": "check_this when |difference_pct| > 10. For quantity answers prefer written_m on not-to-scale sheets, geometry_m otherwise."
-              }
-            }
-          },
-          "elevation_m": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "start": {
-                "type": [
-                  "number",
-                  "null"
-                ]
-              },
-              "end": {
-                "type": [
-                  "number",
-                  "null"
-                ]
-              }
-            },
-            "description": "3D-ready. Empty for now."
-          },
-          "provenance": {
-            "$ref": "#/$defs/provenance"
-          },
-          "polyline_m": {
-            "type": [
-              "array",
-              "null"
-            ],
-            "items": {
-              "$ref": "#/$defs/point"
-            },
-            "description": "Code-written."
-          }
-        }
+        "$ref": "#/$defs/pipe_type"
       }
     },
-    "markers": {
-      "description": "Symbols that sit ON a pipe and do not split it: flow arrows, detail-legend callouts, slope arrows, break marks. (A valve splits a pipe, so it is a node; a flow arrow does not.)",
+    "pipe_segments": {
       "type": "array",
       "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "type",
-          "bbox_px",
-          "provenance"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^marker_"
-          },
-          "type": {
-            "enum": [
-              "flow_arrow",
-              "detail_legend",
-              "slope_arrow",
-              "pipe_break",
-              "section_mark",
-              "other"
-            ]
-          },
-          "bbox_px": {
-            "$ref": "#/$defs/bbox"
-          },
-          "on_edge_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Edge the marker sits on (nearest within snap radius)."
-          },
-          "direction_px": {
-            "oneOf": [
-              {
-                "$ref": "#/$defs/point"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Unit vector the arrow points to, for flow/slope arrows."
-          },
-          "text_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "e.g. the number inside a detail-legend bubble."
-          },
-          "provenance": {
-            "$ref": "#/$defs/provenance"
-          }
-        }
+        "$ref": "#/$defs/pipe_segment"
+      }
+    },
+    "pipe_fittings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pipe_fitting"
+      }
+    },
+    "pipe_equipment": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pipe_equipment"
+      }
+    },
+    "pipe_connections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pipe_connection"
       }
     },
     "texts": {
-      "description": "Every OCR / vector text box, linked or not. Same idea as drawing.schema texts, with pipe roles.",
       "type": "array",
       "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "raw_text",
-          "bbox_px",
-          "role",
-          "provenance"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^text_"
-          },
-          "raw_text": {
-            "type": "string"
-          },
-          "bbox_px": {
-            "$ref": "#/$defs/bbox"
-          },
-          "rotation_deg": {
-            "type": "number",
-            "default": 0
-          },
-          "role": {
-            "enum": [
-              "line_tag",
-              "equipment_tag",
-              "diameter",
-              "length",
-              "system_label",
-              "flow_note",
-              "elevation",
-              "legend_entry",
-              "title",
-              "scale_note",
-              "sheet_ref",
-              "level",
-              "note",
-              "unknown"
-            ]
-          },
-          "value": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "number": {
-                "type": "number"
-              },
-              "unit": {
-                "enum": [
-                  "mm",
-                  "cm",
-                  "m",
-                  "inch",
-                  "dn",
-                  "ratio",
-                  "other"
-                ]
-              }
-            }
-          },
-          "attached_to": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Node/edge ids this text was assigned to."
-          },
-          "language": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "provenance": {
-            "$ref": "#/$defs/provenance"
-          }
-        }
-      }
-    },
-    "relations": {
-      "description": "Only links that the graph cannot derive: legend meanings, off-sheet continuations, and cross-file identity (this pipe node IS that drawing object, e.g. a sink).",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "kind",
-          "from_id",
-          "provenance"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^rel_"
-          },
-          "kind": {
-            "enum": [
-              "legend_meaning",
-              "continues_on",
-              "references",
-              "same_as"
-            ],
-            "description": "continues_on: off_sheet_connector continues on another sheet. same_as: node equals an element in a linked drawing file (to.file_id + to.element_id)."
-          },
-          "from_id": {
-            "type": "string"
-          },
-          "to": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "file_id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "description": "drawing.id or sheet.id of another file; null = this file."
-              },
-              "element_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "target_text": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "description": "Free target, e.g. 'sheet VVS-102, connector A'."
-              }
-            }
-          },
-          "meaning": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "link_id": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "provenance": {
-            "$ref": "#/$defs/provenance"
-          }
-        }
+        "$ref": "#/$defs/pipe_text"
       }
     },
     "coverage": {
-      "description": "What was analysed, where, how well. The agent may only say 'there is no X' or give an exact count where coverage for X is 'analysed' with good confidence. Every unsnapped pipe end gets a 'connectivity' entry with status 'partial' and a region around the end.",
       "type": "array",
       "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "region",
-          "category",
-          "status",
-          "confidence",
-          "extractor_id"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^cov_"
-          },
-          "region": {
-            "oneOf": [
-              {
-                "const": "page"
-              },
-              {
-                "$ref": "#/$defs/bbox"
-              }
-            ]
-          },
-          "category": {
-            "enum": [
-              "symbols",
-              "markers",
-              "pipes",
-              "connectivity",
-              "text",
-              "tags",
-              "diameters",
-              "lengths",
-              "flow_direction",
-              "scale",
-              "legend",
-              "link"
-            ]
-          },
-          "status": {
-            "enum": [
-              "analysed",
-              "partial",
-              "not_analysed"
-            ]
-          },
-          "confidence": {
-            "$ref": "#/$defs/confidence"
-          },
-          "extractor_id": {
-            "type": "string"
-          },
-          "element_ids": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Elements this entry is about, e.g. the edge with an unsnapped end."
-          },
-          "note": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "updated_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          }
-        }
-      }
-    },
-    "summary": {
-      "description": "Code-written roll-up so cheap questions need no graph walk. Recompute whenever nodes/edges change. Never written by a model.",
-      "type": [
-        "object",
-        "null"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "node_counts": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "integer"
-          },
-          "description": "Active nodes by type."
-        },
-        "length_m_by_system_and_size": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "system": {
-                "type": "string"
-              },
-              "size": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "length_m": {
-                "type": [
-                  "number",
-                  "null"
-                ],
-                "description": "Sum over edge_ids that have a length on the chosen basis. If missing_length_edge_ids is not empty, this is a LOWER BOUND and answers must say so."
-              },
-              "missing_length_edge_ids": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "edge_ids": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "length_basis": {
-                "enum": [
-                  "geometry",
-                  "written",
-                  "mixed",
-                  "none"
-                ]
-              }
-            }
-          }
-        },
-        "connected_components": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "unsnapped_end_count": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "computed_at": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "format": "date-time"
-        }
+        "$ref": "#/$defs/coverage"
       }
     },
     "history": {
-      "description": "Write-back log, same as drawing.schema history.",
       "type": "array",
       "items": {
-        "type": "object",
-        "required": [
-          "at",
-          "extractor_id",
-          "added_ids"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "extractor_id": {
-            "type": "string"
-          },
-          "trigger_question": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "region_px": {
-            "oneOf": [
-              {
-                "$ref": "#/$defs/bbox"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "added_ids": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "superseded_ids": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "coverage_ids_updated": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "cost_usd": {
-            "type": [
-              "number",
-              "null"
-            ]
-          }
-        }
+        "$ref": "#/$defs/history"
+      }
+    },
+    "statistics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pipe_statistic"
       }
     }
   },
   "$defs": {
-    "point": {
-      "description": "[x, y]. In *_px fields: page pixels, origin top-left, y down. In *_m fields: metres, same orientation.",
-      "type": "array",
-      "prefixItems": [
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^\\S+$",
+      "description": "No whitespace. Node ids use [A-Za-z0-9_.-]; Python translator ids may contain a raw IFC GlobalId ($)."
+    },
+    "id_or_null": {
+      "oneOf": [
         {
-          "type": "number"
+          "type": "null"
         },
         {
-          "type": "number"
+          "$ref": "#/$defs/id"
         }
-      ],
+      ]
+    },
+    "ids": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/id"
+      }
+    },
+    "num_or_null": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "str_or_null": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "point": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
       "minItems": 2,
-      "maxItems": 2
+      "maxItems": 3
+    },
+    "polygon": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/$defs/point"
+      }
+    },
+    "polygons": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/point"
+        }
+      }
     },
     "bbox": {
-      "description": "[x_min, y_min, x_max, y_max].",
-      "type": "array",
+      "type": [
+        "array",
+        "null"
+      ],
       "items": {
         "type": "number"
       },
       "minItems": 4,
-      "maxItems": 4
-    },
-    "affine": {
-      "description": "2D affine [a, b, c, d, e, f]: x' = a*x + b*y + c, y' = d*x + e*y + f. Identity = [1,0,0,0,1,0].",
-      "type": "array",
-      "items": {
-        "type": "number"
-      },
-      "minItems": 6,
-      "maxItems": 6
+      "maxItems": 4,
+      "description": "[x0, y0, x1, y1] in page pixels"
     },
     "confidence": {
-      "description": "0 to 1. UI shows 'lower confidence' below 0.6.",
       "type": "number",
       "minimum": 0,
       "maximum": 1
     },
-    "size": {
-      "description": "Nominal pipe size.",
-      "type": "object",
-      "required": [
-        "raw_text",
-        "dn_mm"
+    "status_value": {
+      "enum": [
+        "explicit",
+        "calculated",
+        "inferred",
+        "not_available"
       ],
-      "additionalProperties": false,
-      "properties": {
-        "raw_text": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "As written: 'DN50', 'Ø28', '1 1/4\"', '28x1.2'."
-        },
-        "dn_mm": {
-          "type": [
-            "number",
-            "null"
-          ],
-          "description": "Nominal diameter in mm (DN), normalised by code/glossary."
-        },
-        "outer_mm": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "wall_mm": {
-          "type": [
-            "number",
-            "null"
-          ]
-        }
-      }
+      "description": "explicit: read from the source (an IFC attribute or quantity, a written area). calculated: derived by code from explicit data (polygon area, sum of layers). inferred: from a rule or convention (a default unit, a glossary match). not_available: the source does not say; value is null."
     },
-    "label": {
+    "quantity": {
       "type": "object",
-      "required": [
-        "raw_text",
-        "normalized"
-      ],
       "additionalProperties": false,
-      "properties": {
-        "raw_text": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "expanded": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "language": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "normalized": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "glossary_term_id": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      }
-    },
-    "end": {
-      "description": "One end of a pipe edge and how it was attached to a node.",
-      "type": "object",
       "required": [
-        "node_id",
-        "point_px",
-        "snap"
+        "value",
+        "unit",
+        "status",
+        "method",
+        "source"
       ],
-      "additionalProperties": false,
       "properties": {
-        "node_id": {
+        "value": {
           "type": [
-            "string",
+            "number",
             "null"
           ],
-          "description": "null when unsnapped."
+          "description": "In SI (m, m2, m3, kg, s) or degrees, or a plain count"
         },
-        "point_px": {
-          "$ref": "#/$defs/point"
-        },
-        "port_index": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "description": "Index into the node's ports_px, if snapped to a port."
-        },
-        "snap": {
+        "unit": {
           "enum": [
-            "vector_exact",
-            "snapped",
-            "unsnapped"
-          ],
-          "description": "vector_exact: endpoints coincide in the vector source. snapped: nearest node within the snap radius. unsnapped: nothing within radius -> node_id null, and a coverage 'connectivity' entry exists."
+            "m",
+            "m2",
+            "m3",
+            "kg",
+            "s",
+            "deg",
+            "count",
+            "ratio",
+            null
+          ]
         },
-        "snap_distance_px": {
+        "status": {
+          "$ref": "#/$defs/status_value"
+        },
+        "method": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "How the value was obtained, e.g. IfcQuantityArea, polygon area x scale^2, sum of layer thicknesses"
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Where it came from, e.g. Qto_SpaceBaseQuantities.NetFloorArea, polygon_px, text_12"
+        },
+        "raw": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "unit"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "number",
+                "string",
+                "boolean",
+                "null"
+              ]
+            },
+            "unit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "description": "The value as stored in the source, before unit conversion"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "not_available"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "quantities": {
+      "type": "object",
+      "description": "Key = the entity field it describes (area_m2, length_m...) or an IFC quantity as <QtoSet>.<Name>.",
+      "propertyNames": {
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/quantity"
+      }
+    },
+    "unit_decl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit",
+        "to_si",
+        "status",
+        "source"
+      ],
+      "properties": {
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Declared unit as named in the source, e.g. MILLI METRE, FOOT, SQUARE_METRE, DEGREE"
+        },
+        "to_si": {
           "type": [
             "number",
             "null"
+          ],
+          "description": "Multiply a source value by this to get m / m2 / m3 / kg; for plane angles, to get degrees"
+        },
+        "status": {
+          "$ref": "#/$defs/status_value"
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
           ]
+        }
+      }
+    },
+    "units_decl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "length",
+        "area",
+        "volume",
+        "angle"
+      ],
+      "properties": {
+        "length": {
+          "$ref": "#/$defs/unit_decl"
+        },
+        "area": {
+          "$ref": "#/$defs/unit_decl"
+        },
+        "volume": {
+          "$ref": "#/$defs/unit_decl"
+        },
+        "angle": {
+          "$ref": "#/$defs/unit_decl"
+        },
+        "mass": {
+          "$ref": "#/$defs/unit_decl"
         }
       }
     },
     "provenance": {
-      "description": "Same as drawing.schema provenance.",
       "type": "object",
       "required": [
-        "extractor_id",
-        "confidence"
+        "extractor",
+        "source_ref"
       ],
-      "additionalProperties": false,
       "properties": {
-        "extractor_id": {
+        "extractor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "DXF handle, PDF item index, IFC GlobalId, or extractor-local id"
+        },
+        "file": {
           "type": "string"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system",
+        "code",
+        "name"
+      ],
+      "properties": {
+        "system": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "code": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "name": {
+          "$ref": "#/$defs/str_or_null"
+        }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "required": [
+        "id",
+        "confidence",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
         },
         "confidence": {
           "$ref": "#/$defs/confidence"
         },
-        "source_region_px": {
-          "oneOf": [
-            {
-              "$ref": "#/$defs/bbox"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "source_ref": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "Pointer into the original file: DXF entity handle, PDF drawing index, IFC GUID."
-        },
-        "evidence_ids": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+        "provenance": {
+          "$ref": "#/$defs/provenance"
         },
         "status": {
           "enum": [
@@ -1537,12 +469,1546 @@
           "default": "active"
         },
         "superseded_by": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "level_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "description": "Free-form extras, e.g. raw IFC property sets (properties.psets: values as stored, unit not declared)"
+        },
+        "global_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "IFC GlobalId (raw, 22 characters), when the source has one"
+        },
+        "ifc_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Source IFC class in upper case, e.g. IFCWALLSTANDARDCASE"
+        },
+        "quantities": {
+          "$ref": "#/$defs/quantities"
+        },
+        "classifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/classification"
+          }
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "global_id",
+        "schema_identifier",
+        "application",
+        "units"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "long_name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "description": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "phase": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "global_id": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "schema_identifier": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "IFC2X3, IFC4, IFC4X3... (FILE_SCHEMA)"
+        },
+        "application": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "version",
+            "developer"
+          ],
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/str_or_null"
+            },
+            "version": {
+              "$ref": "#/$defs/str_or_null"
+            },
+            "developer": {
+              "$ref": "#/$defs/str_or_null"
+            },
+            "identifier": {
+              "$ref": "#/$defs/str_or_null"
+            },
+            "originating_system": {
+              "$ref": "#/$defs/str_or_null"
+            }
+          }
+        },
+        "created_at": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "units": {
+          "$ref": "#/$defs/units_decl"
+        }
+      }
+    },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "global_id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "global_id": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "long_name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "ref_latitude_deg": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "ref_longitude_deg": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "ref_elevation_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "address": {
+          "$ref": "#/$defs/str_or_null"
+        }
+      }
+    },
+    "building": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "global_id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "global_id": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "long_name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "elevation_of_ref_height_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "elevation_of_terrain_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "address": {
+          "$ref": "#/$defs/str_or_null"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "file",
+        "role",
+        "format"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "file": {
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "primary",
+            "sibling",
+            "merged"
+          ]
+        },
+        "format": {
+          "enum": [
+            "ifc",
+            "dxf",
+            "svg",
+            "pdf",
+            "raster",
+            "json",
+            "other"
+          ]
+        },
+        "schema_identifier": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "size_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "georeference": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "description": "IfcMapConversion: model coordinates (metres) -> projected CRS",
+          "properties": {
+            "eastings": {
+              "$ref": "#/$defs/num_or_null"
+            },
+            "northings": {
+              "$ref": "#/$defs/num_or_null"
+            },
+            "orthogonal_height": {
+              "$ref": "#/$defs/num_or_null"
+            },
+            "x_axis_abscissa": {
+              "$ref": "#/$defs/num_or_null"
+            },
+            "x_axis_ordinate": {
+              "$ref": "#/$defs/num_or_null"
+            },
+            "scale": {
+              "$ref": "#/$defs/num_or_null"
+            },
+            "target_crs": {
+              "$ref": "#/$defs/str_or_null"
+            }
+          }
+        }
+      }
+    },
+    "drawing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "source",
+        "route",
+        "read_from"
+      ],
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "page_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "page_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "part": {
           "type": [
             "string",
             "null"
           ]
+        },
+        "image": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "width_px",
+            "height_px"
+          ],
+          "properties": {
+            "width_px": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height_px": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "dpi": {
+              "$ref": "#/$defs/num_or_null"
+            }
+          }
+        },
+        "route": {
+          "enum": [
+            "ifc",
+            "dxf",
+            "svg",
+            "vector_pdf",
+            "raster",
+            "vlm",
+            "none"
+          ]
+        },
+        "read_from": {
+          "type": "string"
+        },
+        "transforms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "resize",
+                  "deskew",
+                  "affine",
+                  "upscale",
+                  "invert",
+                  "other"
+                ]
+              },
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "scale_x": {
+                "type": "number"
+              },
+              "scale_y": {
+                "type": "number"
+              },
+              "angle_deg": {
+                "type": "number"
+              },
+              "matrix": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "residual_px": {
+                "type": "number"
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "scale": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "confidence"
+          ],
+          "properties": {
+            "m_per_px": {
+              "$ref": "#/$defs/num_or_null"
+            },
+            "source": {
+              "enum": [
+                "vector_units",
+                "scale_note",
+                "dimension_lines",
+                "door_width",
+                "none"
+              ]
+            },
+            "confidence": {
+              "$ref": "#/$defs/confidence"
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "translator_version": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
         }
       }
+    },
+    "level": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "long_name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "elevation_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "height_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "bbox_px": {
+          "$ref": "#/$defs/bbox"
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "category",
+        "region",
+        "status",
+        "extractor",
+        "confidence"
+      ],
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "region": {
+          "oneOf": [
+            {
+              "const": "page"
+            },
+            {
+              "$ref": "#/$defs/bbox"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "analysed",
+            "partial",
+            "not_analysed"
+          ]
+        },
+        "extractor": {
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extractor",
+        "action"
+      ],
+      "properties": {
+        "at": {
+          "type": "string"
+        },
+        "extractor": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "entity_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cost_usd": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "polyline": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/$defs/point"
+      },
+      "description": "Ordered centerline vertices, in original drawing pixels or model metres depending on field"
+    },
+    "pipe_service": {
+      "enum": [
+        "domestic_cold_water",
+        "domestic_hot_water",
+        "hot_water_return",
+        "sanitary_waste",
+        "stormwater",
+        "vent",
+        "heating_supply",
+        "heating_return",
+        "cooling_supply",
+        "cooling_return",
+        "fire_sprinkler",
+        "gas",
+        "compressed_air",
+        "process",
+        "other",
+        "unknown"
+      ]
+    },
+    "pipe_system": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "superseded"
+          ],
+          "default": "active"
+        },
+        "superseded_by": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "level_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "description": "Free-form extras, e.g. raw IFC property sets (properties.psets: values as stored, unit not declared)"
+        },
+        "global_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "IFC GlobalId (raw, 22 characters), when the source has one"
+        },
+        "ifc_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Source IFC class in upper case, e.g. IFCWALLSTANDARDCASE"
+        },
+        "quantities": {
+          "$ref": "#/$defs/quantities"
+        },
+        "classifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/classification"
+          }
+        },
+        "building_entity_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "drawing_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "source_text_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "service": {
+          "$ref": "#/$defs/pipe_service"
+        },
+        "description": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "system_code": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "ifc_system_id": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "level_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "segment_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "fitting_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "equipment_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "total_pipe_length_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "segment_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "fitting_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "equipment_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "unresolved_member_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "function": {
+          "$ref": "#/$defs/str_or_null"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "provenance",
+        "name",
+        "service"
+      ],
+      "description": "Distribution system and its members. Totals are explicit or calculated from active unique segment IDs, never estimated from pixel paths without a known scale."
+    },
+    "pipe_type": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "superseded"
+          ],
+          "default": "active"
+        },
+        "superseded_by": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "level_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "description": "Free-form extras, e.g. raw IFC property sets (properties.psets: values as stored, unit not declared)"
+        },
+        "global_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "IFC GlobalId (raw, 22 characters), when the source has one"
+        },
+        "ifc_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Source IFC class in upper case, e.g. IFCWALLSTANDARDCASE"
+        },
+        "quantities": {
+          "$ref": "#/$defs/quantities"
+        },
+        "classifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/classification"
+          }
+        },
+        "building_entity_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "drawing_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "source_text_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "service": {
+          "$ref": "#/$defs/pipe_service"
+        },
+        "type_mark": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "material": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "nominal_diameter": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "nominal_diameter_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "outer_diameter_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "inner_diameter_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "wall_thickness_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "insulation_material": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "insulation_thickness_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "pressure_class": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "standard": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "segment_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "segment_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "total_length_m": {
+          "$ref": "#/$defs/num_or_null"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "provenance",
+        "name"
+      ],
+      "description": "Reusable pipe specification; supports questions about types, material, diameters and total lengths by type."
+    },
+    "pipe_segment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "superseded"
+          ],
+          "default": "active"
+        },
+        "superseded_by": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "level_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "description": "Free-form extras, e.g. raw IFC property sets (properties.psets: values as stored, unit not declared)"
+        },
+        "global_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "IFC GlobalId (raw, 22 characters), when the source has one"
+        },
+        "ifc_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Source IFC class in upper case, e.g. IFCWALLSTANDARDCASE"
+        },
+        "quantities": {
+          "$ref": "#/$defs/quantities"
+        },
+        "classifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/classification"
+          }
+        },
+        "building_entity_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "drawing_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "source_text_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "tag": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "service": {
+          "$ref": "#/$defs/pipe_service"
+        },
+        "system_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "type_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "room_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "material": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "nominal_diameter": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "nominal_diameter_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "outer_diameter_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "inner_diameter_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "length_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "centerline_px": {
+          "$ref": "#/$defs/polyline"
+        },
+        "centerline_m": {
+          "$ref": "#/$defs/polyline"
+        },
+        "bbox_px": {
+          "$ref": "#/$defs/bbox"
+        },
+        "polygon_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "start_connection_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "end_connection_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "slope_ratio": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "elevation_start_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "elevation_end_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "flow_direction": {
+          "enum": [
+            "start_to_end",
+            "end_to_start",
+            "bidirectional",
+            "unknown",
+            null
+          ]
+        },
+        "insulation_thickness_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "is_existing": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "is_demolished": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "provenance",
+        "service"
+      ],
+      "description": "One physical pipe segment. Each segment counted once for length sums. For highlight, use centerline_px; polygon_px only if the source has an actual footprint."
+    },
+    "pipe_fitting": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "superseded"
+          ],
+          "default": "active"
+        },
+        "superseded_by": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "description": "Free-form extras, e.g. raw IFC property sets (properties.psets: values as stored, unit not declared)"
+        },
+        "global_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "IFC GlobalId (raw, 22 characters), when the source has one"
+        },
+        "ifc_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Source IFC class in upper case, e.g. IFCWALLSTANDARDCASE"
+        },
+        "quantities": {
+          "$ref": "#/$defs/quantities"
+        },
+        "classifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/classification"
+          }
+        },
+        "building_entity_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "drawing_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "source_text_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "kind": {
+          "enum": [
+            "elbow",
+            "tee",
+            "cross",
+            "reducer",
+            "coupling",
+            "union",
+            "cap",
+            "flange",
+            "valve",
+            "trap",
+            "cleanout",
+            "other",
+            "unknown"
+          ]
+        },
+        "service": {
+          "$ref": "#/$defs/pipe_service"
+        },
+        "system_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "type_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "tag": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "nominal_diameter": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "nominal_diameter_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "material": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "connected_segment_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "connection_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "center_px": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/point"
+            }
+          ]
+        },
+        "bbox_px": {
+          "$ref": "#/$defs/bbox"
+        },
+        "polygon_px": {
+          "$ref": "#/$defs/polygon"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "provenance",
+        "kind"
+      ],
+      "description": "Fittings and valves counted separately from pipe segments."
+    },
+    "pipe_equipment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "superseded"
+          ],
+          "default": "active"
+        },
+        "superseded_by": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "level_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "description": "Free-form extras, e.g. raw IFC property sets (properties.psets: values as stored, unit not declared)"
+        },
+        "global_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "IFC GlobalId (raw, 22 characters), when the source has one"
+        },
+        "ifc_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Source IFC class in upper case, e.g. IFCWALLSTANDARDCASE"
+        },
+        "quantities": {
+          "$ref": "#/$defs/quantities"
+        },
+        "classifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/classification"
+          }
+        },
+        "building_entity_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "drawing_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "source_text_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "name": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "kind": {
+          "enum": [
+            "pump",
+            "water_heater",
+            "boiler",
+            "heat_exchanger",
+            "tank",
+            "meter",
+            "filter",
+            "fixture",
+            "terminal",
+            "manifold",
+            "other",
+            "unknown"
+          ]
+        },
+        "subtype": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "service": {
+          "$ref": "#/$defs/pipe_service"
+        },
+        "system_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "tag": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "connected_segment_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "connection_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "room_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "bbox_px": {
+          "$ref": "#/$defs/bbox"
+        },
+        "polygon_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "rated_flow_m3_s": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "rated_pressure_pa": {
+          "$ref": "#/$defs/num_or_null"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "provenance",
+        "kind"
+      ],
+      "description": "Piping-connected equipment, terminals and sanitary fixtures when present in a plumbing model."
+    },
+    "pipe_connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "superseded"
+          ],
+          "default": "active"
+        },
+        "superseded_by": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "level_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "description": "Free-form extras, e.g. raw IFC property sets (properties.psets: values as stored, unit not declared)"
+        },
+        "global_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "IFC GlobalId (raw, 22 characters), when the source has one"
+        },
+        "ifc_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Source IFC class in upper case, e.g. IFCWALLSTANDARDCASE"
+        },
+        "quantities": {
+          "$ref": "#/$defs/quantities"
+        },
+        "classifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/classification"
+          }
+        },
+        "building_entity_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "drawing_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "source_text_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "from_entity_id": {
+          "$ref": "#/$defs/id"
+        },
+        "to_entity_id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "connected",
+            "branch",
+            "feeds",
+            "drains_to",
+            "returns_to",
+            "other"
+          ]
+        },
+        "system_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "point_px": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/point"
+            }
+          ]
+        },
+        "point_m": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/point"
+            }
+          ]
+        },
+        "is_verified": {
+          "type": "boolean"
+        },
+        "note": {
+          "$ref": "#/$defs/str_or_null"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "provenance",
+        "from_entity_id",
+        "to_entity_id",
+        "kind"
+      ],
+      "description": "Graph edges. Connections are explicit only when supported by source or validated geometry; otherwise mark is_verified=false."
+    },
+    "pipe_text": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "superseded"
+          ],
+          "default": "active"
+        },
+        "superseded_by": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "level_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "description": "Free-form extras, e.g. raw IFC property sets (properties.psets: values as stored, unit not declared)"
+        },
+        "global_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "IFC GlobalId (raw, 22 characters), when the source has one"
+        },
+        "ifc_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Source IFC class in upper case, e.g. IFCWALLSTANDARDCASE"
+        },
+        "quantities": {
+          "$ref": "#/$defs/quantities"
+        },
+        "classifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/classification"
+          }
+        },
+        "building_entity_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "drawing_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "source_text_ids": {
+          "$ref": "#/$defs/ids"
+        },
+        "text": {
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "pipe_label",
+            "diameter",
+            "material",
+            "system",
+            "length",
+            "slope",
+            "elevation",
+            "legend",
+            "title",
+            "dimension",
+            "other"
+          ]
+        },
+        "bbox_px": {
+          "$ref": "#/$defs/bbox"
+        },
+        "polygon_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "linked_entity_ids": {
+          "$ref": "#/$defs/ids"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "provenance",
+        "text"
+      ]
+    },
+    "pipe_statistic": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unit": {
+          "enum": [
+            "m",
+            "count",
+            "ratio",
+            "m2",
+            "m3",
+            null
+          ]
+        },
+        "service": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/pipe_service"
+            }
+          ]
+        },
+        "system_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "type_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "level_id": {
+          "$ref": "#/$defs/id_or_null"
+        },
+        "status": {
+          "$ref": "#/$defs/status_value"
+        },
+        "method": {
+          "$ref": "#/$defs/str_or_null"
+        },
+        "source_entity_ids": {
+          "$ref": "#/$defs/ids"
+        }
+      },
+      "required": [
+        "name",
+        "value",
+        "unit",
+        "status",
+        "source_entity_ids"
+      ],
+      "description": "Optional cached aggregates; tools should recompute from active segments when possible."
     }
   }
 }

@@ -417,6 +417,7 @@ def attach_tags(doc: dict, vector: bool = False) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from pipes.schema.convert import graph
     from pipes.write import finalize
 
     if hasattr(sys.stdout, "reconfigure"):
@@ -425,7 +426,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("pipe_json")
     ap.add_argument("-o", "--out", help="default: overwrite the input")
     a = ap.parse_args(argv)
-    doc = json.loads(Path(a.pipe_json).read_text(encoding="utf-8"))
+    doc = graph(json.loads(Path(a.pipe_json).read_text(encoding="utf-8")))
     stats = attach_tags(doc)
     Path(a.out or a.pipe_json).write_text(
         json.dumps(finalize(doc), ensure_ascii=False, indent=1), encoding="utf-8"

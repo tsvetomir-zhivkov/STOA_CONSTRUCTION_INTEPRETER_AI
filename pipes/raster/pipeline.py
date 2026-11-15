@@ -27,6 +27,7 @@ from pipes.raster import ocr_run
 from pipes.raster import regions as rg
 from pipes.raster.detect import merge
 from pipes.raster.trace_skeleton import trace
+from pipes.schema.convert import graph
 from pipes.tags import attach_tags
 from pipes.write import finalize
 
@@ -48,7 +49,7 @@ def _clip(b, W, H):
 def symbol_boxes(sheet_dir: Path, mode: str, conf: float, run: str = cfg.DETECTOR_RUN) -> list[dict]:
     split, sid = sheet_dir.parent.name, sheet_dir.name
     if mode == "gt":
-        doc = json.loads((sheet_dir / "gt.pipe.json").read_text(encoding="utf-8"))
+        doc = graph(json.loads((sheet_dir / "gt.pipe.json").read_text(encoding="utf-8")))
         return [{"bbox_px": n["bbox_px"], "score": 1.0} for n in doc["nodes"]]
     raw_dir = f"ds_{split}_{run}"
     raw = json.loads((HERE / "index_pipes/_raw" / raw_dir / f"{sid}.det.json").read_text(encoding="utf-8"))
@@ -329,6 +330,7 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8"
         )
         draw(d / "sheet.jpg", doc, HERE / "index_pipes" / "overlays" / out.name / f"{d.name}.png")
+        doc = graph(doc)
         s = doc["summary"]
         print(d.name, f"nodes={sum(s['node_counts'].values())} edges={len(doc['edges'])}",
               f"components={s.get('connected_components')} unsnapped={s.get('unsnapped_ends')}", dbg)  # fmt: skip

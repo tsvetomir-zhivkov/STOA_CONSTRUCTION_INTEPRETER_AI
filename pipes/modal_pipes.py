@@ -143,3 +143,42 @@ def detect_main(
         d["cost_usd"] = res["cost_usd"] / len(sheets)
         (raw / f"{sid}.det.json").write_text(json.dumps(d), encoding="utf-8")
     print(f"{len(sheets)} sheets, {res['seconds']:.1f} s GPU, ${res['cost_usd']:.4f}; raw in {raw}")
+
+
+# ---------------------------------------------------------------- quality gate: Real-ESRGAN x3 upscale (scan route)
+
+esrgan_image = (
+    modal.Image.debian_slim(python_version="3.11")
+    .apt_install("libgl1", "libglib2.0-0", "wget")
+    .pip_install(
+        "torch==2.0.1",
+        "torchvision==0.15.2",
+        "numpy<2",
+        "basicsr==1.4.2",
+        "realesrgan==0.3.0",
+        "opencv-python-headless",
+    )  # fmt: skip
+    .run_commands(
+        "wget -q -O /RealESRGAN_x4plus.pth "
+        "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth"
+    )
+)
+
+
+@app.function(image=esrgan_image, gpu="T4", timeout=900, scaledown_window=60)
+def upscale(png: bytes, factor: int = 3) -> bytes:
+    """Real-ESRGAN x4plus, output resized to `factor` x the input. Used for detection/OCR only: the caller maps
+    every box back to the original page pixels."""
+    import cv2
+    import numpy as np
+    import torch
+    from basicsr.archs.rrdbnet_arch import RRDBNet
+    from realesrgan import RealESRGANer
+
+    net = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+    up = RealESRGANer(scale=4, model_path="/RealESRGAN_x4plus.pth", model=net, tile=400, tile_pad=10, pre_pad=0,
+                      half=torch.cuda.is_available())  # fmt: skip
+    img = cv2.imdecode(np.frombuffer(png, np.uint8), cv2.IMREAD_COLOR)
+    out, _ = up.enhance(img, outscale=factor)
+    ok, buf = cv2.imencode(".png", out)
+    return buf.tobytes()

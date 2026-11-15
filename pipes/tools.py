@@ -31,6 +31,7 @@ from pathlib import Path
 import networkx as nx
 
 from pipes.config import MEASURED_RECALL
+from pipes.schema.convert import graph
 from pipes.tags import normalise
 
 STRUCTURAL = {"tee", "junction", "elbow", "cross", "open_end"}
@@ -51,6 +52,7 @@ def _inside(p, box) -> bool:
 
 class PipeIndex:
     def __init__(self, doc: dict):
+        doc = graph(doc)  # a piping-0.1 file is read through the graph view (pipes.schema.convert)
         self.doc = doc
         active = lambda el: el["provenance"].get("status", "active") == "active"  # noqa: E731
         self.nodes = {n["id"]: n for n in doc["nodes"] if active(n)}

@@ -14,6 +14,7 @@ from pathlib import Path
 
 from pipes.eval.metrics import match_symbols, prf
 from pipes.raster.detect import merge
+from pipes.schema.convert import graph
 
 HERE = Path(__file__).parent.parent
 DEV5 = {"0", "145", "157", "159", "192"}
@@ -39,7 +40,9 @@ def load(run: str) -> tuple[dict, dict]:
         for f in (HERE / "index_pipes/_raw" / f"ds_test_{run}").glob("*.det.json")
     }
     gt = {
-        sid: json.loads((HERE / "data_pipes/ds/test" / sid / "gt.pipe.json").read_text(encoding="utf-8"))
+        sid: graph(
+            json.loads((HERE / "data_pipes/ds/test" / sid / "gt.pipe.json").read_text(encoding="utf-8"))
+        )
         for sid in raw
     }
     return raw, gt

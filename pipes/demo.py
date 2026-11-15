@@ -21,11 +21,13 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 from pipes import tools
+from pipes.schema.convert import graph
 
 HERE = Path(__file__).parent
 NODE = (0, 150, 80)
 EDGE = (230, 90, 0)
 REGION = (30, 90, 220)
+PIPE = (40, 90, 200)
 AMBER = (200, 140, 0)
 
 
@@ -34,7 +36,7 @@ def sheet_image(doc: dict) -> Path | None:
     data_pipes/ds/<split>/<id>/sheet.jpg for ids like 'pid_dataset/test/157#0'."""
     from pipes.routing import pipe_index_path
 
-    sh = doc["sheet"]
+    sh = graph(doc)["sheet"]
     png = pipe_index_path(sh["source_file"], sh["page_index"])
     png = png.with_name(png.name.removesuffix(".pipe.json") + ".png")
     if png.exists():
@@ -99,7 +101,24 @@ def _summary(result: dict) -> str:
     return ""
 
 
-def render(result: dict, image: Path, out: Path) -> Path:
+def gate_line(result: dict) -> str | None:
+    """The quality-gate provenance of the published sheet (only written when a check failed), for the caption."""
+    from pipes.routing import pipe_index_path
+
+    try:
+        src, _, page = str(result["sheet"]).partition("#")
+        doc = json.loads(pipe_index_path(src, int(page or 0)).read_text(encoding="utf-8"))
+    except (OSError, ValueError, KeyError):
+        return None
+    for h in doc.get("history", []):
+        if h.get("action") == "extractor" and h["extractor"] == "ext_gate":
+            return json.loads(h["note"])["name"]
+    return next((x["name"] for x in doc.get("extractors", []) if x["id"] == "ext_gate"), None)
+
+
+def render(result: dict, image: Path, out: Path, context: dict | None = None) -> Path:
+    """context = the sheet's pipe index (piping or graph doc): every traced pipe, symbol and unsnapped end is drawn
+    faintly under the highlights, so the answer is seen against the whole network."""
     base = Image.open(image).convert("RGBA")
     W, H = base.size
     unit = (
@@ -113,6 +132,12 @@ def render(result: dict, image: Path, out: Path) -> Path:
         + ("reliable" if result["reliable"] else "NOT RELIABLE"),
         _summary(result),
         *[f"! {c}" for c in (result.get("caveats") or [])[:3]],
+        *(
+            ["all traced pipes in blue, symbols in green, unsnapped ends circled red"]
+            if context is not None
+            else []
+        ),
+        *([gl] if (gl := gate_line(result)) else []),
     ]
     lh = round(cap_size * 1.4)
     band = lh * len(lines) + 12
@@ -127,6 +152,27 @@ def render(result: dict, image: Path, out: Path) -> Path:
         return (p[0], p[1] + band)
 
     line_w, box_w = max(4, round(7 * unit)), max(2, round(3 * unit))
+    if context is not None:
+        ctx = graph(context)
+        thin = max(2, round(3 * unit))
+        for e in ctx["edges"]:
+            d.line([sh(p) for p in e["polyline_px"]], fill=(*PIPE, 190), width=thin, joint="curve")
+            for end in e["ends"]:
+                if end["node_id"] is None:
+                    x, y = end["point_px"]
+                    r = 3 * unit
+                    d.ellipse(
+                        [sh((x - r, y - r)), sh((x + r, y + r))],
+                        outline=(220, 0, 0, 230),
+                        width=max(1, thin - 1),
+                    )
+        for n in ctx["nodes"]:
+            if n["type"] in ("tee", "junction", "open_end", "elbow", "cross"):
+                x, y = n["center_px"]
+                d.ellipse([sh((x - 4, y - 4)), sh((x + 4, y + 4))], fill=(*PIPE, 230))
+            else:
+                x0, y0, x1, y1 = n["bbox_px"]
+                d.rectangle([sh((x0, y0)), sh((x1, y1))], outline=(0, 140, 70, 150), width=max(1, thin - 1))
     for r in hl.get("regions", []):
         d.rectangle([sh(r[:2]), sh(r[2:])], fill=(*REGION, 28), outline=(*REGION, 230), width=box_w)
     route = result["answer"].get("path_edge_ids") if isinstance(result["answer"], dict) else None
@@ -168,6 +214,9 @@ def main(argv: list[str] | None = None) -> int:
     pre.add_argument("--result", help="a saved tool result (JSON) instead of running a tool")
     pre.add_argument("--image", help="sheet image (default: found from the sheet id)")
     pre.add_argument("-o", "--out", required=True)
+    pre.add_argument(
+        "--with-pipes", action="store_true", help="also draw every traced pipe under the highlights"
+    )
     opts, rest = pre.parse_known_args(argv)
     ap = argparse.ArgumentParser(
         prog="python -m pipes.demo", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -176,6 +225,7 @@ def main(argv: list[str] | None = None) -> int:
     tools.add_tool_args(ap.add_subparsers(dest="tool"))
     a = ap.parse_args(rest)
     a.result, a.image, a.out = opts.result, opts.image, opts.out
+    ctx = None
     if a.result:
         result, image = json.loads(Path(a.result).read_text(encoding="utf-8")), a.image
     else:
@@ -184,9 +234,10 @@ def main(argv: list[str] | None = None) -> int:
         idx = tools.PipeIndex.load(a.pipe_json)
         result = tools.call(idx, a)
         image = a.image or sheet_image(idx.doc)
+        ctx = idx.doc if opts.with_pipes else None
     if not image:
         ap.error("no sheet image found: pass --image")
-    print(render(result, Path(image), Path(a.out)))
+    print(render(result, Path(image), Path(a.out), ctx))
     return 0
 
 

@@ -44,6 +44,7 @@ from pipes.glossary_pipes import (
     system_from_layer,
     type_from_block,
 )
+from pipes.schema.convert import graph
 from pipes.tags import attach_tags
 from pipes.write import finalize
 
@@ -570,7 +571,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--no-publish", action="store_true")
     a = ap.parse_args(argv)
-    doc = translate_dxf(a.dxf, a.source_file, publish=not a.no_publish)
+    doc = graph(translate_dxf(a.dxf, a.source_file, publish=not a.no_publish))
     s = doc["summary"]
     print(json.dumps({"nodes": s["node_counts"], "edges": len(doc["edges"]), "components": s["connected_components"],
                       "unsnapped": s["unsnapped_end_count"], "to_scale": doc["sheet"]["is_to_scale"],

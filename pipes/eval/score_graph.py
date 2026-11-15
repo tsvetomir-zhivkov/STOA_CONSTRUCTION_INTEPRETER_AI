@@ -11,11 +11,12 @@ import json
 from pathlib import Path
 
 from pipes.eval.metrics import graph_metrics, has_edges, match_symbols, prf
+from pipes.schema.convert import graph
 
 
 def load_gt(gt_dir: Path) -> dict[str, dict]:
     return {
-        d.name: json.loads((d / "gt.pipe.json").read_text(encoding="utf-8"))
+        d.name: graph(json.loads((d / "gt.pipe.json").read_text(encoding="utf-8")))
         for d in sorted(gt_dir.iterdir())
         if (d / "gt.pipe.json").exists()
     }
@@ -23,7 +24,7 @@ def load_gt(gt_dir: Path) -> dict[str, dict]:
 
 def load_pred(pred_dir: Path) -> dict[str, dict]:
     return {
-        f.name.removesuffix(".pipe.json"): json.loads(f.read_text(encoding="utf-8"))
+        f.name.removesuffix(".pipe.json"): graph(json.loads(f.read_text(encoding="utf-8")))
         for f in sorted(pred_dir.glob("*.pipe.json"))
     }
 

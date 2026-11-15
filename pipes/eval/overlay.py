@@ -7,11 +7,14 @@ from pathlib import Path
 import networkx as nx
 from PIL import Image, ImageDraw
 
+from pipes.schema.convert import graph
+
 PALETTE = [(0, 114, 178), (230, 159, 0), (0, 158, 115), (204, 121, 167), (86, 180, 233), (213, 94, 0)]
 STRUCT = {"tee": (0, 0, 255), "junction": (255, 0, 255), "open_end": (255, 140, 0)}
 
 
 def draw(image: Path, doc: dict, out: Path) -> Path:
+    doc = graph(doc)
     im = Image.open(image).convert("RGB")
     d = ImageDraw.Draw(im, "RGBA")
     for t in doc.get("texts", []):

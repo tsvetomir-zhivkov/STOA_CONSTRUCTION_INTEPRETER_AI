@@ -4,6 +4,7 @@ from pathlib import Path
 from pipes.eval.score_graph import score_symbols
 from pipes.ingest.pid_dataset import gt_document
 from pipes.raster.tiles import origins, tile_boxes
+from pipes.schema.convert import graph
 from pipes.write import finalize
 
 SYMS = [
@@ -13,7 +14,7 @@ SYMS = [
 
 
 def gt():
-    return {"s": finalize(gt_document("s", "test", 300, 200, SYMS))}
+    return {"s": graph(finalize(gt_document("s", "test", 300, 200, SYMS)))}
 
 
 def test_gt_against_itself_is_perfect():
@@ -38,7 +39,7 @@ def test_dev_ground_truth_validates():
     if not files:  # dataset not ingested on this machine
         return
     for f in files:
-        doc = json.loads(f.read_text(encoding="utf-8"))
+        doc = graph(json.loads(f.read_text(encoding="utf-8")))
         assert doc["edges"] == [] or doc["coverage"][1]["status"] == "analysed"
 
 

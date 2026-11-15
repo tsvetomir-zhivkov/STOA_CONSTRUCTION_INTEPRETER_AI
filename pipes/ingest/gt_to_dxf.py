@@ -21,6 +21,8 @@ from pathlib import Path
 import ezdxf
 from ezdxf import units
 
+from pipes.schema.convert import graph
+
 STRUCTURAL = {"tee", "junction", "elbow", "cross", "open_end"}
 BLOCK_NAMES = {
     "boiler": "KATTILA", "pump": "KIERTOPUMPPU", "ball_valve": "PALLOVENTTIILI",
@@ -50,6 +52,7 @@ def _safe(name: str) -> str:
 
 
 def pipe_json_to_dxf(doc: dict, path: str | Path, label_edges: bool = True) -> Path:
+    doc = graph(doc)
     conv, code = _to_dxf(doc["frame"])
     scale_back = (
         1.0 / math.hypot(doc["frame"]["source_to_px"][0], doc["frame"]["source_to_px"][3])

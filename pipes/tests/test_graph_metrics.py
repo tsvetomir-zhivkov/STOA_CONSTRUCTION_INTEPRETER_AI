@@ -4,6 +4,7 @@ from pipes.eval.metrics import adjacency, graph_metrics
 from pipes.eval.score_graph import score_edges
 from pipes.graph import edge_doc
 from pipes.ingest.pid_dataset import gt_document
+from pipes.schema.convert import graph
 from pipes.write import finalize
 
 BOXES = [[10, 10, 30, 30], [110, 10, 130, 30], [210, 10, 230, 30], [310, 10, 330, 30]]
@@ -21,7 +22,7 @@ def make(links, boxes=BOXES):
             {"node_id": nb["id"], "port_index": None, "snap": "snapped", "snap_distance_px": 0},
         ]
         edges.append(edge_doc(i, ends, [na["center_px"], nb["center_px"]], "ext_human", 1.0))
-    return finalize(gt_document("s", "test", 400, 100, syms, edges))
+    return graph(finalize(gt_document("s", "test", 400, 100, syms, edges)))
 
 
 GT = make([(1, 2), (2, 3), (3, 4)])

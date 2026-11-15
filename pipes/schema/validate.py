@@ -1,75 +1,128 @@
-"""Validate a pipe index file: JSON Schema + the cross-reference rules the schema cannot express.
+"""Validate a piping index (schema piping-0.1): JSON Schema + the reference rules the schema says it does not check.
 
-    python validate.py pipe.json [--drawing drawing.json ...]
+    python validate.py piping.json
+
+check(pipe, drawings) -> list of error strings (empty = valid).
 """
-import json, sys, argparse, os
+
+import argparse
+import json
+import os
+import sys
+
 import jsonschema
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+ENTITY_LISTS = (
+    "levels", "pipe_systems", "pipe_types", "pipe_segments", "pipe_fittings", "pipe_equipment",
+    "pipe_connections", "texts",
+)  # fmt: skip
+_SCHEMA = None
 
-def check(pipe, drawings):
-    errs = []
-    schema = json.load(open(os.path.join(HERE, "pipe.schema.json")))
-    for e in jsonschema.Draft202012Validator(schema).iter_errors(pipe):
-        errs.append(f"schema: {'/'.join(map(str, e.path))}: {e.message}")
+
+def schema():
+    global _SCHEMA
+    if _SCHEMA is None:
+        with open(os.path.join(HERE, "pipe.schema.json"), encoding="utf-8") as f:
+            _SCHEMA = json.load(f)
+    return _SCHEMA
+
+
+def check(pipe, drawings=None):
+    errs = [
+        f"schema: {'/'.join(map(str, e.path))}: {e.message}"
+        for e in jsonschema.Draft202012Validator(schema()).iter_errors(pipe)
+    ]
+    if errs:  # the reference rules assume the shape is right
+        return errs
     ids = {}
-    for key in ("nodes", "edges", "markers", "texts", "relations", "coverage", "links"):
-        for el in pipe.get(key, []):
-            if el["id"] in ids: errs.append(f"duplicate id {el['id']}")
+    for key in ENTITY_LISTS:
+        for el in pipe[key]:
+            if el["id"] in ids:
+                errs.append(f"duplicate id {el['id']}")
             ids[el["id"]] = key
-    ext = {x["id"] for x in pipe["extractors"]}
-    def walk(o):
-        if isinstance(o, dict):
-            if "extractor_id" in o and o["extractor_id"] not in ext: errs.append(f"unknown extractor {o['extractor_id']}")
-            for v in o.values(): walk(v)
-        elif isinstance(o, list):
-            for v in o: walk(v)
-    walk(pipe)
-    W, H = pipe["frame"]["width_px"], pipe["frame"]["height_px"]
-    cov_elements = {i for c in pipe["coverage"] if c["category"] == "connectivity" for i in c.get("element_ids", [])}
-    for e in pipe["edges"]:
-        for i, end in enumerate(e["ends"]):
-            if end["node_id"] is not None and ids.get(end["node_id"]) != "nodes":
-                errs.append(f"{e['id']} end {i}: unknown node {end['node_id']}")
-            if end["snap"] == "unsnapped" and end["node_id"] is not None:
-                errs.append(f"{e['id']} end {i}: unsnapped but has node_id")
-            if end["node_id"] is None and e["id"] not in cov_elements:
-                errs.append(f"{e['id']} end {i}: unsnapped end without a 'connectivity' coverage entry")
-        if e["ends"][0]["point_px"] != e["polyline_px"][0] or e["ends"][1]["point_px"] != e["polyline_px"][-1]:
-            errs.append(f"{e['id']}: ends[].point_px must equal first/last polyline point")
-        for t in (e.get("line_tag_text_id"), e["diameter"].get("text_id"), e["length"].get("written_text_id")):
-            if t and ids.get(t) != "texts": errs.append(f"{e['id']}: unknown text {t}")
-    for n in pipe["nodes"]:
-        x0, y0, x1, y1 = n["bbox_px"]
-        if not (0 <= x0 <= x1 <= W and 0 <= y0 <= y1 <= H): errs.append(f"{n['id']}: bbox outside frame")
-        if n.get("tag_text_id") and ids.get(n["tag_text_id"]) != "texts": errs.append(f"{n['id']}: unknown text")
-    for mk in pipe["markers"]:
-        if mk.get("on_edge_id") and ids.get(mk["on_edge_id"]) != "edges": errs.append(f"{mk['id']}: unknown edge {mk['on_edge_id']}")
-    for r in pipe["relations"]:
-        if r["from_id"] not in ids: errs.append(f"{r['id']}: unknown from_id {r['from_id']}")
-        to = r.get("to") or {}
-        if r["kind"] == "same_as":
-            d = drawings.get(to.get("file_id"))
-            if d is not None:
-                all_ids = {el["id"] for k in ("rooms", "walls", "openings", "texts", "objects") for el in d[k]}
-                if to.get("element_id") not in all_ids: errs.append(f"{r['id']}: {to.get('element_id')} not in {to.get('file_id')}")
-    for l in pipe["links"]:
-        if l["relation"] == "same_page" and l.get("transform") != [1, 0, 0, 0, 1, 0]:
-            errs.append(f"{l['id']}: same_page needs the identity transform")
-        d = drawings.get(l["drawing_id"])
-        if d is not None and l["relation"] == "same_page":
-            img = d["drawing"]["image"]
-            if (img["width_px"], img["height_px"]) != (W, H): errs.append(f"{l['id']}: same_page but image sizes differ")
-    if pipe["metres_scale_revision"] not in (None, pipe["scale"]["revision"]):
-        errs.append("metres are stale: run derive.py")
+    for key in ("site", "building"):
+        if pipe[key] and pipe[key]["id"] in ids:
+            errs.append(f"duplicate id {pipe[key]['id']}")
+    src_ids = {s["id"] for s in pipe["sources"]}
+    if pipe["drawing"]["source"] not in src_ids:
+        errs.append(f"drawing.source {pipe['drawing']['source']} is not in sources")
+    img = pipe["drawing"].get("image")
+    W, H = (img["width_px"], img["height_px"]) if img else (None, None)
+
+    def ref(owner, field, target, kinds):
+        if target is not None and ids.get(target) not in kinds:
+            errs.append(f"{owner}: {field} {target} is not a {'/'.join(kinds)} id")
+
+    node_kinds = ("pipe_fittings", "pipe_equipment")
+    for coll in ("pipe_segments", "pipe_fittings", "pipe_equipment", "pipe_systems", "pipe_types", "texts"):
+        for el in pipe[coll]:
+            ref(el["id"], "superseded_by", el.get("superseded_by"), (coll,))
+            ref(el["id"], "level_id", el.get("level_id"), ("levels",))
+            for tid in el.get("source_text_ids", []):
+                ref(el["id"], "source_text_ids", tid, ("texts",))
+            b = el.get("bbox_px") if coll in ("pipe_fittings", "pipe_equipment") else None  # symbols: inside the page
+            if b and W is not None and not (0 <= b[0] <= b[2] <= W and 0 <= b[1] <= b[3] <= H):
+                errs.append(f"{el['id']}: bbox_px outside the page image")
+    conns = {c["id"]: c for c in pipe["pipe_connections"]}
+    for c in pipe["pipe_connections"]:
+        ref(c["id"], "from_entity_id", c["from_entity_id"], (*node_kinds, "pipe_segments"))
+        ref(c["id"], "to_entity_id", c["to_entity_id"], (*node_kinds, "pipe_segments"))
+        ref(c["id"], "system_id", c.get("system_id"), ("pipe_systems",))
+    for s in pipe["pipe_segments"]:
+        ref(s["id"], "system_id", s.get("system_id"), ("pipe_systems",))
+        ref(s["id"], "type_id", s.get("type_id"), ("pipe_types",))
+        pl = s.get("centerline_px")
+        if not pl or len(pl) < 2:
+            errs.append(f"{s['id']}: centerline_px needs at least two points")
+        for i, key in enumerate(("start_connection_id", "end_connection_id")):
+            cid = s.get(key)
+            if cid is None:
+                if f"end{i}_unsnapped" not in s.get("flags", []):
+                    errs.append(f"{s['id']}: {key} is null but the end is not flagged end{i}_unsnapped")
+                continue
+            c = conns.get(cid)
+            if c is None:
+                errs.append(f"{s['id']}: {key} {cid} is not a connection")
+            elif s["id"] not in (c["from_entity_id"], c["to_entity_id"]):
+                errs.append(f"{s['id']}: {key} {cid} does not touch this segment")
+        for cid in (s.get("start_connection_id"), s.get("end_connection_id")):
+            if cid and cid in conns and conns[cid]["from_entity_id"] == s["id"] == conns[cid]["to_entity_id"]:
+                errs.append(f"{cid}: a connection from a segment to itself")
+    for el in (*pipe["pipe_fittings"], *pipe["pipe_equipment"]):
+        for sid in el.get("connected_segment_ids", []):
+            ref(el["id"], "connected_segment_ids", sid, ("pipe_segments",))
+        for cid in el.get("connection_ids", []):
+            ref(el["id"], "connection_ids", cid, ("pipe_connections",))
+    for t in pipe["texts"]:
+        for lid in t.get("linked_entity_ids", []):
+            if lid not in ids:
+                errs.append(f"{t['id']}: linked_entity_ids {lid} does not exist")
+    for sy in pipe["pipe_systems"]:
+        for key, kinds in (("segment_ids", ("pipe_segments",)), ("fitting_ids", ("pipe_fittings",)),
+                           ("equipment_ids", ("pipe_equipment",))):  # fmt: skip
+            for x in sy.get(key, []):
+                ref(sy["id"], key, x, kinds)
+    for ty in pipe["pipe_types"]:
+        for x in ty.get("segment_ids", []):
+            ref(ty["id"], "segment_ids", x, ("pipe_segments",))
+    for st in pipe.get("statistics", []):
+        for x in st["source_entity_ids"]:
+            if x not in ids:
+                errs.append(f"statistic {st['name']}: source_entity_ids {x} does not exist")
+    k = (pipe["drawing"].get("scale") or {}).get("m_per_px")
+    if k is None:
+        for s in pipe["pipe_segments"]:
+            if s.get("length_m") is not None:
+                errs.append(f"{s['id']}: length_m without a scale (never estimate lengths from pixels)")
     return errs
 
+
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(); ap.add_argument("pipe"); ap.add_argument("--drawing", action="append", default=[])
+    ap = argparse.ArgumentParser()
+    ap.add_argument("pipe")
     a = ap.parse_args()
-    drawings = {}
-    for p in a.drawing:
-        d = json.load(open(p)); drawings[d["drawing"]["id"]] = d
-    errs = check(json.load(open(a.pipe)), drawings)
+    with open(a.pipe, encoding="utf-8") as f:
+        errs = check(json.load(f))
     print("\n".join(errs) if errs else f"OK: {a.pipe}")
     sys.exit(1 if errs else 0)

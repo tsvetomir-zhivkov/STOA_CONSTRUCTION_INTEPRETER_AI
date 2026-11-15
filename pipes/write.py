@@ -1,7 +1,8 @@
 """Every route writes through finalize(): derive, validate, raise with the error list.
 
-Needs pipes/schema/{pipe.schema.json,derive.py,validate.py}, copied from schema/pipe/ (see schema/README.md).
-Fails loudly when they are missing: never writes unvalidated JSON.
+Output is the piping schema v0.1 (pipes/schema/pipe.schema.json). The routes build a working graph doc (nodes /
+edges / texts); finalize() converts it (pipes.schema.convert.to_piping), derives and validates. It also accepts a
+piping doc (convert.view() first), so re-finalizing a published file works. Never writes unvalidated JSON.
 """
 
 from __future__ import annotations
@@ -28,18 +29,19 @@ def _schema_modules():
     try:
         from pipes.schema import derive, validate
     except ImportError as e:
-        raise PipeSchemaMissing(
-            "pipes/schema/derive.py and validate.py are missing; copy them (and pipe.schema.json) "
-            f"from schema/pipe/ ({e})"
-        ) from e
+        raise PipeSchemaMissing(f"pipes/schema/{{convert,derive,validate}}.py are missing ({e})") from e
     return derive, validate
 
 
 def finalize(pipe: dict, drawings: dict | None = None) -> dict:
-    """derive.derive(), then validate.check(); raises PipeValidationError with the error list."""
+    """graph doc (or piping doc) -> piping doc: convert, derive, validate; raises PipeValidationError."""
     derive, validate = _schema_modules()
+    from pipes.schema import convert
+
     drawings = drawings or {}
-    out = derive.derive(copy.deepcopy(pipe), drawings)
+    if convert.is_piping(pipe) and (errors := validate.check(pipe, drawings)):
+        raise PipeValidationError(errors)  # a piping doc is checked as given before it is re-derived
+    out = derive.derive(convert.to_piping(convert.view(copy.deepcopy(pipe))), drawings)
     errors = validate.check(out, drawings)
     if errors:
         raise PipeValidationError(errors)
