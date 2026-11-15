@@ -1274,13 +1274,14 @@ export class BlueprintViewer {
   /**
    * Add files (.json and .ifc, any mix). Adds to the model, never replaces it. Returns per-file results.
    * @param {Array<File | { name:string, text?:() => Promise<string>, arrayBuffer?:() => Promise<ArrayBuffer> }>} files
+   * @param {{reframe?:boolean}} options Keep the current camera when attaching background building data.
    */
-  addFiles(files) {
+  addFiles(files, options = {}) {
     if (this.disposed) return Promise.reject(new Error('Viewer was disposed'));
-    return this.session.run(token => this.importFiles(files, token), () => this.bp.sources.length > 0);
+    return this.session.run(token => this.importFiles(files, token, options), () => this.bp.sources.length > 0);
   }
 
-  async importFiles(files, token) {
+  async importFiles(files, token, { reframe = true } = {}) {
     const results = [];
     for (const f of files) {
       if (!token.current() || this.disposed) break;
@@ -1313,7 +1314,7 @@ export class BlueprintViewer {
         results.push({ name: f.name, ok: false, error: err.message });
       }
     }
-    if (token.current()) this.afterChange(true);
+    if (token.current()) this.afterChange(reframe);
     return results;
   }
 

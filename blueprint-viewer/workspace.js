@@ -5,13 +5,11 @@ import {showSource} from './sourceView.js';
 import {PlanCache} from './plans.js';
 import {PlanView} from './planView.js';
 import {indexBuilding,renderProjection} from './buildingModel.js';
+import {api} from './api.js';
+export {api} from './api.js';
 
 const $=id=>document.getElementById(id);
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-export async function api(path,options={}){
-  const response=await fetch(path,options);
-  const value=await response.json();if(!response.ok)throw Error(value.error ?? response.statusText);return value;
-}
 export class Workspace {
   constructor(app){
     this.app=app;this.documents=new Map();this.indexes=new Map();this.planCache=new PlanCache();
@@ -20,6 +18,8 @@ export class Workspace {
     this.planView=new PlanView($('planSurface'),{onSelect:key=>this.selectPlan(key),onHover:key=>{this.planView.hover(key);this.viewer?.setHovered(this.pickByKey.get(key) ?? null);}});
     for(const button of document.querySelectorAll('[data-mode]'))button.addEventListener('click',()=>this.setMode(button.dataset.mode));
     installInspector(this);installLibrary(this);installAnalysis(this);
+    $('cancelImport').onclick=()=>this.clear();
+    $('dismissWorkspaceError').onclick=()=>{$('workspaceError').hidden=true;};
     if(matchMedia('(max-width:900px)').matches)document.body.classList.add('sidebar-collapsed');
     $('toggleSidebar').onclick=()=>{document.body.classList.toggle('sidebar-collapsed');requestAnimationFrame(()=>this.viewer?.resize());};
     $('inspectorClose').onclick=()=>{this.viewer?.select(null);$('panel').classList.remove('open');document.body.classList.remove('inspector-open');this.viewer?.resize();};
@@ -35,62 +35,126 @@ export class Workspace {
   }
   get viewer(){return window.viewer;}
   message(text){$('workspaceMessage').textContent=text;}
+  reportError(error){
+    this.message(error.message);$('workspaceErrorText').textContent=error.message;$('workspaceError').hidden=false;
+    if(!this.viewer?.bp.sources.length&&!this.sourceRecords.size&&!this.activeDocument)document.body.classList.remove('viewing');
+  }
   setMode(mode){
     this.mode=mode;document.body.dataset.mode=mode;
     for(const b of document.querySelectorAll('[data-mode]'))b.setAttribute('aria-pressed',String(b.dataset.mode===mode));
     requestAnimationFrame(()=>{this.viewer?.resize();this.viewer?.frame();if(this.planView.content)this.planView.fit();});
     if(mode!=='3d' && this.floor)this.showFloor();
   }
+  loading(name,phase,previewReady=false){
+    $('importProgress').hidden=false;$('importProgress').dataset.previewReady=String(previewReady);
+    $('importName').textContent=name;$('importPhase').textContent=phase;
+  }
+  async waitForExtraction(meta,epoch){
+    while(['UPLOADING','PROCESSING'].includes(meta.state)&&epoch===this.epoch){
+      await pause(500);if(epoch!==this.epoch)return meta;
+      meta=await api(`/api/documents/${meta.id}`);
+      if(epoch!==this.epoch)return meta;
+      this.documents.set(meta.id,meta);
+      if(this.activeDocument?.id===meta.id)this.activeDocument=meta;
+    }
+    return meta;
+  }
+  async attachBuildingData(meta,epoch){
+    if(meta.state!=='READY'||this.indexes.get(meta.id)?.length)return;
+    const buildings=await api(`/api/documents/${meta.id}/buildings`);
+    if(epoch!==this.epoch)return;
+    const viewer=this.viewer;
+    const hasGeometry=viewer.bp.sources.some(s=>s.scope===meta.id&&s.kind==='ifc');
+    if(meta.type==='ifc'&&!hasGeometry)return;
+    this.indexes.set(meta.id,buildings.map(indexBuilding));
+    for(const building of buildings){
+      const results=await viewer.addFiles([{name:`${meta.name} · building.json`,documentId:meta.id,text:async()=>JSON.stringify(building)}],{reframe:!hasGeometry});
+      if(epoch!==this.epoch)return;
+      if(results.some(r=>!r.ok))throw Error(results.filter(r=>!r.ok).map(r=>r.error).join('\n'));
+    }
+    if(this.activeDocument?.id===meta.id)this.refreshAnalysis?.();
+  }
+  async finishIfc(meta,epoch){
+    this.loading(meta.name,'3D ready. Building data is still processing.',true);
+    meta=await this.waitForExtraction(meta,epoch);
+    if(epoch!==this.epoch)return;
+    await this.attachBuildingData(meta,epoch);
+    if(epoch!==this.epoch)return;
+    if(this.activeDocument?.id===meta.id){
+      this.activeDocument=meta;this.refreshAnalysis?.();
+      this.message(meta.state==='ERROR'?`3D source available. Extraction unavailable: ${meta.error}`:`${meta.name} · validated building data`);
+    }
+  }
   async addFiles(files){
+    $('workspaceError').hidden=true;
     const epoch=this.epoch;
     for(const file of files){
       if(epoch!==this.epoch)break;
       this.app.ensureViewer();document.body.classList.add('viewing');
-      this.message(`Importing ${file.name}…`);
+      this.loading(file.name,'Saving drawing…');this.message(`Importing ${file.name}…`);
       let meta;
       try{
         meta=await api('/api/documents',{method:'POST',headers:{'X-Filename':encodeURIComponent(file.name)},body:file});
         if(epoch!==this.epoch){await api(`/api/documents/${meta.id}`,{method:'DELETE'});break;}
         this.imports.add(meta.id);this.documents.set(meta.id,meta);
-        while(['UPLOADING','PROCESSING'].includes(meta.state)&&epoch===this.epoch){await pause(200);meta=await api(`/api/documents/${meta.id}`);}
-        this.imports.delete(meta.id);if(epoch!==this.epoch)break;
-        this.documents.set(meta.id,meta);
-        await this.openDocument(meta,file);
-        if(meta.state==='ERROR')this.message(`Source retained. Extraction unavailable: ${meta.error}`);
-      }catch(error){if(epoch===this.epoch)this.message(error.message);}
+        if(meta.type==='ifc'){
+          // Render the original geometry while the independent extractor prepares facts.
+          await this.openDocument(meta,file);
+          if(epoch===this.epoch)await this.finishIfc(meta,epoch);
+        }else{
+          this.loading(file.name,'Preparing drawing data…');
+          meta=await this.waitForExtraction(meta,epoch);
+          if(epoch!==this.epoch)break;
+          await this.openDocument(meta,file);
+          if(meta.state==='ERROR')this.message(`Source retained. Extraction unavailable: ${meta.error}`);
+        }
+      }catch(error){if(epoch===this.epoch)this.reportError(error);}
+      finally{if(meta)this.imports.delete(meta.id);if(epoch===this.epoch)$('importProgress').hidden=true;}
     }
-    this.refreshLibrary?.();
+    if(epoch===this.epoch)this.refreshLibrary?.().catch(error=>{if(epoch===this.epoch)this.reportError(error);});
   }
   async openDocument(meta,file=null){
     const epoch=this.epoch;this.analysisController?.abort();this.activeDocument=meta;this.documents.set(meta.id,meta);
+    $('workspaceError').hidden=true;
     this.sourceInfo=null;this.sourceRecords.clear();this.planView.clear();$('sourcePanel').hidden=true;
     $('chatMessages').replaceChildren();$('planTools').hidden=false;document.querySelector('#planPane iframe')?.remove();$('planSurface').hidden=false;
     const viewer=this.app.ensureViewer();
-    if(viewer.bp.sources.some(s=>s.scope===meta.id)){this.sceneChanged(viewer.summary());this.setMode('parallel');$('workspaceTitle').textContent=meta.name;this.refreshAnalysis?.();this.message(meta.name);return;}
-    const buildings=meta.state==='READY'?await api(`/api/documents/${meta.id}/buildings`):[];
-    if(epoch!==this.epoch)return;
-    this.indexes.set(meta.id,buildings.map(indexBuilding));
-    if(meta.type==='ifc'){
-      const bytes=file?await file.arrayBuffer():await(await fetch(`/api/documents/${meta.id}/source`)).arrayBuffer();
-      if(epoch!==this.epoch)return;
-      const results=await viewer.addFiles([{name:meta.name,documentId:meta.id,arrayBuffer:async()=>bytes}]);
-      if(results.some(r=>!r.ok))throw Error(results.filter(r=>!r.ok).map(r=>r.error).join('\n'));
-    }
-    if(epoch!==this.epoch)return;
-    if(['ifc','json'].includes(meta.type)){
-      for(const building of buildings){
-        const results=await viewer.addFiles([{name:`${meta.name} · building.json`,documentId:meta.id,text:async()=>JSON.stringify(building)}]);
-        if(results.some(r=>!r.ok))throw Error(results.filter(r=>!r.ok).map(r=>r.error).join('\n'));
-      }
-      this.sceneChanged(viewer.summary());
-      this.setMode(meta.type==='ifc'?'3d':'parallel');
-    }else await this.openSource?.(meta);
-    if(epoch!==this.epoch || this.activeDocument?.id!==meta.id)return;
-    this.refreshAnalysis?.();
+    const loaded=viewer.bp.sources.some(s=>s.scope===meta.id);
     $('workspaceTitle').textContent=meta.name;
-    document.body.classList.add('viewing');this.message(`${meta.name} · ${meta.state==='READY'?'validated building data':'source view'}`);
+    try{
+      if(meta.type==='ifc'&&!loaded){
+        this.setMode('3d');this.loading(meta.name,'Building 3D geometry. Large drawings may take a moment.');
+        let bytes;
+        if(file)bytes=await file.arrayBuffer();
+        else{
+          const response=await fetch(`/api/documents/${meta.id}/source`);
+          if(!response.ok)throw Error('The stored IFC source could not be loaded.');
+          bytes=await response.arrayBuffer();
+        }
+        if(epoch!==this.epoch)return;
+        const results=await viewer.addFiles([{name:meta.name,documentId:meta.id,arrayBuffer:async()=>bytes}]);
+        if(epoch!==this.epoch)return;
+        if(results.some(r=>!r.ok))throw Error(results.filter(r=>!r.ok).map(r=>r.error).join('\n'));
+        this.loading(meta.name,'3D ready. Preparing building data…',true);
+      }
+      if(epoch!==this.epoch)return;
+      if(['ifc','json'].includes(meta.type)){
+        await this.attachBuildingData(meta,epoch);
+        if(epoch!==this.epoch)return;
+        this.sceneChanged(viewer.summary());this.setMode(meta.type==='ifc'?'3d':'parallel');
+      }else await this.openSource(meta);
+      if(epoch!==this.epoch||this.activeDocument?.id!==meta.id)return;
+      this.refreshAnalysis?.();document.body.classList.add('viewing');
+      this.message(`${meta.name} · ${meta.state==='READY'?'validated building data':'source view'}`);
+    }finally{if(epoch===this.epoch)$('importProgress').hidden=true;}
+    // Reopening a stored, processing IFC also renders immediately, then attaches facts.
+    if(!file&&meta.type==='ifc'&&['UPLOADING','PROCESSING'].includes(meta.state)){
+      this.finishIfc(meta,epoch).catch(error=>{if(epoch===this.epoch)this.reportError(error);})
+        .finally(()=>{if(epoch===this.epoch)$('importProgress').hidden=true;});
+    }
   }
   clear(){
+    $('importProgress').hidden=true;
     this.analysisController?.abort();this.epoch++;this.planGeneration++;this.planCache.clear();this.planView.clear();this.floor=null;this.activeDocument=null;
     for(const id of this.imports)api(`/api/documents/${id}`,{method:'DELETE'}).catch(()=>{});
     this.imports.clear();this.indexes.clear();this.sourceInfo=null;this.sourceRecords.clear();this.layerVisibility.clear();this.typeVisibility.clear();this.removedSource?.clear();$('sourcePanel').hidden=true;document.querySelector('#planPane iframe')?.remove();$('planSurface').hidden=false;this.viewer?.clear();this.pickByKey.clear();this.keyByPick.clear();
@@ -98,6 +162,7 @@ export class Workspace {
     this.message('Ready to open a drawing');
   }
   removeSource(sourceId){
+    $('importProgress').hidden=true;
     const source=this.viewer?.bp.sources.find(s=>s.id===sourceId);if(!source)return;
     this.epoch++;this.planGeneration++;this.planCache.clear();
     this.analysisController?.abort();

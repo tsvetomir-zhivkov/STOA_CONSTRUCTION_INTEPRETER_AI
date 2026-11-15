@@ -1,6 +1,6 @@
 """Loopback HTTP service: original documents, cancellable extraction, validated facts and AI.
 
-Run: python -m workspace.server --port 4600
+Run: python -m workspace.server --port 3000
 Uses the existing Python/Node pipelines; no new runtime dependencies.
 """
 
@@ -14,6 +14,7 @@ import signal
 import subprocess
 import sys
 import threading
+import time
 import uuid
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -23,16 +24,32 @@ from translator.store import validate
 
 ROOT = Path(__file__).resolve().parents[1]
 VIEWER = ROOT / "blueprint-viewer"
+LANDING = ROOT / "scrollcraft" / "builds" / "stoa-plan-to-evidence"
 DATA = ROOT / ".workspace-data"
 LOCK = threading.RLock()
 JOBS = {}
 MAX_UPLOAD = 256 * 1024 * 1024
 
 
+class WorkspaceHTTPServer(ThreadingHTTPServer):
+    # The landing and module-based viewer request many local assets at once.
+    # The stdlib's five-connection backlog drops bursts from multiple tabs.
+    request_queue_size = 128
+
+
 def atomic(path, value):
-    temp = path.with_suffix(".tmp")
-    temp.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
-    os.replace(temp, path)
+    with LOCK:
+        temp = path.with_suffix(".tmp")
+        temp.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+        for attempt in range(6):
+            try:
+                os.replace(temp, path)
+                return
+            except PermissionError:
+                # Windows readers/scanners can briefly deny replacement of an open file.
+                if attempt == 5:
+                    raise
+                time.sleep(0.02 * (attempt + 1))
 
 
 def directory(identity):
@@ -42,7 +59,8 @@ def directory(identity):
 
 
 def metadata(folder):
-    return json.loads((folder / "document.json").read_text(encoding="utf-8"))
+    with LOCK:
+        return json.loads((folder / "document.json").read_text(encoding="utf-8"))
 
 
 def own_process_tree(process):
@@ -90,6 +108,25 @@ def stop_process(process):
 
 
 def run_job(identity):
+    try:
+        _run_job(identity)
+    except Exception as error:
+        # A failed worker must publish an error instead of leaving the UI polling forever.
+        with LOCK:
+            job = JOBS.get(identity)
+            folder = directory(identity)
+            if not job or job["cancelled"] or not folder.exists():
+                return
+            try:
+                stop_process(job.get("process"))
+            finally:
+                job["process"] = None
+                meta = metadata(folder)
+                meta.update(state="ERROR", error=f"Extraction failed: {error}")
+                atomic(folder / "document.json", meta)
+
+
+def _run_job(identity):
     folder = directory(identity)
     with LOCK:
         job = JOBS.get(identity)
@@ -113,8 +150,8 @@ def run_job(identity):
             encoding="utf-8",
             start_new_session=os.name != "nt",
         )
-        own_process_tree(process)
         job["process"] = process
+        own_process_tree(process)
     stdout, stderr = process.communicate()
     stop_process(process)
     with LOCK:
@@ -125,7 +162,7 @@ def run_job(identity):
             meta.update(state="ERROR", error=(stderr or stdout)[-4000:])
         else:
             try:
-                meta.update(state="READY", buildings=json.loads(stdout.strip().splitlines()[-1]))
+                meta.update(state="READY", error=None, buildings=json.loads(stdout.strip().splitlines()[-1]))
             except (ValueError, IndexError):
                 meta.update(state="ERROR", error="Extractor did not return a valid document list")
         meta["has_preview"] = (folder / "preview.svg").exists() or (folder / "thumbnail.png").exists()
@@ -145,6 +182,40 @@ def run_job(identity):
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(VIEWER), **kwargs)
+
+    def send_head(self):
+        """Serve the existing landing and viewer without exposing the repository."""
+        path = unquote(urlparse(self.path).path)
+        if path == "/workspace":
+            self.send_response(308)
+            self.send_header("Location", "/workspace/")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return None
+        workspace = path.startswith("/workspace/")
+        base = VIEWER if workspace else LANDING
+        relative = path.removeprefix("/workspace/") if workspace else path.lstrip("/")
+        relative = relative or "index.html"
+        parts = relative.split("/")
+        allowed = {"vendor"} if workspace else {"assets"}
+        file = (base / relative).resolve()
+        if (
+            "\\" in relative
+            or any(p.startswith(".") or p == "node_modules" for p in parts)
+            or not file.is_relative_to(base.resolve())
+            or (len(parts) > 1 and parts[0] not in allowed)
+            or (len(parts) == 1 and file.suffix not in {".html", ".js", ".css", ".ico"})
+            or not file.is_file()
+        ):
+            self.send_error(404, "Not found")
+            return None
+        stream = file.open("rb")
+        self.send_response(200)
+        self.send_header("Content-Type", self.guess_type(str(file)))
+        self.send_header("Content-Length", str(file.stat().st_size))
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        return stream
 
     def log_message(self, format, *args):
         if len(args) > 1 and str(args[1]).startswith(("4", "5")):
@@ -314,8 +385,17 @@ class Handler(SimpleHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=4600)
+    parser.add_argument("--port", type=int, default=3000)
     args = parser.parse_args()
+    try:
+        server = WorkspaceHTTPServer(("127.0.0.1", args.port), Handler)
+    except OSError as error:
+        parser.exit(
+            1,
+            f"Could not start Stoa on port {args.port}: {error}\n"
+            "Stop the server using this port, then run npm start again, "
+            "or use npm start -- --port 4601.\n",
+        )
     DATA.mkdir(exist_ok=True)
     for folder in DATA.iterdir():
         if folder.is_dir() and (folder / "document.json").exists():
@@ -326,8 +406,8 @@ def main():
                     error="Processing was interrupted by server shutdown; upload again to retry",
                 )
                 atomic(folder / "document.json", meta)
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
-    print(f"Stoa workspace: http://127.0.0.1:{args.port}", flush=True)
+    print(f"Stoa home: http://localhost:{args.port}/", flush=True)
+    print(f"Building workspace: http://localhost:{args.port}/workspace/", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

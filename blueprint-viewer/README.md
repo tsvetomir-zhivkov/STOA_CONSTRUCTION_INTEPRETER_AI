@@ -13,19 +13,22 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m workspace.install --test
 npm ci --prefix blueprint-ingest
 npm ci --prefix blueprint-viewer
-npm start --prefix blueprint-viewer
+npm start
 ```
 
-Open **http://127.0.0.1:4600**. On macOS/Linux, use `.venv/bin/python` for the Python command.
+Open **http://localhost:3000/** for the scrollable landing page, then choose **Open workspace**.
+The drawing workspace is at **http://localhost:3000/workspace/**. On macOS/Linux, use `.venv/bin/python` for the Python command.
 `npm start` selects the checkout's virtual environment, or `PYTHON` if set.
-Use `npm start --prefix blueprint-viewer -- --port 4601` to choose another port.
+Use `npm start -- --port 4601` to choose another port. `npm start --prefix blueprint-viewer` launches the same service.
 The Python installation helper reads dependencies directly from `pyproject.toml`.
 
 The service binds to loopback. Each computer runs its own copy. Original uploads, previews,
 validated JSON and analysis history live in `.workspace-data/`, which is ignored by Git.
 A clone includes source code and committed samples, not another computer's uploaded library.
 All Three.js, BVH and web-ifc assets are copied locally by the viewer's install script.
-Opening `index.html` directly or serving it with a static server does not provide the document API.
+Opening `index.html` directly or serving it with `npx serve` does not provide the document API.
+If a static preview is already using port 3000, stop it with Ctrl+C before running `npm start`.
+A missing API is reported visibly in the workspace with recovery instructions.
 
 AI questions use the existing `answering_agent` integration. Configure `GEMINI_API_KEY` and,
 optionally, `GEMINI_MODEL` in the repository's `.env`. Ordinary IFC/CAD extraction does not
@@ -35,6 +38,9 @@ when unavailable, the workspace retains the source and reports the extraction er
 ## Working with drawings
 
 - Add IFC, JSON, DXF, SVG, PDF or image files. IFC imports include its validated building data.
+- IFC geometry loads independently of building-data extraction. A visible status shows loading,
+  then moves aside once 3D is ready. Facts attach in the background without resetting the camera
+  or selected view mode. **Cancel import** clears the pending import and stops its extraction.
 - Choose **2D**, **3D** or **Parallel**. Pick a floor from the toolbar or **Plan** in the hierarchy.
 - Use floor/category checkboxes, show/hide all, isolation, pull apart, level separation and clipping.
 - Select a component to inspect available facts, measurement provenance and ordered material layers.

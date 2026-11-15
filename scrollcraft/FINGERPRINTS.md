@@ -32,8 +32,9 @@ changes only grammar and world will fail it.
 | stoa-plan-to-evidence / CAD revision 2026-11-14 (current) | Plan-to-Evidence, revised in place | Scrolling wordmark and source-section anchor; GitHub CTA in opening and close | Detailed CAD plan on independently moving paper and registration planes | Pin/parallax > flow/reveal > pin/separate > pan/rotate > pin/reveal/reassemble > flow; 6 beats, 8.46 desktop / 8.59 portrait / 8.77 compact viewports | Ink-ground editorial close after the registered, annotated drawing | Five persistent CAD sheets separate with clear gaps, rotate with face-on coordinate-anchored names, and register into the source-tagged plan | Native architectural SVG; cut hatching, true door arcs, mullions, dimensions, axes, north, scale, title blocks; no external assets | 4500 |
 | stoa-plan-to-evidence / centered hero follow-up (latest) | Plan-to-Evidence, revised in place | Scrolling wordmark and source-section anchor; opening and closing GitHub CTAs | Centered CAD sheet beneath a compact text row; viewport-bound sizing and top-aligned phone composition | Same six beats and scroll spans as CAD revision | Ink-ground editorial close after annotated blueprint | Persistent source-tagged separation, rotation, and registration, unchanged | Native architectural SVG, unchanged | 4500 |
 | stoa-plan-to-evidence / enlarged blue blueprint | Plan-to-Evidence, revised in place | Scrolling wordmark and source-section anchor; project CTA only at close | Retained headline above enlarged central blueprint; opening description and button removed | Same six beats and scroll spans as CAD revision | Ink-ground editorial close after annotated blueprint | Persistent source-tagged separation, rotation, and registration; outlined callout leaders cross blue paper | Blue native CAD sheets with white drafting lines and labels; six color tokens | 4500 |
+| stoa-plan-to-evidence / workspace homepage 2026-11-15 | Plan-to-Evidence, integrated in place | Scrolling wordmark and Open workspace link | Retained enlarged blue CAD blueprint and headline-only hero | Same six beats and spans; parallax > reveal > pin > pan > reveal > flow | Ink-ground close opens the actual workspace | Persistent source-tagged separation, rotation, and registration, unchanged | Native blue/white CAD vectors; unchanged six tokens and two fonts | 3000, app at /workspace/ |
 
-Rows are chronological; the enlarged-blue-blueprint entry supersedes earlier current/latest labels.
+Rows are chronological; the workspace-homepage entry supersedes earlier current/latest labels.
 The first row is retained as the historical build record. The revision rows record
 the user's requested revision of that same site; it does not claim a new site or
 a 4-of-6 uniqueness pass against its own earlier revision. No other sites are
@@ -54,6 +55,8 @@ as a constraint, so writing them down is the whole point.
 - Enlarged-blue-blueprint revision: opening reduced to headline and larger drawing; blue paper and white outlines throughout. Evidence: `builds/stoa-plan-to-evidence/lab/blueprint-blue-*-final/`. This is another requested revision of the same site, not a new-site uniqueness claim.
 
 ---
+
+- Workspace homepage integration: existing design retained at `/`; navigation and closing action enter the real BIM app at `/workspace/`. Evidence: `.workspace-data/qa/landing-{desktop,mobile,reduced}/` and the build verification log. This is a requested integration of the same site.
 
 ## Appending a row
 

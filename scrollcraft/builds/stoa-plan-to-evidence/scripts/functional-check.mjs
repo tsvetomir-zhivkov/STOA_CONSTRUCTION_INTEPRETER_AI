@@ -3,8 +3,8 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 
-const url=process.env.STOA_PREVIEW_URL || 'http://127.0.0.1:4500';
-const out='lab/cad-functional';
+const url=process.env.STOA_PREVIEW_URL || 'http://127.0.0.1:3000';
+const out=process.env.STOA_VERIFY_OUT || 'lab/cad-functional';
 mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({channel:'chrome',headless:true});
 const results=[], errors=[], external=[];
@@ -111,7 +111,7 @@ try {
     await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));await settle(page);
     const closing=await page.locator('.close .cta').evaluate(el=>({opacity:getComputedStyle(el.closest('.close-inner')).opacity,href:el.href}));
     assert.equal(+closing.opacity,1,'Closing CTA hidden');
-    assert.equal(closing.href,'https://github.com/tsvetomir-zhivkov/STOA_CONSTRUCTION_INTEPRETER_AI');
+    assert.equal(closing.href,new URL('/workspace/',url).href);
     // Browser tabbing must reveal every link, including from the final screen.
     await page.goto(url,{waitUntil:'networkidle'});
     const focus=[];
@@ -126,9 +126,14 @@ try {
     assert(focus.every(f=>f.tag==='A'&&f.visible&&f.outline!=='none'),'Invisible keyboard stop: '+JSON.stringify(focus));
     await page.locator('.bar-link').click();
     await settle(page);
-    assert.equal(new URL(page.url()).hash,'#evidence');
+    await page.waitForURL(new URL('/workspace/',url).href);
+    await page.waitForFunction(()=>!!window.workspace);
+    await page.waitForLoadState('networkidle');
+    assert.equal(new URL(page.url()).pathname,'/workspace/');
+    assert(await page.locator('#openBtn').isVisible());
+    await page.goto(url,{waitUntil:'networkidle'});
     const hrefs=await page.locator('a[href]').evaluateAll(els=>els.map(a=>a.getAttribute('href')));
-    assert(hrefs.every(h=>h.startsWith('#')||h.startsWith('https://github.com/tsvetomir-zhivkov/STOA_CONSTRUCTION_INTEPRETER_AI')),'Unexpected destination');
+    assert(hrefs.every(h=>h.startsWith('#')||h==='/workspace/'||h.startsWith('https://github.com/tsvetomir-zhivkov/STOA_CONSTRUCTION_INTEPRETER_AI')),'Unexpected destination');
     results.push({viewport,opening,families,types,totalViewports:final.total,continuity,focus,minimumPaperGaps:phases.map(s=>Math.min(...s.sheets.slice(1).map((v,i)=>Math.max(v.paper.y-s.sheets[i].paper.bottom,v.paper.x-s.sheets[i].paper.right))))});
     await context.close();
   }

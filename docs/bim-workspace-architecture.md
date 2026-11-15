@@ -2,12 +2,17 @@
 
 Implemented on `bim-workspace`, extending the existing `blueprint-viewer` and extraction/answering code.
 The nine reference images extracted from `benchmarks.docx` informed the layout. No hosted demo,
-new frontend framework, external image generation, or changes to the Scrollcraft landing were introduced.
+new frontend framework, or external image generation were introduced. The existing Scrollcraft landing now provides the homepage and workspace entry.
 
 ## Run and review
 
 Follow [blueprint-viewer/README.md](../blueprint-viewer/README.md) for installation and exact commands.
-`npm start --prefix blueprint-viewer` launches the local Python service at http://127.0.0.1:4600.
+`npm start` (repository root) launches the local Python service at http://localhost:3000/.
+The existing Scrollcraft build is served at `/`; the viewer is mounted at `/workspace/`,
+with the document API at `/api/documents`. Both entry points use the same origin.
+A static preview server cannot import drawings. Missing API responses now show a recovery notice.
+Only landing assets and browser modules/vendor assets are served; repository files and directory
+listings are excluded. Relative worker, WASM, and module URLs resolve beneath `/workspace/`.
 A second checkout needs its own dependencies and local server; uploads are not committed to Git.
 
 ## Data flow and ownership
@@ -201,3 +206,49 @@ frontend bundler to run.
   Its many individual meshes can be more expensive than batched real IFC. Heavy IFC parsing,
   BVH generation and mesh sections run in workers; legacy JSON scene assembly remains on the UI thread.
 - The service is a local, single-user workspace, not an authenticated multi-user deployment.
+
+The homepage integration also hardens status publication on Windows: metadata reads
+and writes share the process lock, temporary replacement failures retry, and extraction
+worker exceptions publish ERROR instead of leaving the frontend polling indefinitely.
+
+Homepage/loading follow-up verified with 20 Chrome browser checks, 7 backend
+regressions, 11 viewer unit tests, and desktop/mobile/reduced-motion Scrollcraft runs.
+See the landing build VERIFICATION.md for the current evidence and retained failed runs.
+
+## Large IFC preview loading
+
+The workspace previously waited for full backend extraction before asking web-ifc
+to render an uploaded IFC. A large model therefore showed an empty dark canvas
+even though its original geometry was renderable.
+
+IFC uploads now start the existing geometry worker as soon as the source is saved.
+A visible loading panel names the file and phase, with a cancel action. Once the
+model is visible, a smaller status panel reports ongoing building-data extraction.
+Validated facts attach later without importing the IFC twice or resetting the
+camera/view mode. Stored IFC documents follow the same geometry-first path;
+interrupted or failed data extraction does not prevent viewing the original model.
+Clear/remove generation guards still reject late results and cancel owned imports.
+
+Verified with the supplied `bsc-molio_molio-with-uris.ifc` (73,945,142 bytes,
+SHA-256 `626654e3b62648d3f0499e17c04d4f087931f048ddf79410f6cb90e45004c086`).
+The normal upload rendered 3,498 elements and 724,964 triangles in about 37 seconds
+on this machine while extraction remained pending. The saved source also rendered,
+including when its metadata reported interrupted extraction; that check took about
+93 seconds while another browser suite was running. These are observations, not
+loading-time guarantees. Original IFC colors, geometry, and worker batching remain
+unchanged. Existing web-ifc unsupported-representation warnings are retained;
+this fix does not claim complete geometry support or completed data extraction.
+
+Visually inspected evidence is in `.workspace-data/qa/molio-workspace.png` and
+`molio-stored.png`, with state samples and browser errors in the adjacent JSON files.
+The user's source file was read in place and was not added to the repository.
+A browser regression holds extraction metadata pending, proves real 3D meshes are
+already available, then releases it and checks that enrichment preserves both the
+IFC source and the chosen camera/view mode. The first full suite run timed out
+while the separate large-file check was competing for resources; its report is
+retained as `browser-ifc-parallel-stress.json` before the isolated rerun.
+
+Final isolated rerun: all 21 browser checks passed with zero page errors
+(`.workspace-data/qa/browser-results.json`); all 11 viewer unit tests and module
+syntax checks passed. The delayed-extraction regression covers real geometry and
+camera/view preservation; the exact supplied IFC was verified separately above.

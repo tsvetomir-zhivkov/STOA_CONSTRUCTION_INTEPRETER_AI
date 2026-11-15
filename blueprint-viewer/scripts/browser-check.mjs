@@ -17,6 +17,12 @@ const files={ifc:path.join(folder,'building.ifc'),dxf:path.join(folder,'plan.dxf
 const base=process.argv[2]??'http://127.0.0.1:4601';
 const browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL??'chrome',headless:true});
 const page=await browser.newPage({viewport:{width:1500,height:950}});
+await page.addInitScript(()=>{
+  Element.prototype.requestPointerLock=()=>Promise.reject(new Error('Native pointer lock disabled'));
+  Element.prototype.setPointerCapture=()=>{};
+  Element.prototype.releasePointerCapture=()=>{};
+  Document.prototype.exitPointerLock=()=>{};
+});
 const errors=[],owned=new Set(),results=[];
 page.on('pageerror',e=>errors.push(e.message));
 page.on('response',async response=>{if(response.url()===`${base}/api/documents`&&response.request().method()==='POST'&&response.status()===202){try{owned.add((await response.json()).id);}catch{}}});
@@ -33,6 +39,43 @@ async function upload(kind){
 }
 try{
   await page.goto(base);
+  assert.equal(await page.locator('h1').textContent(),'Drawings, made answerable.');
+  await page.locator('.bar-link').click();
+  await page.waitForURL(`${base}/workspace/`);
+  await check('missing drawing API explains static-server failure and recovers',async()=>{
+    await page.route('**/api/documents',route=>route.fulfill({status:404,contentType:'text/html',body:'<html>Not found</html>'}));
+    await page.locator('#fileInput').setInputFiles(files.ifc);
+    await page.waitForFunction(()=>!document.getElementById('workspaceError').hidden);
+    assert.match(await page.locator('#workspaceErrorText').textContent(),/Stop the static preview server.*npm start/);
+    assert.ok(await page.locator('#openBtn').isVisible());
+    await page.unroute('**/api/documents');
+    await page.locator('#dismissWorkspaceError').click();
+  });
+  await check('IFC 3D appears before extraction finishes; enrichment preserves the view',async()=>{
+    let release=false;
+    const metadataRoute=/\/api\/documents\/[a-f0-9-]+$/;
+    await page.route(metadataRoute,async route=>{
+      const response=await route.fetch(),meta=await response.json();
+      await route.fulfill({response,json:!release&&meta.state==='READY'?{...meta,state:'PROCESSING',buildings:[]}:meta});
+    });
+    try{
+      await page.locator('#fileInput').setInputFiles(files.ifc);
+      await page.waitForFunction(()=>viewer?.bp.sources.length===1&&viewer.session.state==='READY'&&document.getElementById('importProgress').dataset.previewReady==='true');
+      assert.ok(await page.evaluate(()=>viewer.bp.sources[0].model.stats.triangles>0));
+      assert.equal(await page.evaluate(()=>workspace.imports.size),1);
+      assert.notEqual(await page.evaluate(()=>workspace.activeDocument.state),'READY');
+      await page.evaluate(()=>workspace.setMode('parallel'));
+      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+      const before=await page.evaluate(()=>{viewer.camera.position.x+=3;viewer.controls.update();window.firstIfc=viewer.bp.sources[0];return viewer.camera.position.toArray();});
+      release=true;
+      await page.waitForFunction(()=>viewer.bp.sources.length===2&&!workspace.imports.size&&workspace.activeDocument.state==='READY',null,{timeout:90000});
+      assert.equal(await page.evaluate(()=>workspace.mode),'parallel');
+      assert.ok(await page.evaluate(()=>viewer.bp.sources[0]===window.firstIfc));
+      const after=await page.evaluate(()=>viewer.camera.position.toArray());
+      assert.ok(after.every((v,i)=>Math.abs(v-before[i])<1e-6),'Enrichment reframed the camera');
+      assert.equal(await page.locator('#importProgress').isVisible(),false);
+    }finally{await page.unroute(metadataRoute);await clear();}
+  });
   await check('IFC import, real meshes and every storey plan',async()=>{
     await upload('ifc');
     assert.equal(await page.evaluate(()=>workspace.floors.length),2);
@@ -147,6 +190,9 @@ try{
     assert.ok(result.segments>20);assert.equal(result.title,'D1');
   });
   assert.deepEqual(errors,[]);console.log('All browser checks passed.');
+}catch(error){
+  const state=await page.evaluate(()=>({document:workspace.activeDocument,state:viewer?.session.state,sources:viewer?.bp.sources.map(s=>({scope:s.scope,kind:s.kind})),message:document.getElementById('workspaceMessage').textContent,error:document.getElementById('workspaceErrorText').textContent})).catch(()=>null);
+  results.push({failure:String(error),state});console.error(JSON.stringify(state));throw error;
 }finally{
   await page.screenshot({path:path.join(qa,'browser-last.png')}).catch(()=>{});
   await fs.writeFile(path.join(qa,nativeOnly?'browser-native-results.json':'browser-results.json'),JSON.stringify({results,errors},null,2));

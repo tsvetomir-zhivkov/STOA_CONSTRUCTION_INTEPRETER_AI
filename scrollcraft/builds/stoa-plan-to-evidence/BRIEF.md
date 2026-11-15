@@ -77,3 +77,13 @@ Primary families: parallax > reveal > pin > pan > reveal > flow. Five families; 
 
 Run unmodified shoot.mjs on final desktop, portrait, compact phone, and reduced-motion files. Inspect sheets and full-size states. Functional checks cover labels, transformed sheet bounds and gaps, continuity, keyboard, links, no-JS/reduced-motion, no external requests, and engine hashes. Preserve earlier evidence and failed passes.
 
+
+## Workspace integration, 2026-11-15
+
+Requested in-place integration: use this existing scrollable page as the main page.
+The repository server serves this build at `/` and the actual BIM app at `/workspace/`.
+Navigation and closing action both read "Open workspace". The enlarged blue blueprint,
+headline-only hero, six-beat score, signature, and motion rules remain as approved.
+No new-site uniqueness claim or new generated assets. The current extractor validates
+building schema v0.3 through translator/store.py; the earlier v0.2 product notes above
+record the original design research rather than the current workspace data contract.

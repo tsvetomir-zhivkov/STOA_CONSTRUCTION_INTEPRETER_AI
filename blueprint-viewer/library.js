@@ -18,7 +18,7 @@ export function installLibrary(workspace){
       const detail=document.createElement('span');detail.textContent=[meta.type.toUpperCase(),...(meta.building_names??[]),...(meta.floor_names??[])].filter(Boolean).join(' · ');
       open.append(preview,title,detail);open.onclick=async()=>{
         $('library').hidden=true;
-        try{await workspace.openDocument(meta);document.body.classList.add('viewing');}catch(error){workspace.message(error.message);}
+        try{await workspace.openDocument(meta);document.body.classList.add('viewing');}catch(error){workspace.reportError(error);}
       };
       const footer=document.createElement('div');footer.className='document-footer';
       const state=document.createElement('span');state.textContent=meta.state==='READY'?'Ready':meta.state==='ERROR'?'Source saved · analysis unavailable':meta.state.toLowerCase();
@@ -31,7 +31,7 @@ export function installLibrary(workspace){
       footer.append(state,remove);card.append(open,footer);$('documentGallery').append(card);
     }
   };
-  for(const id of ['drawingsOpen','startLibrary'])$(id).onclick=async()=>{try{await workspace.refreshLibrary();$('library').hidden=false;}catch(error){workspace.message(error.message);}};
+  for(const id of ['drawingsOpen','startLibrary'])$(id).onclick=async()=>{try{await workspace.refreshLibrary();$('library').hidden=false;}catch(error){workspace.reportError(error);}};
   $('libraryClose').onclick=()=>{$('library').hidden=true;workspace.viewer?.resize();};
   $('libraryUpload').onclick=()=>{$('library').hidden=true;$('fileInput').click();};
 }

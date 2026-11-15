@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Stoa | Building workspace</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <script type="importmap">
     {
       "imports": {
@@ -145,7 +146,7 @@
 <body data-theme="dark" data-mode="3d">
   <main id="picker">
     <div class="card">
-      <p class="brand-eyebrow">STOA VISION TRANSLATOR</p><h1>Your building.<br>Every detail, connected.</h1>
+      <a class="brand-eyebrow" href="/">STOA VISION TRANSLATOR</a><h1>Your building.<br>Every detail, connected.</h1>
       <p>Open a model or drawing. Explore its floors, inspect components, and trace answers to their source.</p>
       <button id="openBtn" type="button">Open a drawing</button>
       <input id="fileInput" type="file" accept=".json,.ifc,.dxf,.svg,.pdf,.png,.jpg,.jpeg,.webp" multiple hidden>
@@ -153,10 +154,12 @@
     </div>
   </main>
 
-  <header id="workspaceBar"><div class="workspace-brand">stoa<span>BUILDING WORKSPACE</span></div><button id="toggleSidebar" class="ghost" aria-label="Toggle building sidebar">&#9776;</button><strong id="workspaceTitle">Building workspace</strong><nav class="mode-switch" aria-label="View mode"><button class="ghost" data-mode="2d">2D</button><button class="ghost" data-mode="3d" aria-pressed="true">3D</button><button class="ghost" data-mode="parallel">Parallel</button></nav><select id="floorSelect" aria-label="Floor plan"></select><button class="ghost" id="fitView">Fit</button><button class="ghost" id="resetView">Reset</button><button class="ghost" id="drawingsOpen">Drawings</button><button class="ghost" id="analysisOpen">AI review</button></header>
+  <header id="workspaceBar"><a class="workspace-brand" href="/" aria-label="Stoa home">stoa<span>BUILDING WORKSPACE</span></a><button id="toggleSidebar" class="ghost" aria-label="Toggle building sidebar">&#9776;</button><strong id="workspaceTitle">Building workspace</strong><nav class="mode-switch" aria-label="View mode"><button class="ghost" data-mode="2d">2D</button><button class="ghost" data-mode="3d" aria-pressed="true">3D</button><button class="ghost" data-mode="parallel">Parallel</button></nav><select id="floorSelect" aria-label="Floor plan"></select><button class="ghost" id="fitView">Fit</button><button class="ghost" id="resetView">Reset</button><button class="ghost" id="drawingsOpen">Drawings</button><button class="ghost" id="analysisOpen">AI review</button></header>
   <div id="viewport">
   <section id="planPane" aria-label="2D drawing"><div id="planTools"><label>Cut height <input id="planCut" type="number" min="0.1" max="10" step="0.1" value="1.2"> m</label></div><div id="planSurface"></div></section>
   <div id="stage"></div><div id="viewDivider" role="separator" tabindex="0" aria-label="Resize parallel views"></div></div>
+  <aside id="importProgress" role="status" aria-live="polite" hidden><strong id="importName"></strong><p id="importPhase"></p><progress aria-label="Preparing drawing"></progress><button id="cancelImport" class="ghost">Cancel import</button></aside>
+  <aside id="workspaceError" role="alert" hidden><strong>Drawing could not open</strong><p id="workspaceErrorText"></p><button id="dismissWorkspaceError" class="ghost">Dismiss</button></aside>
   <div id="workspaceMessage" role="status">Open a drawing to begin</div>
 
   <div id="banners" aria-live="polite"></div>

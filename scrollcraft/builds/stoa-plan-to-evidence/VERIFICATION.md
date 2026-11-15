@@ -114,3 +114,67 @@ From this build directory:
 - node ../../../.agents/skills/scroll-craft/scripts/shoot.mjs --url http://127.0.0.1:4500 --out lab/recheck
 - Add --width 390 --height 844 for portrait, --width 360 --height 640 for compact, or --reduced-motion for the static composition.
 
+
+## Workspace homepage integration, 2026-11-15
+
+The existing build now runs at `http://localhost:3000/` through `npm start` at
+repository root. The navigation and closing CTA both enter `/workspace/`; the
+workspace wordmark returns home. `npm run preview` in this build starts the same
+application server. No Scrollcraft engine or CAD artwork was changed.
+
+The missing-drawing failure was reproduced against the user's port 3000:
+HTML returned 200, while `/api/documents` returned 404 from `serve .`. The shared
+Python server supplies the landing, viewer modules/WASM, and document API.
+Missing API responses now produce an actionable, visible error notice.
+
+Final unmodified `shoot.mjs` runs against the integrated root:
+
+| Mode | Viewport | Frames | Page height | Findings |
+| --- | --- | --- | --- | --- |
+| Desktop | 1440 x 900 | 34 | 8.46 viewports | No dead scroll; measured cues clear 4.5:1 |
+| Mobile | 390 x 844 | 34 | 8.59 viewports | No dead scroll; measured cues clear 4.5:1 |
+| Reduced motion | 1440 x 900 | 11 | 5.1 viewports | Static composition complete; measured cues clear 4.5:1 |
+
+Contact sheets were visually inspected: enlarged blue opening, readable source
+labels, separated sheets, quiet rotation, annotated reassembly, and closing action
+remain intact. The intended recognition / trust / curiosity / scrutiny /
+satisfaction / resolve curve is preserved; this revision changes the destination,
+not the choreography. The ending now leads into the real product.
+
+Evidence is under repository `.workspace-data/qa/landing-desktop/`,
+`landing-mobile/`, and `landing-reduced/` (each has `report.json` and `sheet.png`).
+The old build `lab/` directory rejected writes, so new evidence uses the writable,
+ignored QA directory. Earlier failed functional reports are retained separately.
+A navigation check initially left the workspace before its modules loaded; the
+final harness waits for app initialization before returning home. Concurrent
+browser runs also exposed the stdlib server's small connection queue; it is now
+128. Physical phones and browsers other than installed Chrome remain untested.
+
+Reproduce from this build after starting the app at repository root:
+
+```powershell
+$env:STOA_PREVIEW_URL='http://127.0.0.1:3000'
+$env:STOA_VERIFY_OUT='../../../.workspace-data/qa/landing-functional-final'
+npm run check
+node ../../../.agents/skills/scroll-craft/scripts/shoot.mjs --url http://127.0.0.1:3000 --out ../../../.workspace-data/qa/landing-desktop
+# Add --width 390 --height 844 or --reduced-motion for the other runs.
+```
+
+The workspace stress run also found a Windows status-file race: an unlocked GET
+could hold `document.json` open during replacement, killing the extraction thread
+and leaving `UPLOADING` unchanged. Metadata readers now share the writer lock,
+atomic replacement retries transient permission failures, and worker exceptions
+publish `ERROR`. Regression tests cover temporary locks and process-start failure.
+The failed browser run is retained as `browser-file-lock-failure.json` in the QA folder.
+
+Final functional run passed at 1440x900, 1280x720, 390x844, 360x640, and
+768x1024, plus reduced-motion and no-JavaScript fallbacks. Report:
+`.workspace-data/qa/landing-functional-final/report.json`. Both engine hashes match
+the skill originals; zero browser errors and zero external asset requests.
+Keyboard focus, workspace navigation, sheet spacing, marker labels, and the
+retained enlarged hero passed. This final report supersedes the failed reports
+in the same directory and in `landing-functional/`.
+
+Final integrated workspace browser run: 20 checks passed, zero page errors.
+Evidence: `.workspace-data/qa/browser-results.json`. Backend regressions: 7 passed;
+viewer unit tests: 11 passed; syntax and Ruff checks passed.
