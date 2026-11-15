@@ -109,7 +109,7 @@ def aggregate(data: dict, collection: str, operation: str, measure: str = "area_
     result = {"sum": sum(values), "min": min(values), "max": max(values), "average": sum(values) / len(values)}[operation]
     contributing_ids = {i for i, _ in known}
     return {"result": result, "measure": measure, "operation": operation, "entity_ids": [i for i, _ in known], "assumed_prior_ids": _assumed_ids([x for x in items if x["id"] in contributing_ids]), "missing_entity_ids": unknown, "complete_for_indexed_matches": not unknown, "note": "Missing measurements are excluded, not treated as zero."}
-
+    
 
 def _polygon(item: dict):
     coords = item.get("polygon_m")

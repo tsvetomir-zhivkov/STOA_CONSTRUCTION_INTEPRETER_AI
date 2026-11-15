@@ -6,6 +6,8 @@ Set GEMINI_API_KEY in .env and optionally GEMINI_MODEL.
 from __future__ import annotations
 
 import os
+import re
+import sys
 from typing import Any
 
 from dotenv import load_dotenv
@@ -73,10 +75,10 @@ LANGUAGE:
 """
 
 
-def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
-    """Answer one question using deterministic drawing tools and Gemini planning."""
+def answer_question(question: str, drawing_data: dict[str, Any]) -> dict[str, Any]:
+    """Answer a question and return text plus validated source entity IDs."""
     if drawing_data.get("schema_version") not in ("0.2", "0.3"):
-        raise ValueError("This agent expects Stoa drawing-index schema v0.2 or v0.3")
+        raise ValueError("Unsupported building schema version (expected 0.2 or 0.3)")
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -173,6 +175,52 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
             "Tokens (final response usage): "
             f"input={usage.prompt_token_count}, "
             f"output={usage.candidates_token_count}, "
-            f"thinking={usage.thoughts_token_count}"
+            f"thinking={usage.thoughts_token_count}",
+            file=sys.stderr,
         )
-    return response.text or "No text answer was returned."
+    answer = response.text or "No text answer was returned."
+    source_ids = extract_source_ids(answer, drawing_data)
+    return {"answer": answer, "source_ids": source_ids}
+
+
+
+def extract_source_ids(answer: str, drawing_data: dict[str, Any]) -> list[str]:
+    """Extract cited active entity IDs, without trusting generated IDs.
+
+    Only inspect explicit Source:/Sources: lines. Coverage references are
+    deliberately excluded because they are not physical highlight targets.
+    """
+    collections = (
+        "levels", "units", "rooms", "walls", "openings", "objects",
+        "texts", "edges", "element_types", "materials",
+        "material_layer_sets", "systems",
+    )
+    active_ids = {
+        entity["id"]
+        for collection in collections
+        for entity in drawing_data.get(collection, [])
+        if isinstance(entity, dict)
+        and isinstance(entity.get("id"), str)
+        and entity.get("status", "active") == "active"
+    }
+
+    cited_lines = [
+        match.group(1)
+        for line in answer.splitlines()
+        if (match := re.match(r"^\s*(?:sources?)\s*:\s*(.*)$", line, re.I))
+    ]
+    if not cited_lines or not active_ids:
+        return []
+
+    # Match whole IDs only; prevents room_1 from matching room_10.
+    # Sort longer IDs first to avoid overlapping prefix matches.
+    pattern = re.compile(
+        r"(?<![\w.$-])(?:" + "|".join(
+            re.escape(entity_id) for entity_id in sorted(active_ids, key=len, reverse=True)
+        ) + r")(?![\w.$-])"
+    )
+    return list(dict.fromkeys(
+        match.group(0)
+        for source_line in cited_lines
+        for match in pattern.finditer(source_line)
+    ))

@@ -20,7 +20,9 @@ def main():
             break
         if question.lower() in {"quit", "exit"}:
             break
-        print("\nAnswer:", answer_question(question, data))
+        result = answer_question(question, data)
+
+        print("\nAnswer:", result["answer"])
 
 
 if __name__ == "__main__":
