@@ -1,0 +1,878 @@
+{
+  "schema_version": "0.3",
+  "project": {
+    "name": null,
+    "global_id": null,
+    "schema_identifier": null,
+    "application": null,
+    "units": {
+      "length": {
+        "unit": null,
+        "to_si": null,
+        "status": "not_available",
+        "source": "not recorded in the source document"
+      },
+      "area": {
+        "unit": null,
+        "to_si": null,
+        "status": "not_available",
+        "source": "a SVG source declares no area unit (areas are derived by code in m2)"
+      },
+      "volume": {
+        "unit": null,
+        "to_si": null,
+        "status": "not_available",
+        "source": "a SVG source declares no volume unit (volumes are derived by code in m3)"
+      },
+      "angle": {
+        "unit": null,
+        "to_si": null,
+        "status": "not_available",
+        "source": "a SVG source declares no angle unit"
+      }
+    }
+  },
+  "site": null,
+  "building": null,
+  "drawing": {
+    "file": "data/ifc_models/kit-fzk-haus_ac20-fzk-haus_plan-02-dachgeschoss.svg",
+    "source": "ifc_models",
+    "page_index": 0,
+    "page_count": 1,
+    "part": null,
+    "image": {
+      "width_px": 200,
+      "height_px": 140,
+      "dpi": null
+    },
+    "route": "svg",
+    "read_from": "kit-fzk-haus_ac20-fzk-haus_plan-02-dachgeschoss.svg",
+    "transforms": [
+      {
+        "kind": "resize",
+        "from": "svg_user_units",
+        "to": "page_px",
+        "scale_x": 1,
+        "scale_y": 1,
+        "note": "viewBox origin (320.5, 243.12) moved to 0,0"
+      }
+    ],
+    "scale": {
+      "m_per_px": null,
+      "source": "none",
+      "confidence": 0
+    },
+    "translator_version": "blueprint-ingest@0.3.0",
+    "created_at": "2026-11-15T00:25:42.758Z"
+  },
+  "sources": [
+    {
+      "id": "source_1",
+      "file": "kit-fzk-haus_ac20-fzk-haus_plan-02-dachgeschoss.svg",
+      "role": "primary",
+      "format": "svg",
+      "schema_identifier": null,
+      "size_bytes": 29299,
+      "sha256": "3fe4cbf08b8a29cf7f35a7fcb30a740d22cc0f6a969102ceda589438b202c960",
+      "georeference": null
+    }
+  ],
+  "levels": [],
+  "units": [],
+  "rooms": [],
+  "walls": [
+    {
+      "id": "wall_3",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall3"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          43,
+          91.76
+        ],
+        [
+          43,
+          91.76
+        ]
+      ],
+      "polygon_px": [
+        [
+          43,
+          91.76
+        ],
+        [
+          43,
+          91.76
+        ],
+        [
+          43,
+          91.76
+        ],
+        [
+          43,
+          91.76
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_4",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall4"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          43,
+          48.98
+        ],
+        [
+          43,
+          48.98
+        ]
+      ],
+      "polygon_px": [
+        [
+          43,
+          48.98
+        ],
+        [
+          43,
+          48.98
+        ],
+        [
+          43,
+          48.98
+        ],
+        [
+          43,
+          48.98
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_5",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall5"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          157,
+          16
+        ],
+        [
+          157,
+          16
+        ]
+      ],
+      "polygon_px": [
+        [
+          157,
+          16
+        ],
+        [
+          157,
+          16
+        ],
+        [
+          157,
+          16
+        ],
+        [
+          157,
+          16
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_6",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall6"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          157,
+          58.78
+        ],
+        [
+          157,
+          58.78
+        ]
+      ],
+      "polygon_px": [
+        [
+          157,
+          58.78
+        ],
+        [
+          157,
+          58.78
+        ],
+        [
+          157,
+          58.78
+        ],
+        [
+          157,
+          58.78
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    }
+  ],
+  "openings": [
+    {
+      "id": "window_1",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "window1"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 9.8
+      },
+      "kind": "window",
+      "bbox_px": [
+        40.95,
+        48.98,
+        41.85,
+        58.78
+      ],
+      "polygon_px": [
+        [
+          40.95,
+          48.98
+        ],
+        [
+          41.85,
+          48.98
+        ],
+        [
+          41.85,
+          58.78
+        ],
+        [
+          40.95,
+          58.78
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "window_2",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "window2"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 9.8
+      },
+      "kind": "window",
+      "bbox_px": [
+        157.95,
+        48.98,
+        158.85,
+        58.78
+      ],
+      "polygon_px": [
+        [
+          157.95,
+          48.98
+        ],
+        [
+          158.85,
+          48.98
+        ],
+        [
+          158.85,
+          58.78
+        ],
+        [
+          157.95,
+          58.78
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    }
+  ],
+  "objects": [],
+  "element_types": [],
+  "materials": [],
+  "material_layer_sets": [],
+  "systems": [],
+  "schedules": [],
+  "relationships": [],
+  "texts": [
+    {
+      "id": "text_7",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text7"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Galerie",
+      "bbox_px": [
+        100,
+        51.58,
+        107.7,
+        53.98
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_8",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text8"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "7",
+      "bbox_px": [
+        100,
+        53.58,
+        101.1,
+        55.98
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_9",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text9"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 4
+      },
+      "text": "FZK-Haus (Simple Phantasy Building) — Grundriss: Dachgeschoss",
+      "bbox_px": [
+        6,
+        111.26,
+        140.2,
+        116.06
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_10",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text10"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2.6
+      },
+      "text": "Maßstab 1:100 · Schnitthöhe 1.20 m über Geschossebene · Aus IFC erzeugt (AC20-FZK-Haus.ifc, IfcOpenShell IfcConvert 0.9.0)",
+      "bbox_px": [
+        6,
+        118.86,
+        180.46,
+        121.98
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_11",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text11"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "© Institute for Automation and Applied Informatics (IAI) / Karlsruhe Institute of Technology (KIT) - KIT IFC Examples,",
+      "bbox_px": [
+        6,
+        124.26,
+        135.8,
+        126.66
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_12",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text12"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "https://www.ifcwiki.org/index.php?title=KIT_IFC_Examples · LicenseRef-KIT-unrestricted",
+      "bbox_px": [
+        6,
+        128.46,
+        100.6,
+        130.86
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_13",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text13"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2.2
+      },
+      "text": "0",
+      "bbox_px": [
+        144,
+        102.56,
+        145.21,
+        105.2
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_14",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text14"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "value": {
+          "number": 5,
+          "unit": "m"
+        },
+        "font_size_px": 2.2
+      },
+      "text": "5 m",
+      "bbox_px": [
+        194,
+        102.56,
+        197.63,
+        105.2
+      ],
+      "angle_deg": 0,
+      "role": "dimension",
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    }
+  ],
+  "edges": [],
+  "coverage": [
+    {
+      "category": "walls",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.8
+    },
+    {
+      "category": "rooms",
+      "region": "page",
+      "status": "partial",
+      "extractor": "vector_svg",
+      "confidence": 0.8,
+      "note": "no room/space layer or class found"
+    },
+    {
+      "category": "doors",
+      "region": "page",
+      "status": "partial",
+      "extractor": "vector_svg",
+      "confidence": 0.8
+    },
+    {
+      "category": "windows",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.8
+    },
+    {
+      "category": "text",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.9
+    },
+    {
+      "category": "dimensions",
+      "region": "page",
+      "status": "partial",
+      "extractor": "vector_svg",
+      "confidence": 0.8
+    },
+    {
+      "category": "fixtures",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.5
+    },
+    {
+      "category": "scale",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0
+    },
+    {
+      "category": "stairs",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.3
+    },
+    {
+      "category": "symbols",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.3
+    },
+    {
+      "category": "legend",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.3
+    },
+    {
+      "category": "materials",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0,
+      "note": "a SVG drawing carries no materials"
+    },
+    {
+      "category": "element_types",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0,
+      "note": "a SVG drawing carries no element types"
+    },
+    {
+      "category": "systems",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0,
+      "note": "a SVG drawing carries no systems"
+    },
+    {
+      "category": "schedules",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0,
+      "note": "not derived for the SVG route"
+    },
+    {
+      "category": "relationships",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0,
+      "note": "not derived for the SVG route"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-11-15T00:25:42.758Z",
+      "extractor": "vector_svg",
+      "action": "extract",
+      "note": "SVG extractor (built-in reader) 1: 0 rooms, 4 walls, 2 openings, 0 objects, 8 texts, 0 units, 0 levels; 0 room name(s) via glossary/geometry",
+      "cost_usd": 0
+    },
+    {
+      "at": "2026-11-15T00:25:42.769Z",
+      "extractor": "schema_v0.3",
+      "action": "build",
+      "note": "built as schema v0.3 from the svg extraction"
+    }
+  ],
+  "statistics": [
+    {
+      "id": "stat_1",
+      "name": "count.levels",
+      "value": 0,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "levels",
+      "exact": false,
+      "scope": {
+        "collection": "levels"
+      }
+    },
+    {
+      "id": "stat_2",
+      "name": "count.rooms",
+      "value": 0,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "rooms",
+      "exact": false,
+      "scope": {
+        "collection": "rooms"
+      }
+    },
+    {
+      "id": "stat_3",
+      "name": "count.walls",
+      "value": 4,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "walls",
+      "exact": true,
+      "scope": {
+        "collection": "walls"
+      }
+    },
+    {
+      "id": "stat_4",
+      "name": "count.openings.door",
+      "value": 0,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "openings",
+      "exact": false,
+      "scope": {
+        "collection": "openings",
+        "category": "door"
+      }
+    },
+    {
+      "id": "stat_5",
+      "name": "count.openings.window",
+      "value": 2,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "openings",
+      "exact": true,
+      "scope": {
+        "collection": "openings",
+        "category": "window"
+      }
+    },
+    {
+      "id": "stat_6",
+      "name": "sum.rooms.area_m2",
+      "value": null,
+      "unit": "m2",
+      "status": "not_available",
+      "method": "sum of rooms[].area_m2",
+      "source": "rooms[].area_m2",
+      "exact": false,
+      "scope": {
+        "collection": "rooms"
+      },
+      "inputs": 0,
+      "missing": 0
+    },
+    {
+      "id": "stat_7",
+      "name": "sum.walls.length_m",
+      "value": null,
+      "unit": "m",
+      "status": "not_available",
+      "method": "sum of walls[].length_m",
+      "source": "walls[].length_m",
+      "exact": false,
+      "scope": {
+        "collection": "walls"
+      },
+      "inputs": 4,
+      "missing": 4
+    }
+  ]
+}

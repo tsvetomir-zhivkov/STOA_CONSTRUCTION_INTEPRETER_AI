@@ -1,0 +1,2005 @@
+{
+ "schema_version": "piping-0.1",
+ "building_schema_version": null,
+ "project": {
+  "name": null,
+  "global_id": null,
+  "schema_identifier": null,
+  "application": null,
+  "units": {
+   "length": {
+    "unit": "px",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "area": {
+    "unit": "px^2",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "volume": {
+    "unit": "px^3",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "angle": {
+    "unit": "DEGREE",
+    "to_si": 1.0,
+    "status": "inferred",
+    "source": "convention"
+   }
+  }
+ },
+ "site": null,
+ "building": null,
+ "drawing": {
+  "file": "pid_dataset/0__raw_data/sheets/test/145.jpg",
+  "source": "src_1",
+  "page_index": 0,
+  "image": {
+   "width_px": 1143,
+   "height_px": 999,
+   "dpi": null
+  },
+  "route": "raster",
+  "read_from": "pid_dataset/0__raw_data/sheets/test/145.jpg",
+  "transforms": [],
+  "scale": {
+   "m_per_px": null,
+   "source": "none",
+   "confidence": 0.9,
+   "note": "not_to_scale"
+  }
+ },
+ "sources": [
+  {
+   "id": "src_1",
+   "file": "pid_dataset/0__raw_data/sheets/test/145.jpg",
+   "role": "primary",
+   "format": "raster"
+  }
+ ],
+ "levels": [],
+ "pipe_systems": [],
+ "pipe_types": [],
+ "pipe_segments": [],
+ "pipe_fittings": [
+  {
+   "id": "node_1",
+   "confidence": 1.0,
+   "provenance": {
+    "extractor": "ext_human",
+    "source_ref": "145:0"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      367.5,
+      500.0
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    246.0,
+    25.0,
+    489.0,
+    975.0
+   ],
+   "kind": "unknown",
+   "center_px": [
+    367.5,
+    500.0
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_2",
+   "confidence": 1.0,
+   "provenance": {
+    "extractor": "ext_human",
+    "source_ref": "145:1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      748.0,
+      502.0
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    610.0,
+    25.0,
+    886.0,
+    979.0
+   ],
+   "kind": "unknown",
+   "center_px": [
+    748.0,
+    502.0
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  }
+ ],
+ "pipe_equipment": [],
+ "pipe_connections": [],
+ "texts": [
+  {
+   "id": "text_1",
+   "confidence": 0.9997,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Single Pass",
+   "role": "other",
+   "bbox_px": [
+    47.0,
+    73.5,
+    248.5,
+    118.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_2",
+   "confidence": 0.998,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_2"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Demister",
+   "role": "other",
+   "bbox_px": [
+    859.5,
+    110.5,
+    1013.0,
+    151.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_3",
+   "confidence": 0.984,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_3"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Spray Nozzle",
+   "role": "other",
+   "bbox_px": [
+    859.5,
+    193.5,
+    1081.0,
+    237.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_4",
+   "confidence": 0.9992,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_4"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Chimney",
+   "role": "other",
+   "bbox_px": [
+    97.0,
+    255.5,
+    247.5,
+    299.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_5",
+   "confidence": 0.9998,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_5"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Two Pass",
+   "role": "other",
+   "bbox_px": [
+    81.5,
+    370.0,
+    246.5,
+    409.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_6",
+   "confidence": 0.9981,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_6"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Packed Section",
+   "role": "other",
+   "bbox_px": [
+    865.5,
+    411.5,
+    1121.0,
+    449.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_7",
+   "confidence": 0.3997,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_7"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "11",
+   "role": "other",
+   "bbox_px": [
+    365.5,
+    427.0,
+    379.0,
+    438.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_8",
+   "confidence": 0.7345,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_8"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "11",
+   "role": "other",
+   "bbox_px": [
+    364.0,
+    530.5,
+    381.0,
+    548.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_9",
+   "confidence": 0.9994,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_9"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Draw Off",
+   "role": "other",
+   "bbox_px": [
+    90.0,
+    550.0,
+    241.5,
+    589.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_10",
+   "confidence": 0.999,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_10"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Generic Tray",
+   "role": "other",
+   "bbox_px": [
+    23.0,
+    632.5,
+    239.0,
+    677.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_11",
+   "confidence": 0.9995,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_11"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Manway",
+   "role": "other",
+   "bbox_px": [
+    897.0,
+    662.5,
+    1040.5,
+    705.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_12",
+   "confidence": 0.9772,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_12"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Vortex Breaker",
+   "role": "other",
+   "bbox_px": [
+    861.0,
+    841.5,
+    1106.5,
+    877.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_13",
+   "confidence": 0.9944,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_13"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Generic Tray",
+   "role": "other",
+   "bbox_px": [
+    17.5,
+    626.5,
+    241.0,
+    682.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_14",
+   "confidence": 0.9812,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_14"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": " Single Pass",
+   "role": "other",
+   "bbox_px": [
+    41.0,
+    70.5,
+    249.5,
+    126.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_15",
+   "confidence": 0.9997,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_15"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Two Pass",
+   "role": "other",
+   "bbox_px": [
+    76.0,
+    366.5,
+    248.0,
+    416.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_16",
+   "confidence": 0.9994,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_16"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Draw Off",
+   "role": "other",
+   "bbox_px": [
+    89.0,
+    549.5,
+    241.5,
+    591.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_17",
+   "confidence": 0.9982,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_17"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Chimney",
+   "role": "other",
+   "bbox_px": [
+    92.5,
+    253.5,
+    247.0,
+    305.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_18",
+   "confidence": 0.7501,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_18"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    271.0,
+    648.0,
+    281.0,
+    657.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_19",
+   "confidence": 0.4729,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_19"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "-",
+   "role": "other",
+   "bbox_px": [
+    269.0,
+    543.0,
+    284.0,
+    553.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_20",
+   "confidence": 0.9808,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_20"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    268.0,
+    437.0,
+    284.5,
+    449.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_21",
+   "confidence": 0.7787,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_21"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "0",
+   "role": "other",
+   "bbox_px": [
+    274.5,
+    114.0,
+    290.0,
+    124.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_22",
+   "confidence": 0.7753,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_22"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "-",
+   "role": "other",
+   "bbox_px": [
+    290.5,
+    794.0,
+    303.5,
+    802.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_23",
+   "confidence": 0.4418,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_23"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "-",
+   "role": "other",
+   "bbox_px": [
+    290.0,
+    736.5,
+    304.0,
+    744.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_24",
+   "confidence": 0.6483,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_24"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "-",
+   "role": "other",
+   "bbox_px": [
+    289.5,
+    647.5,
+    306.0,
+    658.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_25",
+   "confidence": 0.8302,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_25"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "-",
+   "role": "other",
+   "bbox_px": [
+    286.5,
+    333.5,
+    303.5,
+    343.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_26",
+   "confidence": 0.592,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_26"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    293.0,
+    543.5,
+    305.0,
+    552.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_27",
+   "confidence": 0.8451,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_27"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    292.0,
+    437.0,
+    308.0,
+    449.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_28",
+   "confidence": 0.5438,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_28"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "-",
+   "role": "other",
+   "bbox_px": [
+    292.5,
+    193.0,
+    308.5,
+    203.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_29",
+   "confidence": 0.5921,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_29"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "-",
+   "role": "other",
+   "bbox_px": [
+    314.5,
+    794.0,
+    328.5,
+    802.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_30",
+   "confidence": 0.3894,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_30"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "-",
+   "role": "other",
+   "bbox_px": [
+    315.5,
+    736.5,
+    327.5,
+    744.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_31",
+   "confidence": 0.3148,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_31"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "I",
+   "role": "other",
+   "bbox_px": [
+    313.0,
+    647.5,
+    331.0,
+    659.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_32",
+   "confidence": 0.3234,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_32"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "-",
+   "role": "other",
+   "bbox_px": [
+    311.0,
+    333.5,
+    325.5,
+    343.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_33",
+   "confidence": 0.9306,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_33"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    317.5,
+    436.0,
+    329.5,
+    447.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_34",
+   "confidence": 0.396,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_34"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "I",
+   "role": "other",
+   "bbox_px": [
+    316.5,
+    193.0,
+    331.5,
+    203.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_35",
+   "confidence": 0.4942,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_35"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "U",
+   "role": "other",
+   "bbox_px": [
+    322.5,
+    114.0,
+    335.5,
+    124.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_36",
+   "confidence": 0.3952,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_36"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "I",
+   "role": "other",
+   "bbox_px": [
+    339.5,
+    736.5,
+    350.0,
+    743.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_37",
+   "confidence": 0.9596,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_37"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    341.5,
+    193.5,
+    354.0,
+    202.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_38",
+   "confidence": 0.6534,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_38"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    351.5,
+    584.5,
+    367.0,
+    597.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_39",
+   "confidence": 0.7806,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_39"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    351.0,
+    489.0,
+    367.0,
+    502.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_40",
+   "confidence": 0.7546,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_40"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    347.0,
+    232.0,
+    364.0,
+    245.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_41",
+   "confidence": 0.6604,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_41"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    348.0,
+    155.5,
+    361.5,
+    165.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_42",
+   "confidence": 0.4584,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_42"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "I",
+   "role": "other",
+   "bbox_px": [
+    361.5,
+    793.0,
+    378.0,
+    804.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_43",
+   "confidence": 0.3239,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_43"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "-",
+   "role": "other",
+   "bbox_px": [
+    362.5,
+    735.0,
+    377.5,
+    745.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_44",
+   "confidence": 0.6382,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_44"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    365.0,
+    191.0,
+    381.5,
+    204.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_45",
+   "confidence": 0.6076,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_45"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    376.0,
+    682.0,
+    393.0,
+    694.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_46",
+   "confidence": 0.8057,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_46"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    375.5,
+    584.5,
+    393.0,
+    599.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_47",
+   "confidence": 0.8306,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_47"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    375.0,
+    488.5,
+    392.5,
+    503.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_48",
+   "confidence": 0.925,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_48"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    371.5,
+    232.0,
+    387.5,
+    244.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_49",
+   "confidence": 0.8103,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_49"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    374.0,
+    114.5,
+    383.5,
+    123.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_50",
+   "confidence": 0.5017,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_50"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "I",
+   "role": "other",
+   "bbox_px": [
+    386.5,
+    793.0,
+    402.5,
+    803.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_51",
+   "confidence": 0.9661,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_51"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    387.0,
+    764.5,
+    401.5,
+    774.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_52",
+   "confidence": 0.7673,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_52"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    386.5,
+    734.0,
+    403.0,
+    746.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_53",
+   "confidence": 0.6777,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_53"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    391.0,
+    542.0,
+    408.5,
+    554.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_54",
+   "confidence": 0.864,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_54"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    390.0,
+    436.0,
+    408.5,
+    450.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_55",
+   "confidence": 0.6737,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_55"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "0",
+   "role": "other",
+   "bbox_px": [
+    387.0,
+    333.0,
+    402.5,
+    343.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_56",
+   "confidence": 0.8369,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_56"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    399.0,
+    681.0,
+    417.5,
+    695.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_57",
+   "confidence": 0.8591,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_57"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    396.0,
+    232.0,
+    412.0,
+    244.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_58",
+   "confidence": 0.8247,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_58"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    395.0,
+    154.5,
+    412.5,
+    167.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_59",
+   "confidence": 0.9324,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_59"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    410.0,
+    792.0,
+    427.5,
+    804.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_60",
+   "confidence": 0.9457,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_60"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    410.0,
+    762.5,
+    427.5,
+    777.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_61",
+   "confidence": 0.9741,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_61"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    410.0,
+    733.5,
+    427.5,
+    746.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_62",
+   "confidence": 0.8767,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_62"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    413.5,
+    541.0,
+    433.0,
+    555.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_63",
+   "confidence": 0.8282,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_63"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    414.0,
+    436.0,
+    433.0,
+    450.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_64",
+   "confidence": 0.7639,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_64"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "0",
+   "role": "other",
+   "bbox_px": [
+    409.5,
+    331.0,
+    428.0,
+    345.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_65",
+   "confidence": 0.8327,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_65"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    424.0,
+    683.0,
+    437.5,
+    693.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_66",
+   "confidence": 0.4761,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_66"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "0",
+   "role": "other",
+   "bbox_px": [
+    420.0,
+    232.5,
+    436.5,
+    245.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_67",
+   "confidence": 0.7882,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_67"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    421.0,
+    155.0,
+    435.5,
+    165.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_68",
+   "confidence": 0.8593,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_68"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "1",
+   "role": "other",
+   "bbox_px": [
+    615.0,
+    193.5,
+    662.5,
+    225.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_69",
+   "confidence": 0.9982,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_69"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Vortex Breaker",
+   "role": "other",
+   "bbox_px": [
+    858.5,
+    837.5,
+    1110.0,
+    884.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_70",
+   "confidence": 0.9945,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_70"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Spray Nozzle",
+   "role": "other",
+   "bbox_px": [
+    854.5,
+    190.5,
+    1086.0,
+    243.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_71",
+   "confidence": 0.998,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_71"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Packed Section",
+   "role": "other",
+   "bbox_px": [
+    861.0,
+    408.5,
+    1124.5,
+    457.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_72",
+   "confidence": 0.9979,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_72"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Demister",
+   "role": "other",
+   "bbox_px": [
+    859.0,
+    112.5,
+    1012.5,
+    154.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_73",
+   "confidence": 0.9993,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_73"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Manway",
+   "role": "other",
+   "bbox_px": [
+    893.5,
+    658.5,
+    1044.5,
+    712.0
+   ],
+   "linked_entity_ids": []
+  }
+ ],
+ "coverage": [
+  {
+   "category": "symbols",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 1.0,
+   "extractor": "ext_human",
+   "note": "oracle boxes (dataset annotation)"
+  },
+  {
+   "category": "pipes",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.0,
+   "extractor": "ext_graph",
+   "note": "skeleton tracer; 0 noise fragments dropped; legend/title frames are not removed yet"
+  },
+  {
+   "category": "connectivity",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.6,
+   "extractor": "ext_graph",
+   "note": "unsnapped ends listed separately as partial"
+  },
+  {
+   "category": "text",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.7808,
+   "extractor": "ext_ocr",
+   "note": "PaddleOCR Latin model, two orientations"
+  }
+ ],
+ "history": [
+  {
+   "extractor": "ext_human",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"human\", \"name\": \"dataset boxes\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_ocr",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"ocr\", \"name\": \"PaddleOCR latin_PP-OCRv3_mobile_rec\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_graph",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"graph_builder\", \"name\": \"skeleton tracer + graph.py\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_graph",
+   "action": "sheet_facts",
+   "note": "{\"sheet_id\": \"pid_dataset/test/145#0\", \"diagram_type\": \"schematic\", \"is_to_scale\": false, \"file_format\": \"jpg\", \"source_dataset\": \"pid_dataset\", \"regions\": [{\"kind\": \"other\", \"bbox_px\": [263.0, 847.0, 442.0, 958.5], \"provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 0.7, \"source_ref\": null}}, {\"kind\": \"other\", \"bbox_px\": [661.0, 847.0, 838.0, 960.0], \"provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 0.7, \"source_ref\": null}}], \"source_units\": \"px\", \"scale_provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 1.0, \"source_ref\": null}}"
+  }
+ ],
+ "statistics": [
+  {
+   "name": "segment_count",
+   "value": 0,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": []
+  },
+  {
+   "name": "fitting_count",
+   "value": 2,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "node_1",
+    "node_2"
+   ]
+  },
+  {
+   "name": "equipment_count",
+   "value": 0,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": []
+  },
+  {
+   "name": "connection_count",
+   "value": 0,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": []
+  },
+  {
+   "name": "total_pipe_length_m",
+   "value": null,
+   "unit": "m",
+   "status": "not_available",
+   "method": "no scale: not computed",
+   "source_entity_ids": []
+  }
+ ]
+}

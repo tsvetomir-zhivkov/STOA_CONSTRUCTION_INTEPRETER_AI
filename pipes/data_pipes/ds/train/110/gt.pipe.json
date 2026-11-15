@@ -1,0 +1,376 @@
+{
+ "schema_version": "piping-0.1",
+ "building_schema_version": null,
+ "project": {
+  "name": null,
+  "global_id": null,
+  "schema_identifier": null,
+  "application": null,
+  "units": {
+   "length": {
+    "unit": "px",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "area": {
+    "unit": "px^2",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "volume": {
+    "unit": "px^3",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "angle": {
+    "unit": "DEGREE",
+    "to_si": 1.0,
+    "status": "inferred",
+    "source": "convention"
+   }
+  }
+ },
+ "site": null,
+ "building": null,
+ "drawing": {
+  "file": "pid_dataset/0__raw_data/sheets/train/110.jpg",
+  "source": "src_1",
+  "page_index": 0,
+  "image": {
+   "width_px": 565,
+   "height_px": 349,
+   "dpi": null
+  },
+  "route": "raster",
+  "read_from": "pid_dataset/0__raw_data/sheets/train/110.jpg",
+  "transforms": [],
+  "scale": {
+   "m_per_px": null,
+   "source": "none",
+   "confidence": 0.9,
+   "note": "not_to_scale"
+  }
+ },
+ "sources": [
+  {
+   "id": "src_1",
+   "file": "pid_dataset/0__raw_data/sheets/train/110.jpg",
+   "role": "primary",
+   "format": "raster"
+  }
+ ],
+ "levels": [],
+ "pipe_systems": [],
+ "pipe_types": [],
+ "pipe_segments": [],
+ "pipe_fittings": [
+  {
+   "id": "node_1",
+   "confidence": 1.0,
+   "provenance": {
+    "extractor": "ext_human",
+    "source_ref": "110:0"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "Symbol"
+     },
+     "center_px": [
+      59.0,
+      44.0
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    36.0,
+    27.0,
+    82.0,
+    61.0
+   ],
+   "kind": "unknown",
+   "center_px": [
+    59.0,
+    44.0
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_2",
+   "confidence": 1.0,
+   "provenance": {
+    "extractor": "ext_human",
+    "source_ref": "110:1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "Symbol"
+     },
+     "center_px": [
+      60.0,
+      95.0
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    38.0,
+    76.0,
+    82.0,
+    114.0
+   ],
+   "kind": "unknown",
+   "center_px": [
+    60.0,
+    95.0
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_3",
+   "confidence": 1.0,
+   "provenance": {
+    "extractor": "ext_human",
+    "source_ref": "110:2"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "Symbol"
+     },
+     "center_px": [
+      60.5,
+      143.5
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    38.0,
+    123.0,
+    83.0,
+    164.0
+   ],
+   "kind": "unknown",
+   "center_px": [
+    60.5,
+    143.5
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_4",
+   "confidence": 1.0,
+   "provenance": {
+    "extractor": "ext_human",
+    "source_ref": "110:3"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "Symbol"
+     },
+     "center_px": [
+      61.0,
+      196.5
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    39.0,
+    177.0,
+    83.0,
+    216.0
+   ],
+   "kind": "unknown",
+   "center_px": [
+    61.0,
+    196.5
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_5",
+   "confidence": 1.0,
+   "provenance": {
+    "extractor": "ext_human",
+    "source_ref": "110:4"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "Symbol"
+     },
+     "center_px": [
+      59.0,
+      244.5
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    37.0,
+    226.0,
+    81.0,
+    263.0
+   ],
+   "kind": "unknown",
+   "center_px": [
+    59.0,
+    244.5
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_6",
+   "confidence": 1.0,
+   "provenance": {
+    "extractor": "ext_human",
+    "source_ref": "110:5"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "Symbol"
+     },
+     "center_px": [
+      59.5,
+      301.5
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    38.0,
+    282.0,
+    81.0,
+    321.0
+   ],
+   "kind": "unknown",
+   "center_px": [
+    59.5,
+    301.5
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  }
+ ],
+ "pipe_equipment": [],
+ "pipe_connections": [],
+ "texts": [],
+ "coverage": [
+  {
+   "category": "symbols",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 1.0,
+   "extractor": "ext_human",
+   "note": "dataset annotation (single class Symbol)"
+  },
+  {
+   "category": "pipes",
+   "region": "page",
+   "status": "not_analysed",
+   "confidence": 0.0,
+   "extractor": "ext_human",
+   "note": "the dataset annotates no pipe lines"
+  }
+ ],
+ "history": [
+  {
+   "extractor": "ext_human",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"human\", \"name\": \"PID_dataset annotation + hand-labelled edges\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_human",
+   "action": "sheet_facts",
+   "note": "{\"sheet_id\": \"pid_dataset/train/110#0\", \"diagram_type\": \"schematic\", \"is_to_scale\": false, \"file_format\": \"jpg\", \"source_dataset\": \"pid_dataset\", \"source_units\": \"px\", \"scale_provenance\": {\"extractor_id\": \"ext_human\", \"confidence\": 1.0, \"source_ref\": null}}"
+  }
+ ],
+ "statistics": [
+  {
+   "name": "segment_count",
+   "value": 0,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": []
+  },
+  {
+   "name": "fitting_count",
+   "value": 6,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "node_1",
+    "node_2",
+    "node_3",
+    "node_4",
+    "node_5",
+    "node_6"
+   ]
+  },
+  {
+   "name": "equipment_count",
+   "value": 0,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": []
+  },
+  {
+   "name": "connection_count",
+   "value": 0,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": []
+  },
+  {
+   "name": "total_pipe_length_m",
+   "value": null,
+   "unit": "m",
+   "status": "not_available",
+   "method": "no scale: not computed",
+   "source_entity_ids": []
+  }
+ ]
+}

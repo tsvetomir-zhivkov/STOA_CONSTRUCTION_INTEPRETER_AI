@@ -1,0 +1,1522 @@
+{
+ "schema_version": "piping-0.1",
+ "building_schema_version": null,
+ "project": {
+  "name": null,
+  "global_id": null,
+  "schema_identifier": null,
+  "application": null,
+  "units": {
+   "length": {
+    "unit": "px",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "area": {
+    "unit": "px^2",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "volume": {
+    "unit": "px^3",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "angle": {
+    "unit": "DEGREE",
+    "to_si": 1.0,
+    "status": "inferred",
+    "source": "convention"
+   }
+  }
+ },
+ "site": null,
+ "building": null,
+ "drawing": {
+  "file": "pid_dataset/0__raw_data/sheets/test/192.jpg",
+  "source": "src_1",
+  "page_index": 0,
+  "image": {
+   "width_px": 889,
+   "height_px": 1270,
+   "dpi": null
+  },
+  "route": "raster",
+  "read_from": "pid_dataset/0__raw_data/sheets/test/192.jpg",
+  "transforms": [],
+  "scale": {
+   "m_per_px": null,
+   "source": "none",
+   "confidence": 0.9,
+   "note": "not_to_scale"
+  }
+ },
+ "sources": [
+  {
+   "id": "src_1",
+   "file": "pid_dataset/0__raw_data/sheets/test/192.jpg",
+   "role": "primary",
+   "format": "raster"
+  }
+ ],
+ "levels": [],
+ "pipe_systems": [
+  {
+   "id": "sys_unknown",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "derive",
+    "source_ref": "sys_unknown"
+   },
+   "name": "unknown",
+   "service": "unknown",
+   "segment_ids": [
+    "pipe_1",
+    "pipe_2"
+   ],
+   "segment_count": 2,
+   "total_pipe_length_m": null
+  }
+ ],
+ "pipe_types": [
+  {
+   "id": "type_1",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "derive",
+    "source_ref": "type_1"
+   },
+   "name": "unknown size unknown",
+   "service": "unknown",
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "segment_ids": [
+    "pipe_1",
+    "pipe_2"
+   ],
+   "segment_count": 2,
+   "total_length_m": null
+  }
+ ],
+ "pipe_segments": [
+  {
+   "id": "pipe_1",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_1"
+   },
+   "flags": [
+    "cov:connectivity",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 2.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     649.0,
+     524.0
+    ],
+    [
+     697.0,
+     524.0
+    ]
+   ],
+   "bbox_px": [
+    649.0,
+    524.0,
+    697.0,
+    524.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_1",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_2",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_2"
+   },
+   "flags": [
+    "cov:connectivity",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 2.69
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     788.0,
+     525.0
+    ],
+    [
+     833.0,
+     525.0
+    ]
+   ],
+   "bbox_px": [
+    788.0,
+    525.0,
+    833.0,
+    525.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_2",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  }
+ ],
+ "pipe_fittings": [
+  {
+   "id": "node_1",
+   "confidence": 0.8422,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "192:0"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      754.47,
+      403.23
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    694.6,
+    378.59,
+    814.34,
+    427.86
+   ],
+   "kind": "unknown",
+   "center_px": [
+    754.47,
+    403.23
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_2",
+   "confidence": 0.8319,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "192:1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      742.06,
+      896.09
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    697.41,
+    850.04,
+    786.7,
+    942.14
+   ],
+   "kind": "unknown",
+   "center_px": [
+    742.06,
+    896.09
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_3",
+   "confidence": 0.8309,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "192:2"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       699.5,
+       524.0
+      ],
+      [
+       785.5,
+       524.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      742.92,
+      525.31
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    698.65,
+    485.64,
+    787.2,
+    564.98
+   ],
+   "kind": "unknown",
+   "center_px": [
+    742.92,
+    525.31
+   ],
+   "connected_segment_ids": [
+    "pipe_1",
+    "pipe_2"
+   ],
+   "connection_ids": [
+    "conn_1",
+    "conn_2"
+   ]
+  },
+  {
+   "id": "node_4",
+   "confidence": 0.8196,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "192:3"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      741.56,
+      278.3
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    702.77,
+    246.99,
+    780.35,
+    309.6
+   ],
+   "kind": "unknown",
+   "center_px": [
+    741.56,
+    278.3
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_5",
+   "confidence": 0.8173,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "192:4"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      740.1,
+      1015.02
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    668.13,
+    991.39,
+    812.07,
+    1038.65
+   ],
+   "kind": "unknown",
+   "center_px": [
+    740.1,
+    1015.02
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_6",
+   "confidence": 0.8152,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "192:5"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      740.94,
+      158.34
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    713.03,
+    117.72,
+    768.85,
+    198.96
+   ],
+   "kind": "unknown",
+   "center_px": [
+    740.94,
+    158.34
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_7",
+   "confidence": 0.7749,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "192:6"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      742.52,
+      1166.65
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    704.77,
+    1136.22,
+    780.28,
+    1197.09
+   ],
+   "kind": "unknown",
+   "center_px": [
+    742.52,
+    1166.65
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_8",
+   "confidence": 0.7585,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "192:7"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      740.21,
+      647.64
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    712.19,
+    606.1,
+    768.22,
+    689.19
+   ],
+   "kind": "unknown",
+   "center_px": [
+    740.21,
+    647.64
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  }
+ ],
+ "pipe_equipment": [],
+ "pipe_connections": [
+  {
+   "id": "conn_1",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_1"
+   },
+   "from_entity_id": "node_3",
+   "to_entity_id": "pipe_1",
+   "kind": "connected",
+   "point_px": [
+    697.0,
+    524.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_2",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_2"
+   },
+   "from_entity_id": "node_3",
+   "to_entity_id": "pipe_2",
+   "kind": "connected",
+   "point_px": [
+    788.0,
+    525.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  }
+ ],
+ "texts": [
+  {
+   "id": "text_1",
+   "confidence": 0.9956,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "SPECIALTYITEMS",
+   "role": "other",
+   "bbox_px": [
+    254.0,
+    33.5,
+    558.0,
+    69.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_2",
+   "confidence": 0.725,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_2"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "0",
+   "role": "other",
+   "bbox_px": [
+    715.0,
+    118.0,
+    769.0,
+    195.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_3",
+   "confidence": 0.996,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_3"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "DETONATIONARRESTOR",
+   "role": "other",
+   "bbox_px": [
+    24.5,
+    144.0,
+    445.5,
+    176.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_4",
+   "confidence": 0.9644,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_4"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "EXCESSFLOW VALVE",
+   "role": "other",
+   "bbox_px": [
+    23.0,
+    261.5,
+    389.5,
+    297.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_5",
+   "confidence": 0.9596,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_5"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "XXX=FLOW LIMIT",
+   "role": "other",
+   "bbox_px": [
+    23.5,
+    306.5,
+    350.0,
+    342.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_6",
+   "confidence": 0.9768,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_6"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "XXX",
+   "role": "other",
+   "bbox_px": [
+    702.5,
+    304.5,
+    779.0,
+    340.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_7",
+   "confidence": 0.9647,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_7"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "EXPANSION JOINT",
+   "role": "other",
+   "bbox_px": [
+    23.5,
+    387.5,
+    332.0,
+    421.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_8",
+   "confidence": 0.9956,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_8"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "F",
+   "role": "other",
+   "bbox_px": [
+    721.0,
+    500.5,
+    759.0,
+    548.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_9",
+   "confidence": 0.9633,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_9"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FILTER,TUBING TYPE",
+   "role": "other",
+   "bbox_px": [
+    22.5,
+    506.5,
+    389.5,
+    543.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_10",
+   "confidence": 0.9912,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_10"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "F",
+   "role": "other",
+   "bbox_px": [
+    721.5,
+    623.0,
+    760.0,
+    665.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_11",
+   "confidence": 0.9964,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_11"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FLAMEARRESTOR",
+   "role": "other",
+   "bbox_px": [
+    22.5,
+    630.5,
+    337.5,
+    663.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_12",
+   "confidence": 0.9474,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_12"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FLEX HOSE",
+   "role": "other",
+   "bbox_px": [
+    24.0,
+    753.0,
+    217.0,
+    783.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_13",
+   "confidence": 0.4786,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_13"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "2",
+   "role": "other",
+   "bbox_px": [
+    702.5,
+    853.0,
+    786.5,
+    937.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_14",
+   "confidence": 0.9937,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_14"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "INJECTION/SPRAYNOZZLE",
+   "role": "other",
+   "bbox_px": [
+    24.0,
+    874.5,
+    491.5,
+    907.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_15",
+   "confidence": 0.9661,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_15"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "IN-LINE(STATIC) MIXER",
+   "role": "other",
+   "bbox_px": [
+    22.5,
+    992.5,
+    417.5,
+    1032.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_16",
+   "confidence": 0.947,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_16"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "OPEN DRAIN",
+   "role": "other",
+   "bbox_px": [
+    22.5,
+    1156.0,
+    238.0,
+    1191.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_17",
+   "confidence": 0.9481,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_17"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "OPEN DRAIN",
+   "role": "other",
+   "bbox_px": [
+    17.5,
+    1150.5,
+    241.0,
+    1197.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_18",
+   "confidence": 0.9964,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_18"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "IN-LINE (STATIC) MIXER",
+   "role": "other",
+   "bbox_px": [
+    14.0,
+    986.5,
+    420.5,
+    1039.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_19",
+   "confidence": 0.9918,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_19"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "INJECTION/SPRAY NOZZLE",
+   "role": "other",
+   "bbox_px": [
+    16.5,
+    870.0,
+    494.0,
+    914.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_20",
+   "confidence": 0.9931,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_20"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FLAME ARRESTOR",
+   "role": "other",
+   "bbox_px": [
+    17.5,
+    621.0,
+    341.5,
+    674.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_21",
+   "confidence": 0.9978,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_21"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "EXPANSION JOINT",
+   "role": "other",
+   "bbox_px": [
+    15.5,
+    376.0,
+    338.0,
+    432.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_22",
+   "confidence": 0.9689,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_22"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "(XXX = FLOW LIMIT)",
+   "role": "other",
+   "bbox_px": [
+    15.0,
+    302.5,
+    355.0,
+    350.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_23",
+   "confidence": 0.9956,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_23"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "EXCESS FLOW VALVE",
+   "role": "other",
+   "bbox_px": [
+    17.0,
+    255.5,
+    394.0,
+    307.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_24",
+   "confidence": 0.977,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_24"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "DETONATION ARRESTOR",
+   "role": "other",
+   "bbox_px": [
+    13.5,
+    139.5,
+    450.0,
+    181.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_25",
+   "confidence": 0.964,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_25"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FLEX HOSE",
+   "role": "other",
+   "bbox_px": [
+    20.0,
+    748.5,
+    219.0,
+    789.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_26",
+   "confidence": 0.9873,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_26"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FILTER, TUBING TYPE",
+   "role": "other",
+   "bbox_px": [
+    18.5,
+    504.5,
+    391.0,
+    549.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_27",
+   "confidence": 0.9991,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_27"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "SPECIALTY ITEMS",
+   "role": "other",
+   "bbox_px": [
+    251.0,
+    28.0,
+    562.5,
+    74.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_28",
+   "confidence": 0.7503,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_28"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "BE",
+   "role": "other",
+   "bbox_px": [
+    597.5,
+    673.0,
+    878.0,
+    1185.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_29",
+   "confidence": 0.7059,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_29"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": ">",
+   "role": "other",
+   "bbox_px": [
+    690.0,
+    1094.5,
+    792.5,
+    1207.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_30",
+   "confidence": 0.4701,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_30"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "10",
+   "role": "other",
+   "bbox_px": [
+    693.0,
+    233.0,
+    789.5,
+    356.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_31",
+   "confidence": 0.4129,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_31"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "T",
+   "role": "other",
+   "bbox_px": [
+    716.5,
+    619.0,
+    764.0,
+    682.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_32",
+   "confidence": 0.3158,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_32"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "D",
+   "role": "other",
+   "bbox_px": [
+    715.5,
+    126.5,
+    764.0,
+    206.0
+   ],
+   "linked_entity_ids": []
+  }
+ ],
+ "coverage": [
+  {
+   "category": "symbols",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.8113,
+   "extractor": "ext_det",
+   "note": "detector, reported at conf >= 0.5; 0 lower-confidence boxes erased for tracing, not reported; 0 equipment nodes from closed contours"
+  },
+  {
+   "category": "pipes",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.5,
+   "extractor": "ext_graph",
+   "note": "skeleton tracer; 0 noise fragments dropped; legend/title frames are not removed yet"
+  },
+  {
+   "category": "connectivity",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.6,
+   "extractor": "ext_graph",
+   "note": "unsnapped ends listed separately as partial"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    614.6,
+    489.6,
+    683.4,
+    558.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    798.6,
+    490.6,
+    867.4,
+    559.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "text",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.8855,
+   "extractor": "ext_ocr",
+   "note": "PaddleOCR Latin model, two orientations"
+  }
+ ],
+ "history": [
+  {
+   "extractor": "ext_det",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"symbol_detector\", \"name\": \"yolo11s single-class\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_ocr",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"ocr\", \"name\": \"PaddleOCR latin_PP-OCRv3_mobile_rec\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_graph",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"graph_builder\", \"name\": \"skeleton tracer + graph.py\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_graph",
+   "action": "sheet_facts",
+   "note": "{\"sheet_id\": \"pid_dataset/test/192#0\", \"diagram_type\": \"schematic\", \"is_to_scale\": false, \"file_format\": \"jpg\", \"source_dataset\": \"pid_dataset\", \"source_units\": \"px\", \"scale_provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 1.0, \"source_ref\": null}}"
+  }
+ ],
+ "statistics": [
+  {
+   "name": "segment_count",
+   "value": 2,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "pipe_1",
+    "pipe_2"
+   ]
+  },
+  {
+   "name": "fitting_count",
+   "value": 8,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "node_1",
+    "node_2",
+    "node_3",
+    "node_4",
+    "node_5",
+    "node_6",
+    "node_7",
+    "node_8"
+   ]
+  },
+  {
+   "name": "equipment_count",
+   "value": 0,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": []
+  },
+  {
+   "name": "connection_count",
+   "value": 2,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "conn_1",
+    "conn_2"
+   ]
+  },
+  {
+   "name": "total_pipe_length_m",
+   "value": null,
+   "unit": "m",
+   "status": "not_available",
+   "method": "no scale: not computed",
+   "source_entity_ids": [
+    "pipe_1",
+    "pipe_2"
+   ]
+  },
+  {
+   "name": "total_pipe_length_m:unknown",
+   "value": null,
+   "unit": "m",
+   "status": "not_available",
+   "method": "no scale: not computed",
+   "source_entity_ids": [
+    "pipe_1",
+    "pipe_2"
+   ],
+   "service": "unknown"
+  }
+ ]
+}

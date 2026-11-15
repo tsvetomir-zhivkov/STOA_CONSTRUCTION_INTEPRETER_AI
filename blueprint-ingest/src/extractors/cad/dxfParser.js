@@ -35,8 +35,10 @@ export function parseDxf(text) {
     if (!cur) return;
     const type = cur[0][1].toUpperCase();
     const ent = decodeEntity(type, cur, skipped);
+    const handle = cur.find((p) => p[0] === 5)?.[1] ?? null; // DXF entity handle (group code 5): provenance.source_ref
     cur = null;
     if (!ent) return;
+    if (handle) ent.handle = handle;
     if (ent.type === 'POLYLINE') { pendingPoly = ent; return; }
     if (ent.type === 'VERTEX') { if (pendingPoly) pendingPoly.pts.push(ent.pt); return; }
     if (ent.type === 'SEQEND') { if (pendingPoly) { (curBlock ? curBlock.entities : entities).push({ ...pendingPoly, type: 'LWPOLYLINE' }); pendingPoly = null; } return; }

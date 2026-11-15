@@ -14,7 +14,7 @@ export class PipelineError extends Error {
   }
 }
 
-/** The merged/created document does not satisfy the JSON Schema (even after the repair pass). */
+/** The merged/created document does not satisfy the JSON Schema. */
 export class SchemaValidationError extends PipelineError {
   /** @param {import('ajv').ErrorObject[]} errors */
   constructor(errors, message = 'Document does not conform to blueprint.schema.json') {

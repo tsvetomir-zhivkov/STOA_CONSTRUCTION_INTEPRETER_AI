@@ -1,0 +1,1429 @@
+{
+ "schema_version": "piping-0.1",
+ "building_schema_version": null,
+ "project": {
+  "name": null,
+  "global_id": null,
+  "schema_identifier": null,
+  "application": null,
+  "units": {
+   "length": {
+    "unit": "px",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "area": {
+    "unit": "px^2",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "volume": {
+    "unit": "px^3",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "angle": {
+    "unit": "DEGREE",
+    "to_si": 1.0,
+    "status": "inferred",
+    "source": "convention"
+   }
+  }
+ },
+ "site": null,
+ "building": null,
+ "drawing": {
+  "file": "pid_dataset/0__raw_data/sheets/test/0.jpg",
+  "source": "src_1",
+  "page_index": 0,
+  "image": {
+   "width_px": 960,
+   "height_px": 799,
+   "dpi": null
+  },
+  "route": "raster",
+  "read_from": "pid_dataset/0__raw_data/sheets/test/0.jpg",
+  "transforms": [],
+  "scale": {
+   "m_per_px": null,
+   "source": "none",
+   "confidence": 0.9,
+   "note": "not_to_scale"
+  }
+ },
+ "sources": [
+  {
+   "id": "src_1",
+   "file": "pid_dataset/0__raw_data/sheets/test/0.jpg",
+   "role": "primary",
+   "format": "raster"
+  }
+ ],
+ "levels": [],
+ "pipe_systems": [],
+ "pipe_types": [],
+ "pipe_segments": [],
+ "pipe_fittings": [
+  {
+   "id": "node_1",
+   "confidence": 0.8616,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "0:0"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       824.5,
+       615.0
+      ],
+      [
+       777.5,
+       702.0
+      ],
+      [
+       873.5,
+       702.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      825.9,
+      672.76
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    776.33,
+    611.3,
+    875.47,
+    734.22
+   ],
+   "kind": "unknown",
+   "center_px": [
+    825.9,
+    672.76
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_2",
+   "confidence": 0.8597,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "0:1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       321.0,
+       615.0
+      ],
+      [
+       273.5,
+       702.0
+      ],
+      [
+       371.5,
+       702.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      323.21,
+      673.24
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    272.53,
+    611.15,
+    373.9,
+    735.32
+   ],
+   "kind": "unknown",
+   "center_px": [
+    323.21,
+    673.24
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_3",
+   "confidence": 0.857,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "0:2"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       730.5,
+       364.0
+      ],
+      [
+       680.5,
+       451.0
+      ],
+      [
+       785.5,
+       451.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      733.3,
+      419.23
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    679.35,
+    360.58,
+    787.24,
+    477.88
+   ],
+   "kind": "unknown",
+   "center_px": [
+    733.3,
+    419.23
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_4",
+   "confidence": 0.8539,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "0:3"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       84.5,
+       179.0
+      ],
+      [
+       183.5,
+       179.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      134.62,
+      148.43
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    83.35,
+    88.78,
+    185.9,
+    208.07
+   ],
+   "kind": "unknown",
+   "center_px": [
+    134.62,
+    148.43
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_5",
+   "confidence": 0.8534,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "0:4"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       775.5,
+       179.0
+      ],
+      [
+       875.5,
+       179.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      826.41,
+      152.88
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    774.9,
+    88.58,
+    877.92,
+    217.19
+   ],
+   "kind": "unknown",
+   "center_px": [
+    826.41,
+    152.88
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_6",
+   "confidence": 0.8527,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "0:5"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       320.5,
+       354.5
+      ],
+      [
+       274.5,
+       441.0
+      ],
+      [
+       368.5,
+       441.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      322.26,
+      411.11
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    273.66,
+    351.07,
+    370.86,
+    471.14
+   ],
+   "kind": "unknown",
+   "center_px": [
+    322.26,
+    411.11
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_7",
+   "confidence": 0.8516,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "0:6"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       85.5,
+       441.0
+      ],
+      [
+       180.5,
+       441.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      133.68,
+      409.6
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    84.64,
+    349.71,
+    182.72,
+    469.49
+   ],
+   "kind": "unknown",
+   "center_px": [
+    133.68,
+    409.6
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_8",
+   "confidence": 0.8506,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "0:7"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       638.0,
+       615.6
+      ],
+      [
+       586.5,
+       702.0
+      ],
+      [
+       689.5,
+       702.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      638.48,
+      670.97
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    585.64,
+    612.53,
+    691.32,
+    729.41
+   ],
+   "kind": "unknown",
+   "center_px": [
+    638.48,
+    670.97
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_9",
+   "confidence": 0.8488,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "0:8"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       134.9,
+       615.6
+      ],
+      [
+       83.5,
+       702.0
+      ],
+      [
+       184.5,
+       702.0
+      ],
+      [
+       170.0,
+       726.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      134.57,
+      670.83
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    82.78,
+    612.27,
+    186.36,
+    729.38
+   ],
+   "kind": "unknown",
+   "center_px": [
+    134.57,
+    670.83
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_10",
+   "confidence": 0.8482,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "0:9"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       271.5,
+       179.0
+      ],
+      [
+       373.5,
+       179.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      323.16,
+      150.59
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    270.87,
+    86.79,
+    375.45,
+    214.38
+   ],
+   "kind": "unknown",
+   "center_px": [
+    323.16,
+    150.59
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_11",
+   "confidence": 0.8477,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "0:10"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       587.5,
+       179.0
+      ],
+      [
+       687.5,
+       179.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      637.91,
+      148.22
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    586.38,
+    88.28,
+    689.45,
+    208.17
+   ],
+   "kind": "unknown",
+   "center_px": [
+    637.91,
+    148.22
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  }
+ ],
+ "pipe_equipment": [],
+ "pipe_connections": [],
+ "texts": [
+  {
+   "id": "text_1",
+   "confidence": 0.9753,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Open",
+   "role": "other",
+   "bbox_px": [
+    129.0,
+    38.5,
+    303.0,
+    89.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_2",
+   "confidence": 0.9478,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_2"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Close",
+   "role": "other",
+   "bbox_px": [
+    641.0,
+    37.5,
+    820.0,
+    84.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_3",
+   "confidence": 0.5211,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_3"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "(1o)",
+   "role": "other",
+   "bbox_px": [
+    704.0,
+    116.0,
+    766.5,
+    171.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_4",
+   "confidence": 0.9858,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_4"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "(or)",
+   "role": "other",
+   "bbox_px": [
+    203.5,
+    129.0,
+    256.5,
+    170.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_5",
+   "confidence": 0.9935,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_5"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FO",
+   "role": "other",
+   "bbox_px": [
+    110.5,
+    208.5,
+    158.0,
+    238.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_6",
+   "confidence": 0.9969,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_6"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FC",
+   "role": "other",
+   "bbox_px": [
+    613.5,
+    207.5,
+    661.0,
+    239.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_7",
+   "confidence": 0.965,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_7"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Locked",
+   "role": "other",
+   "bbox_px": [
+    117.0,
+    301.0,
+    322.0,
+    344.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_8",
+   "confidence": 0.9744,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_8"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Indeternine",
+   "role": "other",
+   "bbox_px": [
+    607.0,
+    302.0,
+    875.0,
+    342.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_9",
+   "confidence": 0.9644,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_9"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "(or)",
+   "role": "other",
+   "bbox_px": [
+    201.5,
+    382.5,
+    260.0,
+    429.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_10",
+   "confidence": 0.9691,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_10"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FL. chemicalergineerngworid.com",
+   "role": "other",
+   "bbox_px": [
+    109.0,
+    462.5,
+    839.5,
+    519.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_11",
+   "confidence": 0.9629,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_11"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Last/Drift Open",
+   "role": "other",
+   "bbox_px": [
+    54.5,
+    560.0,
+    389.0,
+    606.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_12",
+   "confidence": 0.9735,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_12"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Last/Drift Close",
+   "role": "other",
+   "bbox_px": [
+    561.5,
+    562.5,
+    900.5,
+    602.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_13",
+   "confidence": 0.6975,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_13"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Cor)",
+   "role": "other",
+   "bbox_px": [
+    194.5,
+    629.5,
+    270.5,
+    699.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_14",
+   "confidence": 0.8116,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_14"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "X",
+   "role": "other",
+   "bbox_px": [
+    99.0,
+    661.0,
+    179.5,
+    720.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_15",
+   "confidence": 0.9741,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_15"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FL/DO",
+   "role": "other",
+   "bbox_px": [
+    90.0,
+    729.5,
+    178.5,
+    762.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_16",
+   "confidence": 0.9661,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_16"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FL/DC",
+   "role": "other",
+   "bbox_px": [
+    593.0,
+    727.5,
+    682.5,
+    763.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_17",
+   "confidence": 0.9708,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_17"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Last/Drift Open",
+   "role": "other",
+   "bbox_px": [
+    51.5,
+    559.0,
+    391.5,
+    614.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_18",
+   "confidence": 0.9565,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_18"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FL/DO",
+   "role": "other",
+   "bbox_px": [
+    84.5,
+    727.5,
+    179.0,
+    768.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_19",
+   "confidence": 0.9191,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_19"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FL chemical",
+   "role": "other",
+   "bbox_px": [
+    109.5,
+    466.0,
+    360.5,
+    523.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_20",
+   "confidence": 0.9608,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_20"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Locked",
+   "role": "other",
+   "bbox_px": [
+    115.0,
+    303.0,
+    322.5,
+    350.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_21",
+   "confidence": 0.9528,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_21"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Open",
+   "role": "other",
+   "bbox_px": [
+    130.0,
+    39.5,
+    303.0,
+    92.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_22",
+   "confidence": 0.9253,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_22"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "(or)",
+   "role": "other",
+   "bbox_px": [
+    197.0,
+    132.0,
+    258.5,
+    171.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_23",
+   "confidence": 0.9252,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_23"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "jngworid.com",
+   "role": "other",
+   "bbox_px": [
+    539.5,
+    478.5,
+    835.5,
+    514.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_24",
+   "confidence": 0.9765,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_24"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Last/Drift Close",
+   "role": "other",
+   "bbox_px": [
+    559.0,
+    561.0,
+    902.5,
+    611.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_25",
+   "confidence": 0.8756,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_25"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "FLIDC",
+   "role": "other",
+   "bbox_px": [
+    590.5,
+    727.5,
+    681.0,
+    766.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_26",
+   "confidence": 0.9823,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_26"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Indeternine",
+   "role": "other",
+   "bbox_px": [
+    604.5,
+    302.5,
+    876.5,
+    348.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_27",
+   "confidence": 0.7841,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_27"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "2",
+   "role": "other",
+   "bbox_px": [
+    610.5,
+    207.5,
+    661.0,
+    241.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_28",
+   "confidence": 0.9709,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_28"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Fail Close",
+   "role": "other",
+   "bbox_px": [
+    640.5,
+    40.0,
+    820.5,
+    90.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_29",
+   "confidence": 0.9332,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_29"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "(or)",
+   "role": "other",
+   "bbox_px": [
+    702.0,
+    132.0,
+    761.5,
+    171.5
+   ],
+   "linked_entity_ids": []
+  }
+ ],
+ "coverage": [
+  {
+   "category": "symbols",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.8532,
+   "extractor": "ext_det",
+   "note": "detector, reported at conf >= 0.5; 2 lower-confidence boxes erased for tracing, not reported; 0 equipment nodes from closed contours"
+  },
+  {
+   "category": "pipes",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.0,
+   "extractor": "ext_graph",
+   "note": "skeleton tracer; 0 noise fragments dropped; legend/title frames are not removed yet"
+  },
+  {
+   "category": "connectivity",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.6,
+   "extractor": "ext_graph",
+   "note": "unsnapped ends listed separately as partial"
+  },
+  {
+   "category": "text",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.9246,
+   "extractor": "ext_ocr",
+   "note": "PaddleOCR Latin model, two orientations"
+  }
+ ],
+ "history": [
+  {
+   "extractor": "ext_det",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"symbol_detector\", \"name\": \"yolo11s single-class\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_ocr",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"ocr\", \"name\": \"PaddleOCR latin_PP-OCRv3_mobile_rec\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_graph",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"graph_builder\", \"name\": \"skeleton tracer + graph.py\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_graph",
+   "action": "sheet_facts",
+   "note": "{\"sheet_id\": \"pid_dataset/test/0#0\", \"diagram_type\": \"schematic\", \"is_to_scale\": false, \"file_format\": \"jpg\", \"source_dataset\": \"pid_dataset\", \"regions\": [{\"kind\": \"other\", \"bbox_px\": [550.0, 38.0, 915.0, 255.5], \"provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 0.7, \"source_ref\": null}}, {\"kind\": \"other\", \"bbox_px\": [46.0, 38.0, 410.0, 255.5], \"provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 0.7, \"source_ref\": null}}, {\"kind\": \"other\", \"bbox_px\": [550.0, 299.0, 914.0, 517.5], \"provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 0.7, \"source_ref\": null}}, {\"kind\": \"other\", \"bbox_px\": [46.0, 299.0, 410.0, 517.5], \"provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 0.7, \"source_ref\": null}}, {\"kind\": \"other\", \"bbox_px\": [550.0, 560.0, 915.0, 778.5], \"provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 0.7, \"source_ref\": null}}, {\"kind\": \"other\", \"bbox_px\": [46.0, 560.0, 410.0, 778.5], \"provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 0.7, \"source_ref\": null}}], \"source_units\": \"px\", \"scale_provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 1.0, \"source_ref\": null}}"
+  }
+ ],
+ "statistics": [
+  {
+   "name": "segment_count",
+   "value": 0,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": []
+  },
+  {
+   "name": "fitting_count",
+   "value": 11,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "node_1",
+    "node_2",
+    "node_3",
+    "node_4",
+    "node_5",
+    "node_6",
+    "node_7",
+    "node_8",
+    "node_9",
+    "node_10",
+    "node_11"
+   ]
+  },
+  {
+   "name": "equipment_count",
+   "value": 0,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": []
+  },
+  {
+   "name": "connection_count",
+   "value": 0,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": []
+  },
+  {
+   "name": "total_pipe_length_m",
+   "value": null,
+   "unit": "m",
+   "status": "not_available",
+   "method": "no scale: not computed",
+   "source_entity_ids": []
+  }
+ ]
+}

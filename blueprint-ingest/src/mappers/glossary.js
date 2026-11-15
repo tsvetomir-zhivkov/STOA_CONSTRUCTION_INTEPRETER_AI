@@ -1,7 +1,7 @@
 /**
  * Built-in multilingual room glossary. Resolves common room labels (and abbreviations such as the
- * Finnish "MH") deterministically, so Gemini is only asked about names that are not in here.
- * `type` values must stay within the schema's room.type enum (schema v0.2).
+ * Finnish "MH") deterministically. Names that are not in here stay type "unknown".
+ * `type` values must stay within the schema's room.type enum (schema v0.3).
  */
 
 /** @typedef {'bedroom'|'living'|'kitchen'|'dining'|'bathroom'|'wc'|'sauna'|'entry'|'corridor'|'closet'|'storage'|'utility'|'technical'|'stair'|'balcony'|'terrace'|'garage'|'office'|'outdoor'|'shaft'|'other'|'unknown'} RoomType */
@@ -49,6 +49,8 @@ const ENTRIES = [
   // Estonian
   ['et', 'elutuba', 'living', 'living room'], ['et', 'köök', 'kitchen', 'kitchen'], ['et', 'magamistuba', 'bedroom', 'bedroom'], ['et', 'vannituba', 'bathroom', 'bathroom'],
   ['et', 'esik', 'entry', 'entrance hall'], ['et', 'koridor', 'corridor', 'corridor'], ['et', 'panipaik', 'storage', 'storage'], ['et', 'rõdu', 'balcony', 'balcony'], ['et', 'saun', 'sauna', 'sauna'],
+  ['et', 'tualettruum', 'wc', 'toilet'], ['et', 'tualett', 'wc', 'toilet'], ['et', 'wc', 'wc', 'toilet'], ['et', 'dušširuum', 'bathroom', 'shower room'],
+  ['et', 'elutuba+köök', 'living', 'living room with kitchen'], ['et', 'trepikoda', 'stair', 'staircase'], ['et', 'abiruum', 'utility', 'utility room'],
   // Swedish
   ['sv', 'sovrum', 'bedroom', 'bedroom'], ['sv', 'vardagsrum', 'living', 'living room'], ['sv', 'kök', 'kitchen', 'kitchen'], ['sv', 'badrum', 'bathroom', 'bathroom'],
   ['sv', 'tvättstuga', 'utility', 'laundry room'], ['sv', 'förråd', 'storage', 'storage'], ['sv', 'balkong', 'balcony', 'balcony'], ['sv', 'kontor', 'office', 'office'], ['sv', 'trappa', 'stair', 'staircase'], ['sv', 'hall', 'entry', 'hall'],
@@ -64,19 +66,49 @@ const ENTRIES = [
   ['fr', 'chambre', 'bedroom', 'bedroom'], ['fr', 'séjour', 'living', 'living room'], ['fr', 'salon', 'living', 'living room'], ['fr', 'cuisine', 'kitchen', 'kitchen'], ['fr', 'salle de bain', 'bathroom', 'bathroom'],
   ['fr', 'sdb', 'bathroom', 'bathroom', 'salle de bain'], ['fr', 'couloir', 'corridor', 'corridor'], ['fr', 'entrée', 'entry', 'entrance hall'], ['fr', 'placard', 'closet', 'closet'], ['fr', 'cellier', 'storage', 'storage'],
   ['fr', 'balcon', 'balcony', 'balcony'], ['fr', 'bureau', 'office', 'office'], ['fr', 'escalier', 'stair', 'staircase'], ['fr', 'wc', 'wc', 'toilet'],
+
+  // ---- added in 0.2.1 (Swiss Dwellings: FR / DE / IT). Requested names use the schema v0.2 types:
+  //      living_room -> living, toilet -> wc, hall -> entry. "pièce" / "stanza" / "locale" mean "room": always "other".
+  // French
+  ['fr', 'bain', 'bathroom', 'bathroom'], ['fr', 'douche', 'bathroom', 'shower room'], ['fr', 'séjour/repas', 'living', 'living / dining room'],
+  ['fr', 'salle à manger', 'dining', 'dining room'], ['fr', 'hall', 'entry', 'hall'], ['fr', 'loggia', 'balcony', 'loggia'], ['fr', 'terrasse', 'terrace', 'terrace'],
+  ['fr', 'cave', 'storage', 'cellar'], ['fr', 'réduit', 'storage', 'storage'], ['fr', 'buanderie', 'utility', 'laundry room'], ['fr', 'local technique', 'technical', 'technical room'],
+  ["fr", "cage d'escalier", 'stair', 'stairwell'], ['fr', 'ascenseur', 'technical', 'lift'], ['fr', 'garage', 'garage', 'garage'], ['fr', 'pièce', 'other', 'room'],
+  ['fr', 'chambre à coucher', 'bedroom', 'bedroom'], ['fr', 'repas', 'dining', 'dining area'],
+  // German
+  ['de', 'aufzug', 'technical', 'lift'], ['de', 'wohnen/essen', 'living', 'living / dining room'], ['de', 'eingangshalle', 'entry', 'entrance hall'], ['de', 'bürofläche', 'office', 'office area'],
+  // Italian
+  ['it', 'cucina', 'kitchen', 'kitchen'], ['it', 'bagno', 'bathroom', 'bathroom'], ['it', 'camera', 'bedroom', 'bedroom'], ['it', 'camera da letto', 'bedroom', 'bedroom'],
+  ['it', 'soggiorno', 'living', 'living room'], ['it', 'soggiorno/pranzo', 'living', 'living / dining room'], ['it', 'pranzo', 'dining', 'dining area'],
+  ['it', 'corridoio', 'corridor', 'corridor'], ['it', 'balcone', 'balcony', 'balcony'], ['it', 'scala', 'stair', 'staircase'], ['it', 'vano scala', 'stair', 'stairwell'],
+  ['it', 'ripostiglio', 'storage', 'storage'], ['it', 'ascensore', 'technical', 'lift'], ['it', 'stanza', 'other', 'room'], ['it', 'locale', 'other', 'room'],
+  // English
+  ['en', 'lift', 'technical', 'lift'], ['en', 'elevator', 'technical', 'lift'],
+  // Danish (Molio IFC models and their rendered plans)
+  ['da', 'bad', 'bathroom', 'bathroom'], ['da', 'badeværelse', 'bathroom', 'bathroom'], ['da', 'brusebad', 'bathroom', 'shower room'],
+  ['da', 'toilet', 'wc', 'toilet'], ['da', 'køkken', 'kitchen', 'kitchen'], ['da', 'soveværelse', 'bedroom', 'bedroom'], ['da', 'stue', 'living', 'living room'],
+  ['da', 'gang', 'corridor', 'corridor'], ['da', 'entré', 'entry', 'entrance'], ['da', 'depot', 'storage', 'storage'], ['da', 'opbevaring', 'storage', 'storage'],
+  ['da', 'teknikrum', 'technical', 'technical room'], ['da', 'køle og varmecentral', 'technical', 'cooling and heating plant'], ['da', 'skakt', 'shaft', 'shaft'],
+  ['da', 'trappe', 'stair', 'staircase'], ['da', 'trapperum', 'stair', 'staircase'], ['da', 'kontor', 'office', 'office'], ['da', 'altan', 'balcony', 'balcony'],
+  ['da', 'bryggers', 'utility', 'utility room'], ['da', 'vaskerum', 'utility', 'laundry room'],
 ];
 
 /** @type {Map<string, {language:string, term:string, type:RoomType, normalized:string, expanded:string|null}>} */
 const INDEX = new Map();
 for (const [language, term, type, normalized, expanded] of ENTRIES) {
-  // first entry wins, so English "wc" beats the later fi/fr duplicates
-  if (!INDEX.has(term)) INDEX.set(term, { language, term, type, normalized, expanded: expanded ?? null });
+  // first entry wins, so English "wc" beats the later fi/fr duplicates. Keys are accent-folded like the lookup.
+  const k = normalizeKey(term);
+  if (!INDEX.has(k)) INDEX.set(k, { language, term, type, normalized, expanded: expanded ?? null });
 }
 
-/** Lower-case, trim punctuation and trailing numbering ("MH 2", "Bedroom 3." -> "mh", "bedroom"). @param {string} raw */
+/** Lower-case and strip accents ("Pièce" -> "piece", "Küche" -> "kuche"); typographic apostrophes become "'". @param {string} s */
+export function foldText(s) {
+  return String(s).normalize('NFD').replace(/\p{M}+/gu, '').replace(/[\u2018\u2019\u02bc]/g, "'").toLowerCase();
+}
+
+/** Accent-fold, trim punctuation and trailing numbering ("MH 2", "Chambre 2", "Bedroom 3." -> "mh", "chambre", "bedroom"). @param {string} raw */
 export function normalizeKey(raw) {
-  return raw
-    .toLowerCase()
+  return foldText(raw)
     .replace(/[\s_]+/g, ' ')
     .replace(/[.,:;()]+/g, '')
     .replace(/\s*[-/#]?\s*\d+[a-z]?$/i, '')
@@ -90,7 +122,8 @@ export function normalizeKey(raw) {
 export function lookupRoomName(raw) {
   if (!raw) return null;
   const key = normalizeKey(raw);
-  const hit = INDEX.get(key);
+  // "Bad - Dame", "WC - Herren": a room name followed by a " - " qualifier resolves through the name
+  const hit = INDEX.get(key) ?? (key.includes(' - ') ? INDEX.get(normalizeKey(key.split(' - ')[0])) : undefined);
   if (!hit) return null;
   return {
     type: hit.type,

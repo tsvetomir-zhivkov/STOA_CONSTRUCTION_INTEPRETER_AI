@@ -210,7 +210,7 @@
       "allOf": [{"$ref": "#/$defs/entity"}],
       "required": ["category"],
       "properties": {
-        "category": {"enum": ["toilet", "sink", "shower", "bathtub", "sauna_bench", "stair", "other"]},
+        "category": {"enum": ["toilet", "sink", "shower", "bathtub", "sauna_bench", "stair", "stove", "fridge", "washing_machine", "elevator", "radiator", "closet", "other"], "description": "stove, fridge, washing_machine, elevator and radiator were added in translator 0.2.1, closet in 0.2.2 (additive: schema_version stays 0.2). A DXF stair is one object per staircase and keeps its tread data in properties: tread_count (total), flights[] {tread_count, direction_deg (plan frame, 0 = +x, 90 = +y down), start_m (centre of the first edge), width_m, going_m, plus the *_px values they are derived from}, landings[] {polygon_m, at_height_m (null: plans carry no heights), after_tread (treads below the landing), side (measured|room|assumed)}, rise_direction (up|unknown)."},
         "subtype": {"type": ["string", "null"]},
         "bbox_px": {"$ref": "#/$defs/bbox"},
         "polygon_px": {"$ref": "#/$defs/polygon"},

@@ -1,0 +1,7247 @@
+{
+ "schema_version": "piping-0.1",
+ "building_schema_version": null,
+ "project": {
+  "name": null,
+  "global_id": null,
+  "schema_identifier": null,
+  "application": null,
+  "units": {
+   "length": {
+    "unit": "px",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "area": {
+    "unit": "px^2",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "volume": {
+    "unit": "px^3",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "angle": {
+    "unit": "DEGREE",
+    "to_si": 1.0,
+    "status": "inferred",
+    "source": "convention"
+   }
+  }
+ },
+ "site": null,
+ "building": null,
+ "drawing": {
+  "file": "pid_dataset/0__raw_data/sheets/test/129.jpg",
+  "source": "src_1",
+  "page_index": 0,
+  "image": {
+   "width_px": 739,
+   "height_px": 661,
+   "dpi": null
+  },
+  "route": "raster",
+  "read_from": "pid_dataset/0__raw_data/sheets/test/129.jpg",
+  "transforms": [],
+  "scale": {
+   "m_per_px": null,
+   "source": "none",
+   "confidence": 0.9,
+   "note": "not_to_scale"
+  }
+ },
+ "sources": [
+  {
+   "id": "src_1",
+   "file": "pid_dataset/0__raw_data/sheets/test/129.jpg",
+   "role": "primary",
+   "format": "raster"
+  }
+ ],
+ "levels": [],
+ "pipe_systems": [
+  {
+   "id": "sys_unknown",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "derive",
+    "source_ref": "sys_unknown"
+   },
+   "name": "unknown",
+   "service": "unknown",
+   "segment_ids": [
+    "pipe_1",
+    "pipe_2",
+    "pipe_3",
+    "pipe_4",
+    "pipe_5",
+    "pipe_6",
+    "pipe_7",
+    "pipe_8",
+    "pipe_9",
+    "pipe_10",
+    "pipe_11",
+    "pipe_12",
+    "pipe_13",
+    "pipe_14",
+    "pipe_15",
+    "pipe_16",
+    "pipe_17",
+    "pipe_18",
+    "pipe_19",
+    "pipe_20",
+    "pipe_21",
+    "pipe_22",
+    "pipe_23",
+    "pipe_24",
+    "pipe_25",
+    "pipe_26",
+    "pipe_27",
+    "pipe_28",
+    "pipe_29",
+    "pipe_30",
+    "pipe_31",
+    "pipe_32",
+    "pipe_33",
+    "pipe_34",
+    "pipe_35",
+    "pipe_36",
+    "pipe_37",
+    "pipe_38",
+    "pipe_39"
+   ],
+   "segment_count": 39,
+   "total_pipe_length_m": null
+  }
+ ],
+ "pipe_types": [
+  {
+   "id": "type_1",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "derive",
+    "source_ref": "type_1"
+   },
+   "name": "unknown size unknown",
+   "service": "unknown",
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "segment_ids": [
+    "pipe_1",
+    "pipe_2",
+    "pipe_3",
+    "pipe_4",
+    "pipe_5",
+    "pipe_6",
+    "pipe_7",
+    "pipe_8",
+    "pipe_9",
+    "pipe_10",
+    "pipe_11",
+    "pipe_12",
+    "pipe_13",
+    "pipe_14",
+    "pipe_15",
+    "pipe_16",
+    "pipe_17",
+    "pipe_18",
+    "pipe_19",
+    "pipe_20",
+    "pipe_21",
+    "pipe_22",
+    "pipe_23",
+    "pipe_24",
+    "pipe_25",
+    "pipe_26",
+    "pipe_27",
+    "pipe_28",
+    "pipe_29",
+    "pipe_30",
+    "pipe_31",
+    "pipe_32",
+    "pipe_33",
+    "pipe_34",
+    "pipe_35",
+    "pipe_36",
+    "pipe_37",
+    "pipe_38",
+    "pipe_39"
+   ],
+   "segment_count": 39,
+   "total_length_m": null
+  }
+ ],
+ "pipe_segments": [
+  {
+   "id": "pipe_1",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_1"
+   },
+   "flags": [
+    "cov:diameters",
+    "cov:lengths"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "snapped",
+       "snap_distance_px": 0.0
+      },
+      {
+       "port_index": null,
+       "snap": "snapped",
+       "snap_distance_px": 0.0
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     734.0,
+     94.0
+    ],
+    [
+     3.0,
+     95.0
+    ]
+   ],
+   "bbox_px": [
+    3.0,
+    94.0,
+    734.0,
+    95.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_1",
+   "end_connection_id": "conn_2",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_2",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_2"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 1.8
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     215.0,
+     136.0
+    ],
+    [
+     197.0,
+     137.0
+    ]
+   ],
+   "bbox_px": [
+    197.0,
+    136.0,
+    215.0,
+    137.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_3",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_3",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_3"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     281.0,
+     137.0
+    ],
+    [
+     299.0,
+     137.0
+    ]
+   ],
+   "bbox_px": [
+    281.0,
+    137.0,
+    299.0,
+    137.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_4",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_4",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_4"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     458.0,
+     153.0
+    ],
+    [
+     474.0,
+     153.0
+    ]
+   ],
+   "bbox_px": [
+    458.0,
+    153.0,
+    474.0,
+    153.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_5",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_5",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_5"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     546.0,
+     153.0
+    ],
+    [
+     561.0,
+     153.0
+    ]
+   ],
+   "bbox_px": [
+    546.0,
+    153.0,
+    561.0,
+    153.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_6",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_6",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_6"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     428.0,
+     249.0
+    ],
+    [
+     414.0,
+     250.0
+    ]
+   ],
+   "bbox_px": [
+    414.0,
+    249.0,
+    428.0,
+    250.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_7",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_7",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_7"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     149.0,
+     261.0
+    ],
+    [
+     171.0,
+     261.0
+    ]
+   ],
+   "bbox_px": [
+    149.0,
+    261.0,
+    171.0,
+    261.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_8",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_8",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_8"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 2.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     237.0,
+     261.0
+    ],
+    [
+     255.0,
+     261.0
+    ]
+   ],
+   "bbox_px": [
+    237.0,
+    261.0,
+    255.0,
+    261.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_9",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_9",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_9"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     503.0,
+     275.0
+    ],
+    [
+     479.0,
+     276.0
+    ]
+   ],
+   "bbox_px": [
+    479.0,
+    275.0,
+    503.0,
+    276.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_10",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_10",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_10"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     569.0,
+     275.0
+    ],
+    [
+     593.0,
+     275.0
+    ]
+   ],
+   "bbox_px": [
+    569.0,
+    275.0,
+    593.0,
+    275.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_11",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_11",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_11"
+   },
+   "flags": [
+    "cov:diameters",
+    "cov:lengths"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 2.5
+      },
+      {
+       "port_index": null,
+       "snap": "snapped",
+       "snap_distance_px": 11.32
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     375.0,
+     288.0
+    ],
+    [
+     375.0,
+     299.0
+    ]
+   ],
+   "bbox_px": [
+    375.0,
+    288.0,
+    375.0,
+    299.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_12",
+   "end_connection_id": "conn_13",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_12",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_12"
+   },
+   "flags": [
+    "cov:diameters",
+    "cov:lengths"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 2,
+       "snap": "snapped",
+       "snap_distance_px": 1.33
+      },
+      {
+       "port_index": null,
+       "snap": "snapped",
+       "snap_distance_px": 11.06
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     695.0,
+     300.0
+    ],
+    [
+     707.0,
+     300.0
+    ]
+   ],
+   "bbox_px": [
+    695.0,
+    300.0,
+    707.0,
+    300.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_14",
+   "end_connection_id": "conn_15",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_13",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_13"
+   },
+   "flags": [
+    "cov:diameters",
+    "cov:lengths"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 3,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      },
+      {
+       "port_index": null,
+       "snap": "snapped",
+       "snap_distance_px": 11.03
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     641.0,
+     301.0
+    ],
+    [
+     629.0,
+     302.0
+    ]
+   ],
+   "bbox_px": [
+    629.0,
+    301.0,
+    641.0,
+    302.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_16",
+   "end_connection_id": "conn_17",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_14",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_14"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     35.0,
+     306.0
+    ],
+    [
+     55.0,
+     306.0
+    ]
+   ],
+   "bbox_px": [
+    35.0,
+    306.0,
+    55.0,
+    306.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_18",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_15",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_15"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     120.0,
+     306.0
+    ],
+    [
+     140.0,
+     306.0
+    ]
+   ],
+   "bbox_px": [
+    120.0,
+    306.0,
+    140.0,
+    306.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_19",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_16",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_16"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     195.0,
+     339.0
+    ],
+    [
+     212.0,
+     339.0
+    ]
+   ],
+   "bbox_px": [
+    195.0,
+    339.0,
+    212.0,
+    339.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_20",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_17",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_17"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     287.0,
+     339.0
+    ],
+    [
+     305.0,
+     339.0
+    ]
+   ],
+   "bbox_px": [
+    287.0,
+    339.0,
+    305.0,
+    339.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_21",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_18",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_18"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     465.0,
+     391.0
+    ],
+    [
+     487.0,
+     391.0
+    ]
+   ],
+   "bbox_px": [
+    465.0,
+    391.0,
+    487.0,
+    391.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_22",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_19",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_19"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     613.0,
+     397.0
+    ],
+    [
+     633.0,
+     397.0
+    ]
+   ],
+   "bbox_px": [
+    613.0,
+    397.0,
+    633.0,
+    397.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_23",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_20",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_20"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     705.0,
+     397.0
+    ],
+    [
+     720.0,
+     397.0
+    ]
+   ],
+   "bbox_px": [
+    705.0,
+    397.0,
+    720.0,
+    397.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_24",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_21",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_21"
+   },
+   "flags": [
+    "cov:diameters",
+    "cov:lengths"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "snapped",
+       "snap_distance_px": 10.06
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     81.0,
+     448.0
+    ],
+    [
+     92.0,
+     448.0
+    ]
+   ],
+   "bbox_px": [
+    81.0,
+    448.0,
+    92.0,
+    448.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_25",
+   "end_connection_id": "conn_26",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_22",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_22"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     117.0,
+     456.0
+    ],
+    [
+     137.0,
+     456.0
+    ]
+   ],
+   "bbox_px": [
+    117.0,
+    456.0,
+    137.0,
+    456.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_27",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_23",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_23"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     260.0,
+     464.0
+    ],
+    [
+     276.0,
+     464.0
+    ]
+   ],
+   "bbox_px": [
+    260.0,
+    464.0,
+    276.0,
+    464.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_28",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_24",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_24"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     346.0,
+     464.0
+    ],
+    [
+     361.0,
+     464.0
+    ]
+   ],
+   "bbox_px": [
+    346.0,
+    464.0,
+    361.0,
+    464.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_29",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_25",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_25"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 2.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     41.0,
+     485.0
+    ],
+    [
+     41.0,
+     499.0
+    ]
+   ],
+   "bbox_px": [
+    41.0,
+    485.0,
+    41.0,
+    499.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_30",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_26",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_26"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 2,
+       "snap": "snapped",
+       "snap_distance_px": 2.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     169.0,
+     487.0
+    ],
+    [
+     169.0,
+     505.0
+    ]
+   ],
+   "bbox_px": [
+    169.0,
+    487.0,
+    169.0,
+    505.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_31",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_27",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_27"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     475.0,
+     491.0
+    ],
+    [
+     497.0,
+     491.0
+    ]
+   ],
+   "bbox_px": [
+    475.0,
+    491.0,
+    497.0,
+    491.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_32",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_28",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_28"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     564.0,
+     491.0
+    ],
+    [
+     580.0,
+     491.0
+    ]
+   ],
+   "bbox_px": [
+    564.0,
+    491.0,
+    580.0,
+    491.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_33",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_29",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_29"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     622.0,
+     491.0
+    ],
+    [
+     638.0,
+     491.0
+    ]
+   ],
+   "bbox_px": [
+    622.0,
+    491.0,
+    638.0,
+    491.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_34",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_30",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_30"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     273.0,
+     559.0
+    ],
+    [
+     273.0,
+     579.0
+    ]
+   ],
+   "bbox_px": [
+    273.0,
+    559.0,
+    273.0,
+    579.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_35",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_31",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_31"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     41.0,
+     584.0
+    ],
+    [
+     55.0,
+     584.0
+    ]
+   ],
+   "bbox_px": [
+    41.0,
+    584.0,
+    55.0,
+    584.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_36",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_32",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_32"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     133.0,
+     584.0
+    ],
+    [
+     149.0,
+     585.0
+    ]
+   ],
+   "bbox_px": [
+    133.0,
+    584.0,
+    149.0,
+    585.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_37",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_33",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_33"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     468.0,
+     595.0
+    ],
+    [
+     445.0,
+     596.0
+    ]
+   ],
+   "bbox_px": [
+    445.0,
+    595.0,
+    468.0,
+    596.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_38",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_34",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_34"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "snapped",
+       "snap_distance_px": 7.9
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     540.0,
+     595.0
+    ],
+    [
+     552.0,
+     595.0
+    ]
+   ],
+   "bbox_px": [
+    540.0,
+    595.0,
+    552.0,
+    595.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_39",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_35",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_35"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": 1,
+       "snap": "snapped",
+       "snap_distance_px": 0.5
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     218.0,
+     611.0
+    ],
+    [
+     240.0,
+     612.0
+    ]
+   ],
+   "bbox_px": [
+    218.0,
+    611.0,
+    240.0,
+    612.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": "conn_40",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_36",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_36"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 2,
+       "snap": "snapped",
+       "snap_distance_px": 1.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     306.0,
+     612.0
+    ],
+    [
+     323.0,
+     612.0
+    ]
+   ],
+   "bbox_px": [
+    306.0,
+    612.0,
+    323.0,
+    612.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_41",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_37",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_37"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 2,
+       "snap": "snapped",
+       "snap_distance_px": 2.5
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     499.0,
+     627.0
+    ],
+    [
+     499.0,
+     647.0
+    ]
+   ],
+   "bbox_px": [
+    499.0,
+    627.0,
+    499.0,
+    647.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_42",
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_38",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_38"
+   },
+   "flags": [
+    "cov:diameters",
+    "cov:lengths"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": 3,
+       "snap": "snapped",
+       "snap_distance_px": 2.63
+      },
+      {
+       "port_index": null,
+       "snap": "snapped",
+       "snap_distance_px": 0.0
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     271.0,
+     641.0
+    ],
+    [
+     271.0,
+     659.0
+    ]
+   ],
+   "bbox_px": [
+    271.0,
+    641.0,
+    271.0,
+    659.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": "conn_43",
+   "end_connection_id": "conn_44",
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  },
+  {
+   "id": "pipe_39",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_39"
+   },
+   "flags": [
+    "cov:connectivity",
+    "cov:diameters",
+    "cov:lengths",
+    "end0_unsnapped",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "unknown",
+     "diameter": {
+      "source": "unknown",
+      "text_id": null,
+      "confidence": 0.0,
+      "value": null
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "unknown",
+      "evidence_ids": [],
+      "confidence": 0.0
+     },
+     "ends": [
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": null
+      }
+     ]
+    }
+   },
+   "service": "unknown",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": null,
+   "nominal_diameter_m": null,
+   "centerline_px": [
+    [
+     331.0,
+     135.0
+    ],
+    [
+     351.0,
+     135.0
+    ],
+    [
+     417.0,
+     136.0
+    ],
+    [
+     434.0,
+     136.0
+    ]
+   ],
+   "bbox_px": [
+    331.0,
+    135.0,
+    434.0,
+    136.0
+   ],
+   "flow_direction": "unknown",
+   "start_connection_id": null,
+   "end_connection_id": null,
+   "centerline_m": null,
+   "length_m": null,
+   "type_id": "type_1",
+   "system_id": "sys_unknown"
+  }
+ ],
+ "pipe_fittings": [
+  {
+   "id": "node_1",
+   "confidence": 0.8408,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:0"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       474.5,
+       153.0
+      ],
+      [
+       544.5,
+       153.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      510.09,
+      142.24
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    473.92,
+    107.9,
+    546.25,
+    176.58
+   ],
+   "kind": "unknown",
+   "center_px": [
+    510.09,
+    142.24
+   ],
+   "connected_segment_ids": [
+    "pipe_4",
+    "pipe_5"
+   ],
+   "connection_ids": [
+    "conn_5",
+    "conn_6"
+   ]
+  },
+  {
+   "id": "node_2",
+   "confidence": 0.834,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       117.0,
+       198.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      135.06,
+      158.72
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    92.47,
+    115.49,
+    177.65,
+    201.95
+   ],
+   "kind": "unknown",
+   "center_px": [
+    135.06,
+    158.72
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_3",
+   "confidence": 0.8317,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:2"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       503.5,
+       275.0
+      ],
+      [
+       567.5,
+       275.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      536.0,
+      262.8
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    502.29,
+    228.4,
+    569.72,
+    297.19
+   ],
+   "kind": "unknown",
+   "center_px": [
+    536.0,
+    262.8
+   ],
+   "connected_segment_ids": [
+    "pipe_10",
+    "pipe_9"
+   ],
+   "connection_ids": [
+    "conn_10",
+    "conn_11"
+   ]
+  },
+  {
+   "id": "node_4",
+   "confidence": 0.8303,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:3"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       415.4,
+       135.6
+      ],
+      [
+       352.5,
+       136.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      384.74,
+      135.46
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    351.77,
+    113.05,
+    417.7,
+    157.86
+   ],
+   "kind": "unknown",
+   "center_px": [
+    384.74,
+    135.46
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_5",
+   "confidence": 0.8276,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:4"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       172.5,
+       261.0
+      ],
+      [
+       234.5,
+       261.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      203.86,
+      259.69
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    171.4,
+    237.09,
+    236.31,
+    282.3
+   ],
+   "kind": "unknown",
+   "center_px": [
+    203.86,
+    259.69
+   ],
+   "connected_segment_ids": [
+    "pipe_7",
+    "pipe_8"
+   ],
+   "connection_ids": [
+    "conn_8",
+    "conn_9"
+   ]
+  },
+  {
+   "id": "node_6",
+   "confidence": 0.8265,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:5"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       633.5,
+       397.0
+      ],
+      [
+       703.5,
+       397.0
+      ],
+      [
+       680.0,
+       415.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      669.36,
+      395.08
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    632.99,
+    371.03,
+    705.72,
+    419.14
+   ],
+   "kind": "unknown",
+   "center_px": [
+    669.36,
+    395.08
+   ],
+   "connected_segment_ids": [
+    "pipe_19",
+    "pipe_20"
+   ],
+   "connection_ids": [
+    "conn_23",
+    "conn_24"
+   ]
+  },
+  {
+   "id": "node_7",
+   "confidence": 0.8262,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:6"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       212.5,
+       339.0
+      ],
+      [
+       285.5,
+       339.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      249.27,
+      339.16
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    211.38,
+    317.88,
+    287.16,
+    360.44
+   ],
+   "kind": "unknown",
+   "center_px": [
+    249.27,
+    339.16
+   ],
+   "connected_segment_ids": [
+    "pipe_16",
+    "pipe_17"
+   ],
+   "connection_ids": [
+    "conn_20",
+    "conn_21"
+   ]
+  },
+  {
+   "id": "node_8",
+   "confidence": 0.8221,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:7"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       55.5,
+       306.0
+      ],
+      [
+       118.5,
+       306.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      87.64,
+      305.65
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    54.9,
+    281.79,
+    120.37,
+    329.52
+   ],
+   "kind": "unknown",
+   "center_px": [
+    87.64,
+    305.65
+   ],
+   "connected_segment_ids": [
+    "pipe_14",
+    "pipe_15"
+   ],
+   "connection_ids": [
+    "conn_18",
+    "conn_19"
+   ]
+  },
+  {
+   "id": "node_9",
+   "confidence": 0.8221,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:8"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       216.5,
+       137.0
+      ],
+      [
+       279.5,
+       137.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      248.5,
+      137.38
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    215.29,
+    114.12,
+    281.7,
+    160.64
+   ],
+   "kind": "unknown",
+   "center_px": [
+    248.5,
+    137.38
+   ],
+   "connected_segment_ids": [
+    "pipe_2",
+    "pipe_3"
+   ],
+   "connection_ids": [
+    "conn_3",
+    "conn_4"
+   ]
+  },
+  {
+   "id": "node_10",
+   "confidence": 0.8217,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:9"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       55.5,
+       584.0
+      ],
+      [
+       131.5,
+       584.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      94.33,
+      583.15
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    54.84,
+    556.96,
+    133.82,
+    609.34
+   ],
+   "kind": "unknown",
+   "center_px": [
+    94.33,
+    583.15
+   ],
+   "connected_segment_ids": [
+    "pipe_31",
+    "pipe_32"
+   ],
+   "connection_ids": [
+    "conn_36",
+    "conn_37"
+   ]
+  },
+  {
+   "id": "node_11",
+   "confidence": 0.8143,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:10"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       276.5,
+       464.0
+      ],
+      [
+       344.5,
+       464.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      310.72,
+      448.61
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    275.37,
+    410.24,
+    346.07,
+    486.98
+   ],
+   "kind": "unknown",
+   "center_px": [
+    310.72,
+    448.61
+   ],
+   "connected_segment_ids": [
+    "pipe_23",
+    "pipe_24"
+   ],
+   "connection_ids": [
+    "conn_28",
+    "conn_29"
+   ]
+  },
+  {
+   "id": "node_12",
+   "confidence": 0.8127,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:11"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       638.5,
+       491.0
+      ],
+      [
+       715.5,
+       491.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      677.67,
+      485.28
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    637.64,
+    456.55,
+    717.71,
+    514.01
+   ],
+   "kind": "unknown",
+   "center_px": [
+    677.67,
+    485.28
+   ],
+   "connected_segment_ids": [
+    "pipe_29"
+   ],
+   "connection_ids": [
+    "conn_34"
+   ]
+  },
+  {
+   "id": "node_13",
+   "confidence": 0.809,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:12"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       497.5,
+       491.0
+      ],
+      [
+       562.5,
+       491.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      530.84,
+      488.64
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    496.71,
+    463.96,
+    564.97,
+    513.33
+   ],
+   "kind": "unknown",
+   "center_px": [
+    530.84,
+    488.64
+   ],
+   "connected_segment_ids": [
+    "pipe_27",
+    "pipe_28"
+   ],
+   "connection_ids": [
+    "conn_32",
+    "conn_33"
+   ]
+  },
+  {
+   "id": "node_14",
+   "confidence": 0.8017,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:13"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       273.0,
+       580.5
+      ],
+      [
+       240.5,
+       612.0
+      ],
+      [
+       304.5,
+       612.0
+      ],
+      [
+       271.4,
+       638.4
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      272.79,
+      610.12
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    239.15,
+    579.34,
+    306.42,
+    640.9
+   ],
+   "kind": "unknown",
+   "center_px": [
+    272.79,
+    610.12
+   ],
+   "connected_segment_ids": [
+    "pipe_30",
+    "pipe_35",
+    "pipe_36",
+    "pipe_38"
+   ],
+   "connection_ids": [
+    "conn_35",
+    "conn_40",
+    "conn_41",
+    "conn_43"
+   ]
+  },
+  {
+   "id": "node_15",
+   "confidence": 0.7963,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:14"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       169.5,
+       408.5
+      ],
+      [
+       137.5,
+       456.0
+      ],
+      [
+       169.0,
+       484.5
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      164.05,
+      446.06
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    136.27,
+    405.18,
+    191.82,
+    486.94
+   ],
+   "kind": "unknown",
+   "center_px": [
+    164.05,
+    446.06
+   ],
+   "connected_segment_ids": [
+    "pipe_22",
+    "pipe_26"
+   ],
+   "connection_ids": [
+    "conn_27",
+    "conn_31"
+   ]
+  },
+  {
+   "id": "node_16",
+   "confidence": 0.7934,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:15"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       412.5,
+       250.0
+      ],
+      [
+       375.0,
+       285.5
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      383.31,
+      257.78
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    352.61,
+    227.88,
+    414.02,
+    287.68
+   ],
+   "kind": "unknown",
+   "center_px": [
+    383.31,
+    257.78
+   ],
+   "connected_segment_ids": [
+    "pipe_11",
+    "pipe_6"
+   ],
+   "connection_ids": [
+    "conn_7",
+    "conn_12",
+    "conn_13"
+   ]
+  },
+  {
+   "id": "node_17",
+   "confidence": 0.7913,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:16"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       477.0,
+       579.0
+      ],
+      [
+       468.5,
+       595.0
+      ],
+      [
+       499.0,
+       624.5
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      499.86,
+      600.83
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    467.61,
+    575.11,
+    532.1,
+    626.55
+   ],
+   "kind": "unknown",
+   "center_px": [
+    499.86,
+    600.83
+   ],
+   "connected_segment_ids": [
+    "pipe_33",
+    "pipe_34",
+    "pipe_37"
+   ],
+   "connection_ids": [
+    "conn_38",
+    "conn_39",
+    "conn_42"
+   ]
+  },
+  {
+   "id": "node_18",
+   "confidence": 0.7912,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:17"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       659.0,
+       264.0
+      ],
+      [
+       679.0,
+       264.0
+      ],
+      [
+       693.7,
+       299.7
+      ],
+      [
+       641.5,
+       301.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      667.99,
+      294.95
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    640.03,
+    260.05,
+    695.94,
+    329.85
+   ],
+   "kind": "unknown",
+   "center_px": [
+    667.99,
+    294.95
+   ],
+   "connected_segment_ids": [
+    "pipe_12",
+    "pipe_13"
+   ],
+   "connection_ids": [
+    "conn_14",
+    "conn_15",
+    "conn_16",
+    "conn_17"
+   ]
+  },
+  {
+   "id": "node_19",
+   "confidence": 0.7831,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:18"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       79.5,
+       448.0
+      ],
+      [
+       41.0,
+       482.5
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      49.48,
+      441.09
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    17.02,
+    397.37,
+    81.94,
+    484.81
+   ],
+   "kind": "unknown",
+   "center_px": [
+    49.48,
+    441.09
+   ],
+   "connected_segment_ids": [
+    "pipe_21",
+    "pipe_25"
+   ],
+   "connection_ids": [
+    "conn_25",
+    "conn_26",
+    "conn_30"
+   ]
+  },
+  {
+   "id": "node_20",
+   "confidence": 0.7783,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:19"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       610.5,
+       152.0
+      ],
+      [
+       695.5,
+       153.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      653.92,
+      143.85
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    609.9,
+    115.39,
+    697.95,
+    172.31
+   ],
+   "kind": "unknown",
+   "center_px": [
+    653.92,
+    143.85
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_21",
+   "confidence": 0.7423,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:20"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       46.0,
+       120.5
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      47.31,
+      154.6
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    23.0,
+    117.46,
+    71.62,
+    191.74
+   ],
+   "kind": "unknown",
+   "center_px": [
+    47.31,
+    154.6
+   ],
+   "connected_segment_ids": [],
+   "connection_ids": []
+  },
+  {
+   "id": "node_22",
+   "confidence": 0.6808,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "129:21"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "unknown",
+     "subtype": "unknown",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       463.5,
+       391.0
+      ],
+      [
+       440.0,
+       418.0
+      ]
+     ],
+     "attributes": {
+      "cls_raw": "symbol"
+     },
+     "center_px": [
+      439.52,
+      394.05
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    413.67,
+    368.05,
+    465.38,
+    420.05
+   ],
+   "kind": "unknown",
+   "center_px": [
+    439.52,
+    394.05
+   ],
+   "connected_segment_ids": [
+    "pipe_18"
+   ],
+   "connection_ids": [
+    "conn_22"
+   ]
+  },
+  {
+   "id": "node_23",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "node_23"
+   },
+   "flags": [
+    "open_end"
+   ],
+   "properties": {
+    "graph": {
+     "type": "open_end",
+     "rotation_deg": 0,
+     "center_px": [
+      734.0,
+      94.0
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    730.2,
+    90.2,
+    737.8,
+    97.8
+   ],
+   "kind": "other",
+   "center_px": [
+    734.0,
+    94.0
+   ],
+   "connected_segment_ids": [
+    "pipe_1"
+   ],
+   "connection_ids": [
+    "conn_1"
+   ]
+  },
+  {
+   "id": "node_24",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "node_24"
+   },
+   "flags": [
+    "open_end"
+   ],
+   "properties": {
+    "graph": {
+     "type": "open_end",
+     "rotation_deg": 0,
+     "center_px": [
+      3.0,
+      95.0
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    0,
+    91.2,
+    6.8,
+    98.8
+   ],
+   "kind": "other",
+   "center_px": [
+    3.0,
+    95.0
+   ],
+   "connected_segment_ids": [
+    "pipe_1"
+   ],
+   "connection_ids": [
+    "conn_2"
+   ]
+  },
+  {
+   "id": "node_25",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "node_25"
+   },
+   "flags": [
+    "open_end"
+   ],
+   "properties": {
+    "graph": {
+     "type": "open_end",
+     "rotation_deg": 0,
+     "center_px": [
+      271.0,
+      659.0
+     ]
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    267.2,
+    655.2,
+    274.8,
+    661
+   ],
+   "kind": "other",
+   "center_px": [
+    271.0,
+    659.0
+   ],
+   "connected_segment_ids": [
+    "pipe_38"
+   ],
+   "connection_ids": [
+    "conn_44"
+   ]
+  }
+ ],
+ "pipe_equipment": [],
+ "pipe_connections": [
+  {
+   "id": "conn_1",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_1"
+   },
+   "from_entity_id": "node_23",
+   "to_entity_id": "pipe_1",
+   "kind": "connected",
+   "point_px": [
+    734.0,
+    94.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_2",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_1"
+   },
+   "from_entity_id": "node_24",
+   "to_entity_id": "pipe_1",
+   "kind": "connected",
+   "point_px": [
+    3.0,
+    95.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_3",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_2"
+   },
+   "from_entity_id": "node_9",
+   "to_entity_id": "pipe_2",
+   "kind": "connected",
+   "point_px": [
+    215.0,
+    136.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_4",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_3"
+   },
+   "from_entity_id": "node_9",
+   "to_entity_id": "pipe_3",
+   "kind": "connected",
+   "point_px": [
+    281.0,
+    137.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_5",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_4"
+   },
+   "from_entity_id": "node_1",
+   "to_entity_id": "pipe_4",
+   "kind": "connected",
+   "point_px": [
+    474.0,
+    153.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_6",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_5"
+   },
+   "from_entity_id": "node_1",
+   "to_entity_id": "pipe_5",
+   "kind": "connected",
+   "point_px": [
+    546.0,
+    153.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_7",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_6"
+   },
+   "from_entity_id": "node_16",
+   "to_entity_id": "pipe_6",
+   "kind": "connected",
+   "point_px": [
+    414.0,
+    250.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_8",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_7"
+   },
+   "from_entity_id": "node_5",
+   "to_entity_id": "pipe_7",
+   "kind": "connected",
+   "point_px": [
+    171.0,
+    261.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_9",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_8"
+   },
+   "from_entity_id": "node_5",
+   "to_entity_id": "pipe_8",
+   "kind": "connected",
+   "point_px": [
+    237.0,
+    261.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_10",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_9"
+   },
+   "from_entity_id": "node_3",
+   "to_entity_id": "pipe_9",
+   "kind": "connected",
+   "point_px": [
+    503.0,
+    275.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_11",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_10"
+   },
+   "from_entity_id": "node_3",
+   "to_entity_id": "pipe_10",
+   "kind": "connected",
+   "point_px": [
+    569.0,
+    275.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_12",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_11"
+   },
+   "from_entity_id": "node_16",
+   "to_entity_id": "pipe_11",
+   "kind": "connected",
+   "point_px": [
+    375.0,
+    288.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_13",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_11"
+   },
+   "from_entity_id": "node_16",
+   "to_entity_id": "pipe_11",
+   "kind": "connected",
+   "point_px": [
+    375.0,
+    299.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_14",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_12"
+   },
+   "from_entity_id": "node_18",
+   "to_entity_id": "pipe_12",
+   "kind": "connected",
+   "point_px": [
+    695.0,
+    300.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_15",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_12"
+   },
+   "from_entity_id": "node_18",
+   "to_entity_id": "pipe_12",
+   "kind": "connected",
+   "point_px": [
+    707.0,
+    300.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_16",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_13"
+   },
+   "from_entity_id": "node_18",
+   "to_entity_id": "pipe_13",
+   "kind": "connected",
+   "point_px": [
+    641.0,
+    301.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_17",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_13"
+   },
+   "from_entity_id": "node_18",
+   "to_entity_id": "pipe_13",
+   "kind": "connected",
+   "point_px": [
+    629.0,
+    302.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_18",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_14"
+   },
+   "from_entity_id": "node_8",
+   "to_entity_id": "pipe_14",
+   "kind": "connected",
+   "point_px": [
+    55.0,
+    306.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_19",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_15"
+   },
+   "from_entity_id": "node_8",
+   "to_entity_id": "pipe_15",
+   "kind": "connected",
+   "point_px": [
+    120.0,
+    306.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_20",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_16"
+   },
+   "from_entity_id": "node_7",
+   "to_entity_id": "pipe_16",
+   "kind": "connected",
+   "point_px": [
+    212.0,
+    339.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_21",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_17"
+   },
+   "from_entity_id": "node_7",
+   "to_entity_id": "pipe_17",
+   "kind": "connected",
+   "point_px": [
+    287.0,
+    339.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_22",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_18"
+   },
+   "from_entity_id": "node_22",
+   "to_entity_id": "pipe_18",
+   "kind": "connected",
+   "point_px": [
+    465.0,
+    391.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_23",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_19"
+   },
+   "from_entity_id": "node_6",
+   "to_entity_id": "pipe_19",
+   "kind": "connected",
+   "point_px": [
+    633.0,
+    397.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_24",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_20"
+   },
+   "from_entity_id": "node_6",
+   "to_entity_id": "pipe_20",
+   "kind": "connected",
+   "point_px": [
+    705.0,
+    397.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_25",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_21"
+   },
+   "from_entity_id": "node_19",
+   "to_entity_id": "pipe_21",
+   "kind": "connected",
+   "point_px": [
+    81.0,
+    448.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_26",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_21"
+   },
+   "from_entity_id": "node_19",
+   "to_entity_id": "pipe_21",
+   "kind": "connected",
+   "point_px": [
+    92.0,
+    448.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_27",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_22"
+   },
+   "from_entity_id": "node_15",
+   "to_entity_id": "pipe_22",
+   "kind": "connected",
+   "point_px": [
+    137.0,
+    456.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_28",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_23"
+   },
+   "from_entity_id": "node_11",
+   "to_entity_id": "pipe_23",
+   "kind": "connected",
+   "point_px": [
+    276.0,
+    464.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_29",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_24"
+   },
+   "from_entity_id": "node_11",
+   "to_entity_id": "pipe_24",
+   "kind": "connected",
+   "point_px": [
+    346.0,
+    464.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_30",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_25"
+   },
+   "from_entity_id": "node_19",
+   "to_entity_id": "pipe_25",
+   "kind": "connected",
+   "point_px": [
+    41.0,
+    485.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_31",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_26"
+   },
+   "from_entity_id": "node_15",
+   "to_entity_id": "pipe_26",
+   "kind": "connected",
+   "point_px": [
+    169.0,
+    487.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_32",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_27"
+   },
+   "from_entity_id": "node_13",
+   "to_entity_id": "pipe_27",
+   "kind": "connected",
+   "point_px": [
+    497.0,
+    491.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_33",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_28"
+   },
+   "from_entity_id": "node_13",
+   "to_entity_id": "pipe_28",
+   "kind": "connected",
+   "point_px": [
+    564.0,
+    491.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_34",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_29"
+   },
+   "from_entity_id": "node_12",
+   "to_entity_id": "pipe_29",
+   "kind": "connected",
+   "point_px": [
+    638.0,
+    491.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_35",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_30"
+   },
+   "from_entity_id": "node_14",
+   "to_entity_id": "pipe_30",
+   "kind": "connected",
+   "point_px": [
+    273.0,
+    579.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_36",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_31"
+   },
+   "from_entity_id": "node_10",
+   "to_entity_id": "pipe_31",
+   "kind": "connected",
+   "point_px": [
+    55.0,
+    584.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_37",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_32"
+   },
+   "from_entity_id": "node_10",
+   "to_entity_id": "pipe_32",
+   "kind": "connected",
+   "point_px": [
+    133.0,
+    584.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_38",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_33"
+   },
+   "from_entity_id": "node_17",
+   "to_entity_id": "pipe_33",
+   "kind": "connected",
+   "point_px": [
+    468.0,
+    595.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_39",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_34"
+   },
+   "from_entity_id": "node_17",
+   "to_entity_id": "pipe_34",
+   "kind": "connected",
+   "point_px": [
+    540.0,
+    595.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_40",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_35"
+   },
+   "from_entity_id": "node_14",
+   "to_entity_id": "pipe_35",
+   "kind": "connected",
+   "point_px": [
+    240.0,
+    612.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_41",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_36"
+   },
+   "from_entity_id": "node_14",
+   "to_entity_id": "pipe_36",
+   "kind": "connected",
+   "point_px": [
+    306.0,
+    612.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_42",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_37"
+   },
+   "from_entity_id": "node_17",
+   "to_entity_id": "pipe_37",
+   "kind": "connected",
+   "point_px": [
+    499.0,
+    627.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_43",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_38"
+   },
+   "from_entity_id": "node_14",
+   "to_entity_id": "pipe_38",
+   "kind": "connected",
+   "point_px": [
+    271.0,
+    641.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  },
+  {
+   "id": "conn_44",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_38"
+   },
+   "from_entity_id": "node_25",
+   "to_entity_id": "pipe_38",
+   "kind": "connected",
+   "point_px": [
+    271.0,
+    659.0
+   ],
+   "is_verified": false,
+   "point_m": null
+  }
+ ],
+ "texts": [
+  {
+   "id": "text_1",
+   "confidence": 0.9976,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "VALVE SYMBOLS",
+   "role": "other",
+   "bbox_px": [
+    104.5,
+    16.5,
+    578.0,
+    77.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_2",
+   "confidence": 0.9718,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_2"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "&",
+   "role": "other",
+   "bbox_px": [
+    359.0,
+    117.5,
+    410.0,
+    149.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_3",
+   "confidence": 0.9885,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_3"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Ball",
+   "role": "other",
+   "bbox_px": [
+    362.5,
+    152.0,
+    412.0,
+    181.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_4",
+   "confidence": 0.9978,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_4"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Gate",
+   "role": "other",
+   "bbox_px": [
+    219.5,
+    162.5,
+    278.0,
+    189.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_5",
+   "confidence": 0.9953,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_5"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Manual",
+   "role": "other",
+   "bbox_px": [
+    612.0,
+    165.0,
+    695.5,
+    190.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_6",
+   "confidence": 0.995,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_6"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Pneumatic",
+   "role": "other",
+   "bbox_px": [
+    451.0,
+    180.0,
+    569.5,
+    207.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_7",
+   "confidence": 0.9926,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_7"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    216.5,
+    193.5,
+    279.5,
+    218.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_8",
+   "confidence": 0.9991,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_8"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Operated",
+   "role": "other",
+   "bbox_px": [
+    601.5,
+    193.0,
+    706.5,
+    222.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_9",
+   "confidence": 0.9964,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_9"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Bleeder",
+   "role": "other",
+   "bbox_px": [
+    23.0,
+    199.0,
+    113.0,
+    227.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_10",
+   "confidence": 0.9915,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_10"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    620.0,
+    223.0,
+    684.5,
+    248.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_11",
+   "confidence": 0.9956,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_11"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valves",
+   "role": "other",
+   "bbox_px": [
+    28.5,
+    229.0,
+    105.0,
+    255.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_12",
+   "confidence": 0.9963,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_12"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Plug",
+   "role": "other",
+   "bbox_px": [
+    177.0,
+    276.0,
+    235.0,
+    311.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_13",
+   "confidence": 0.9967,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_13"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Angle",
+   "role": "other",
+   "bbox_px": [
+    357.0,
+    301.5,
+    425.5,
+    333.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_14",
+   "confidence": 0.996,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_14"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Pneumatic",
+   "role": "other",
+   "bbox_px": [
+    480.0,
+    302.5,
+    595.5,
+    325.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_15",
+   "confidence": 0.9985,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_15"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Globe",
+   "role": "other",
+   "bbox_px": [
+    53.0,
+    327.0,
+    121.0,
+    352.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_16",
+   "confidence": 0.9547,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_16"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Knife Valve",
+   "role": "other",
+   "bbox_px": [
+    612.5,
+    333.0,
+    734.5,
+    355.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_17",
+   "confidence": 0.992,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_17"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    53.0,
+    356.0,
+    118.0,
+    382.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_18",
+   "confidence": 0.9943,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_18"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Butterfly",
+   "role": "other",
+   "bbox_px": [
+    207.0,
+    357.0,
+    300.5,
+    385.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_19",
+   "confidence": 0.9846,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_19"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Relief",
+   "role": "other",
+   "bbox_px": [
+    411.0,
+    422.5,
+    481.0,
+    451.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_20",
+   "confidence": 0.9733,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_20"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Pinch Valve",
+   "role": "other",
+   "bbox_px": [
+    611.0,
+    420.0,
+    739.0,
+    445.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_21",
+   "confidence": 0.9913,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_21"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    412.0,
+    454.0,
+    476.5,
+    479.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_22",
+   "confidence": 0.9868,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_22"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Solenoid Valve",
+   "role": "other",
+   "bbox_px": [
+    236.5,
+    496.5,
+    397.0,
+    519.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_23",
+   "confidence": 0.9984,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_23"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "SAFETY (Gases)",
+   "role": "other",
+   "bbox_px": [
+    8.0,
+    511.5,
+    197.5,
+    542.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_24",
+   "confidence": 0.9963,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_24"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Check",
+   "role": "other",
+   "bbox_px": [
+    494.5,
+    515.0,
+    569.5,
+    543.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_25",
+   "confidence": 0.9998,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_25"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Stop Check",
+   "role": "other",
+   "bbox_px": [
+    608.0,
+    518.0,
+    737.5,
+    546.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_26",
+   "confidence": 0.9988,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_26"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "CLOSED",
+   "role": "other",
+   "bbox_px": [
+    266.5,
+    525.0,
+    368.0,
+    548.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_27",
+   "confidence": 0.9937,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_27"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    497.0,
+    543.5,
+    563.5,
+    572.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_28",
+   "confidence": 0.3826,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_28"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "X",
+   "role": "other",
+   "bbox_px": [
+    67.0,
+    565.0,
+    124.0,
+    603.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_29",
+   "confidence": 0.9995,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_29"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Three-Way",
+   "role": "other",
+   "bbox_px": [
+    527.5,
+    598.0,
+    652.5,
+    629.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_30",
+   "confidence": 0.9984,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_30"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Diaphragm",
+   "role": "other",
+   "bbox_px": [
+    32.0,
+    607.0,
+    154.0,
+    638.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_31",
+   "confidence": 0.9989,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_31"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Four-Way",
+   "role": "other",
+   "bbox_px": [
+    299.0,
+    630.5,
+    410.5,
+    661.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_32",
+   "confidence": 0.9931,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_32"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    556.5,
+    627.5,
+    623.0,
+    656.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_33",
+   "confidence": 0.9893,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_33"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "SAFETY (Gases)",
+   "role": "other",
+   "bbox_px": [
+    4.5,
+    509.5,
+    199.0,
+    547.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_34",
+   "confidence": 0.9944,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_34"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Bleeder",
+   "role": "other",
+   "bbox_px": [
+    19.0,
+    198.0,
+    114.5,
+    232.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_35",
+   "confidence": 0.9983,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_35"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Diaphragm",
+   "role": "other",
+   "bbox_px": [
+    27.5,
+    604.5,
+    156.0,
+    642.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_36",
+   "confidence": 0.9934,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_36"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valves",
+   "role": "other",
+   "bbox_px": [
+    24.5,
+    228.0,
+    106.5,
+    261.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_37",
+   "confidence": 0.9912,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_37"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    50.0,
+    354.0,
+    120.0,
+    388.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_38",
+   "confidence": 0.9983,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_38"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Globe",
+   "role": "other",
+   "bbox_px": [
+    48.5,
+    325.0,
+    122.5,
+    358.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_39",
+   "confidence": 0.9989,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_39"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "VALVE SYMBOLS",
+   "role": "other",
+   "bbox_px": [
+    101.5,
+    15.0,
+    581.5,
+    80.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_40",
+   "confidence": 0.9939,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_40"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Plug",
+   "role": "other",
+   "bbox_px": [
+    174.5,
+    277.0,
+    234.0,
+    313.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_41",
+   "confidence": 0.9953,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_41"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Butterfly",
+   "role": "other",
+   "bbox_px": [
+    204.5,
+    357.0,
+    300.5,
+    389.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_42",
+   "confidence": 0.9867,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_42"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    212.0,
+    189.0,
+    282.0,
+    226.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_43",
+   "confidence": 0.9983,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_43"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Gate",
+   "role": "other",
+   "bbox_px": [
+    216.0,
+    162.0,
+    279.0,
+    194.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_44",
+   "confidence": 0.9952,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_44"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Solenoid Valve",
+   "role": "other",
+   "bbox_px": [
+    234.5,
+    496.5,
+    398.5,
+    522.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_45",
+   "confidence": 0.9995,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_45"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "CLOSED",
+   "role": "other",
+   "bbox_px": [
+    262.0,
+    522.5,
+    369.5,
+    554.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_46",
+   "confidence": 0.9993,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_46"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Four-Way",
+   "role": "other",
+   "bbox_px": [
+    299.0,
+    631.0,
+    409.5,
+    661.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_47",
+   "confidence": 0.9965,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_47"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Angle",
+   "role": "other",
+   "bbox_px": [
+    352.5,
+    301.0,
+    426.0,
+    338.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_48",
+   "confidence": 0.9945,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_48"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Ball",
+   "role": "other",
+   "bbox_px": [
+    360.0,
+    152.5,
+    411.0,
+    185.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_49",
+   "confidence": 0.9886,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_49"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    409.0,
+    453.5,
+    478.0,
+    484.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_50",
+   "confidence": 0.9829,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_50"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Relief",
+   "role": "other",
+   "bbox_px": [
+    409.5,
+    423.5,
+    480.5,
+    453.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_51",
+   "confidence": 0.9947,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_51"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Pneumatic",
+   "role": "other",
+   "bbox_px": [
+    449.0,
+    181.5,
+    569.5,
+    209.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_52",
+   "confidence": 0.9919,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_52"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Pneumatic",
+   "role": "other",
+   "bbox_px": [
+    477.5,
+    301.0,
+    597.5,
+    328.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_53",
+   "confidence": 0.9909,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_53"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    495.0,
+    543.5,
+    565.0,
+    576.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_54",
+   "confidence": 0.998,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_54"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Check",
+   "role": "other",
+   "bbox_px": [
+    492.0,
+    515.5,
+    571.5,
+    548.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_55",
+   "confidence": 0.9994,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_55"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Three-Way",
+   "role": "other",
+   "bbox_px": [
+    526.5,
+    596.5,
+    655.0,
+    632.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_56",
+   "confidence": 0.9897,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_56"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    554.5,
+    627.0,
+    625.5,
+    660.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_57",
+   "confidence": 0.9986,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_57"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Operated",
+   "role": "other",
+   "bbox_px": [
+    598.5,
+    193.0,
+    708.0,
+    225.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_58",
+   "confidence": 0.9997,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_58"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Stop Check",
+   "role": "other",
+   "bbox_px": [
+    604.5,
+    515.0,
+    739.0,
+    551.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_59",
+   "confidence": 0.9931,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_59"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Pinch Valve",
+   "role": "other",
+   "bbox_px": [
+    608.0,
+    418.5,
+    738.5,
+    451.5
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_60",
+   "confidence": 0.9968,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_60"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Knife Valve",
+   "role": "other",
+   "bbox_px": [
+    612.0,
+    333.5,
+    735.5,
+    362.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_61",
+   "confidence": 0.9975,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_61"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Manual",
+   "role": "other",
+   "bbox_px": [
+    609.0,
+    163.0,
+    697.5,
+    193.0
+   ],
+   "linked_entity_ids": []
+  },
+  {
+   "id": "text_62",
+   "confidence": 0.9891,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_62"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "unknown",
+     "rotation_deg": 0
+    }
+   },
+   "text": "Valve",
+   "role": "other",
+   "bbox_px": [
+    618.0,
+    221.0,
+    687.0,
+    254.5
+   ],
+   "linked_entity_ids": []
+  }
+ ],
+ "coverage": [
+  {
+   "category": "symbols",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.8035,
+   "extractor": "ext_det",
+   "note": "detector, reported at conf >= 0.5; 1 lower-confidence boxes erased for tracing, not reported; 0 equipment nodes from closed contours"
+  },
+  {
+   "category": "pipes",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.5462,
+   "extractor": "ext_graph",
+   "note": "skeleton tracer; 0 noise fragments dropped; legend/title frames are not removed yet"
+  },
+  {
+   "category": "connectivity",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.6,
+   "extractor": "ext_graph",
+   "note": "unsnapped ends listed separately as partial"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    162.6,
+    102.6,
+    231.4,
+    171.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    264.6,
+    102.6,
+    333.4,
+    171.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    423.6,
+    118.6,
+    492.4,
+    187.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    526.6,
+    118.6,
+    595.4,
+    187.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    393.6,
+    214.6,
+    462.4,
+    283.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    114.6,
+    226.6,
+    183.4,
+    295.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    220.6,
+    226.6,
+    289.4,
+    295.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    444.6,
+    241.6,
+    513.4,
+    310.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    558.6,
+    240.6,
+    627.4,
+    309.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    0.6,
+    271.6,
+    69.4,
+    340.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    105.6,
+    271.6,
+    174.4,
+    340.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    160.6,
+    304.6,
+    229.4,
+    373.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    270.6,
+    304.6,
+    339.4,
+    373.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    452.6,
+    356.6,
+    521.4,
+    425.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    578.6,
+    362.6,
+    647.4,
+    431.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    685.6,
+    362.6,
+    739,
+    431.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    82.6,
+    421.6,
+    151.4,
+    490.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    225.6,
+    429.6,
+    294.4,
+    498.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    326.6,
+    429.6,
+    395.4,
+    498.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    6.6,
+    464.6,
+    75.4,
+    533.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    134.6,
+    470.6,
+    203.4,
+    539.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    440.6,
+    456.6,
+    509.4,
+    525.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    545.6,
+    456.6,
+    614.4,
+    525.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    587.6,
+    456.6,
+    656.4,
+    525.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    238.6,
+    524.6,
+    307.4,
+    593.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    6.6,
+    549.6,
+    75.4,
+    618.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    114.6,
+    550.6,
+    183.4,
+    619.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    410.6,
+    561.6,
+    479.4,
+    630.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    517.6,
+    560.6,
+    586.4,
+    629.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    183.6,
+    576.6,
+    252.4,
+    645.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    288.6,
+    577.6,
+    357.4,
+    646.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    464.6,
+    612.6,
+    533.4,
+    661
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    296.6,
+    100.6,
+    365.4,
+    169.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    399.6,
+    101.6,
+    468.4,
+    170.4
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe end that reaches no symbol, junction or border"
+  },
+  {
+   "category": "text",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.9835,
+   "extractor": "ext_ocr",
+   "note": "PaddleOCR Latin model, two orientations"
+  },
+  {
+   "category": "tags",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.9835,
+   "extractor": "ext_tags",
+   "note": "no tag-like text found on this sheet"
+  },
+  {
+   "category": "diameters",
+   "region": "page",
+   "status": "partial",
+   "confidence": 0.9835,
+   "extractor": "ext_tags",
+   "note": "0 of 39 pipes have a size"
+  },
+  {
+   "category": "lengths",
+   "region": "page",
+   "status": "not_analysed",
+   "confidence": 0.0,
+   "extractor": "ext_tags",
+   "note": "not to scale and no written lengths"
+  }
+ ],
+ "history": [
+  {
+   "extractor": "ext_det",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"symbol_detector\", \"name\": \"yolo11s single-class\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_ocr",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"ocr\", \"name\": \"PaddleOCR latin_PP-OCRv3_mobile_rec\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_graph",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"graph_builder\", \"name\": \"skeleton tracer + graph.py\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_tags",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"geometry_code\", \"name\": \"tag proximity rules (pipes.tags)\", \"version\": null, \"run_at\": null}"
+  },
+  {
+   "extractor": "ext_graph",
+   "action": "sheet_facts",
+   "note": "{\"sheet_id\": \"pid_dataset/test/129#0\", \"diagram_type\": \"schematic\", \"is_to_scale\": false, \"file_format\": \"jpg\", \"source_dataset\": \"pid_dataset\", \"source_units\": \"px\", \"scale_provenance\": {\"extractor_id\": \"ext_graph\", \"confidence\": 1.0, \"source_ref\": null}}"
+  }
+ ],
+ "statistics": [
+  {
+   "name": "segment_count",
+   "value": 39,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "pipe_1",
+    "pipe_2",
+    "pipe_3",
+    "pipe_4",
+    "pipe_5",
+    "pipe_6",
+    "pipe_7",
+    "pipe_8",
+    "pipe_9",
+    "pipe_10",
+    "pipe_11",
+    "pipe_12",
+    "pipe_13",
+    "pipe_14",
+    "pipe_15",
+    "pipe_16",
+    "pipe_17",
+    "pipe_18",
+    "pipe_19",
+    "pipe_20",
+    "pipe_21",
+    "pipe_22",
+    "pipe_23",
+    "pipe_24",
+    "pipe_25",
+    "pipe_26",
+    "pipe_27",
+    "pipe_28",
+    "pipe_29",
+    "pipe_30",
+    "pipe_31",
+    "pipe_32",
+    "pipe_33",
+    "pipe_34",
+    "pipe_35",
+    "pipe_36",
+    "pipe_37",
+    "pipe_38",
+    "pipe_39"
+   ]
+  },
+  {
+   "name": "fitting_count",
+   "value": 25,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "node_1",
+    "node_2",
+    "node_3",
+    "node_4",
+    "node_5",
+    "node_6",
+    "node_7",
+    "node_8",
+    "node_9",
+    "node_10",
+    "node_11",
+    "node_12",
+    "node_13",
+    "node_14",
+    "node_15",
+    "node_16",
+    "node_17",
+    "node_18",
+    "node_19",
+    "node_20",
+    "node_21",
+    "node_22",
+    "node_23",
+    "node_24",
+    "node_25"
+   ]
+  },
+  {
+   "name": "equipment_count",
+   "value": 0,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": []
+  },
+  {
+   "name": "connection_count",
+   "value": 44,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "conn_1",
+    "conn_2",
+    "conn_3",
+    "conn_4",
+    "conn_5",
+    "conn_6",
+    "conn_7",
+    "conn_8",
+    "conn_9",
+    "conn_10",
+    "conn_11",
+    "conn_12",
+    "conn_13",
+    "conn_14",
+    "conn_15",
+    "conn_16",
+    "conn_17",
+    "conn_18",
+    "conn_19",
+    "conn_20",
+    "conn_21",
+    "conn_22",
+    "conn_23",
+    "conn_24",
+    "conn_25",
+    "conn_26",
+    "conn_27",
+    "conn_28",
+    "conn_29",
+    "conn_30",
+    "conn_31",
+    "conn_32",
+    "conn_33",
+    "conn_34",
+    "conn_35",
+    "conn_36",
+    "conn_37",
+    "conn_38",
+    "conn_39",
+    "conn_40",
+    "conn_41",
+    "conn_42",
+    "conn_43",
+    "conn_44"
+   ]
+  },
+  {
+   "name": "total_pipe_length_m",
+   "value": null,
+   "unit": "m",
+   "status": "not_available",
+   "method": "no scale: not computed",
+   "source_entity_ids": [
+    "pipe_1",
+    "pipe_2",
+    "pipe_3",
+    "pipe_4",
+    "pipe_5",
+    "pipe_6",
+    "pipe_7",
+    "pipe_8",
+    "pipe_9",
+    "pipe_10",
+    "pipe_11",
+    "pipe_12",
+    "pipe_13",
+    "pipe_14",
+    "pipe_15",
+    "pipe_16",
+    "pipe_17",
+    "pipe_18",
+    "pipe_19",
+    "pipe_20",
+    "pipe_21",
+    "pipe_22",
+    "pipe_23",
+    "pipe_24",
+    "pipe_25",
+    "pipe_26",
+    "pipe_27",
+    "pipe_28",
+    "pipe_29",
+    "pipe_30",
+    "pipe_31",
+    "pipe_32",
+    "pipe_33",
+    "pipe_34",
+    "pipe_35",
+    "pipe_36",
+    "pipe_37",
+    "pipe_38",
+    "pipe_39"
+   ]
+  },
+  {
+   "name": "total_pipe_length_m:unknown",
+   "value": null,
+   "unit": "m",
+   "status": "not_available",
+   "method": "no scale: not computed",
+   "source_entity_ids": [
+    "pipe_1",
+    "pipe_2",
+    "pipe_3",
+    "pipe_4",
+    "pipe_5",
+    "pipe_6",
+    "pipe_7",
+    "pipe_8",
+    "pipe_9",
+    "pipe_10",
+    "pipe_11",
+    "pipe_12",
+    "pipe_13",
+    "pipe_14",
+    "pipe_15",
+    "pipe_16",
+    "pipe_17",
+    "pipe_18",
+    "pipe_19",
+    "pipe_20",
+    "pipe_21",
+    "pipe_22",
+    "pipe_23",
+    "pipe_24",
+    "pipe_25",
+    "pipe_26",
+    "pipe_27",
+    "pipe_28",
+    "pipe_29",
+    "pipe_30",
+    "pipe_31",
+    "pipe_32",
+    "pipe_33",
+    "pipe_34",
+    "pipe_35",
+    "pipe_36",
+    "pipe_37",
+    "pipe_38",
+    "pipe_39"
+   ],
+   "service": "unknown"
+  }
+ ]
+}

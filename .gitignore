@@ -6,7 +6,17 @@ questions.jsonl
 # generated outputs: regenerate with python -m translator --source <name>
 index/
 __pycache__/
+.venv/
 *.pyc
 .pytest_cache/
 .ruff_cache/
 *.tmp
+uv.lock
+.python-version
+#schema and example json file
+drawing.schema.json
+sample_drawing.json
+index_v03/
+
+# large local merge fixture (>100 MB, over GitHub limit)
+blueprint-ingest/big/

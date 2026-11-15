@@ -1,4 +1,4 @@
-"""Gemini answering agent for Stoa drawing-index schema v0.2.
+"""Gemini answering agent for Stoa building schema v0.3.
 
 Install: uv add google-genai python-dotenv shapely
 Set GEMINI_API_KEY in .env and optionally GEMINI_MODEL.
@@ -6,13 +6,16 @@ Set GEMINI_API_KEY in .env and optionally GEMINI_MODEL.
 from __future__ import annotations
 
 import os
+import re
+import sys
 from typing import Any
 
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from tools import (
+from answering_agent import pipe_tools
+from answering_agent.tools import (
     aggregate,
     connected_rooms,
     check_coverage,
@@ -20,6 +23,7 @@ from tools import (
     geometry_operation,
     get_entity,
     query_entities,
+    building_summary,
 )
 
 load_dotenv()
@@ -27,8 +31,13 @@ load_dotenv()
 MODEL = os.getenv("GEMINI_MODEL", "gemini-4-hydrogen")
 SYSTEM_INSTRUCTION = """You are a construction drawing assistant for engineers.
 Use deterministic tools for drawing facts, counts, measurements, and geometry.
-The drawing index uses schema v0.2; ignore superseded entities.
-
+The building index uses schema v0.3; ignore superseded entities. It contains all levels.
+Filter by level_id for floor-specific questions. Types and schedule rows are specifications,
+not physical instances. Doorways and voids are not doors. Check quantity origin and method;
+unknown measurements are not zero. Pixel coordinates from different drawings cannot be compared.
+- Prefer the smallest number of tool calls needed.
+- Reuse evidence already returned by tools.
+- Do not repeat coverage checks when the returned coverage information is sufficient.
 COVERAGE AND GAP DETECTION:
 - The index may be incomplete. Before concluding something is absent, call
   check_coverage_tool for the relevant category and region.
@@ -45,7 +54,10 @@ COVERAGE AND GAP DETECTION:
 - For a verified absence, cite the coverage reference rather than making up
   an entity ID. Do not confuse lack of evidence with evidence of absence.
 - Do not infer room access from touching polygons.
-
+ASSUMED VALUES:
+- If a tool marks an entity as assumed_prior, disclose that its information is assumed, not verified from the drawing.
+- For counts and measurements, disclose if any contributing entities are assumed.
+- Never present assumed information as a confirmed fact.
 RESPONSE STYLE:
 - Answer directly, naturally, and concisely; 1-3 sentences for simple questions.
 - Do not expose JSON keys, coordinates, raw provenance, or tool implementation.
@@ -57,40 +69,51 @@ RESPONSE STYLE:
 - Never present incomplete results as exhaustive or invent citations.
 
 LANGUAGE:
-- Support English, Finnish, French and Swedish.
-- Detect the language of the user's question.
-- Always answer in the same language as the question,
-  unless the user explicitly requests another language.
-- Understand construction terminology in all three languages.
-- Match equivalent concepts across languages.
-  Examples:
-  "bedroom" = "makuuhuone" = "sovrum" = "chambre"
-  "kitchen" = "keittiö" = "kök" = "cuisine"
-  "bathroom" = "kylpyhuone" = "badrum"
-  "living room" = "olohuone" = "vardagsrum"
-- Use the JSON's canonical entity types when searching,
-  regardless of the user's language.
-- Translate descriptions naturally, but preserve
-  measurements, entity IDs, and source references.
-- Never translate JSON keys or modify the schema.
+- Answer in the user's language.
+- Interpret multilingual construction terminology.
+- Map translated concepts to canonical schema types.
+- Preserve original entity IDs and measurements.
 """
 
 
-def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
-    """Answer one question using deterministic drawing tools and Gemini planning."""
-    if drawing_data.get("schema_version") != "0.2":
-        raise ValueError("This agent expects Stoa drawing-index schema v0.2")
+PIPING_SYSTEM_INSTRUCTION = """You are a construction piping drawing assistant.
+Use only deterministic piping tools to answer questions. Do not guess physical
+pipe lengths, materials, diameters, equipment types, or system membership.
+Pixel centerlines are not metric measurements; never convert without verified scale.
+Unidentified graph nodes in pipe_fittings are NOT confirmed physical fittings.
+An empty query is not proof of absence: check extraction coverage first.
+Partial or missing coverage cannot verify absence, regardless of confidence.
+Use few tool calls and cite real active entity IDs on a separate Source: line.
+Never invent IDs. Answer concisely in the user's language. Distinguish
+indexed counts from complete real-world totals. No image inspection is available.
+"""
+
+
+def answer_question(question: str, drawing_data: dict[str, Any], history: list[dict[str, str]] | None = None) -> dict[str, Any]:
+    """Answer a question and return text plus validated source entity IDs."""
+    schema_version = drawing_data.get("schema_version")
+    if schema_version not in ("0.2", "0.3", "piping-0.1"):
+        raise ValueError(f"Unsupported drawing schema version: {schema_version}")
+    is_piping = schema_version == "piping-0.1"
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("Set GEMINI_API_KEY in your .env file")
 
     # Wrappers bind the drawing data privately; the model never supplies it.
+    def building_summary_tool() -> dict:
+        """Get project/building metadata, source files, levels and calculated building statistics."""
+        return building_summary(drawing_data)
+
     def query_entities_tool(collection: str, field: str = "", value: str = "", limit: int = 50) -> dict:
         """Search active drawing entities. Collections: levels, units, rooms, walls,
-        openings, objects, texts, edges. Optional exact-match field/value filter.
+        openings, objects, texts, edges, types, systems, schedules. Optional exact-match field/value filter.
+        Results include ALL flags, assumption flags, and coverage notes.
         Use room 'type' (e.g. bedroom, living, wc, entry), opening 'kind'
-        (door, window, doorway), or object 'category'.
+        (door, window, doorway), or object 'category'. For converted pipe drawings,
+        pipes use objects.subtype='pipe'; other pipe nodes retain their subtype.
+        Pipe-specific fields and original geometry are in properties.pipe_index,
+        accessible through get_entity_tool. Do not infer metric lengths from pixel paths.
         """
         return query_entities(drawing_data, collection, field, value, limit)
 
@@ -105,6 +128,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         Operations: count, sum, min, max, average. For numeric operations,
         choose a measurement such as area_m2, width_m, height_m or length_m.
         Missing numeric values are excluded and reported separately.
+        Results list flagged contributors; assumed entities are NOT verified facts.
         """
         return aggregate(drawing_data, collection, operation, measure, field, value)
 
@@ -127,6 +151,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         fireplace, stairs, text. Region is an optional pixel bounding box
         [left, top, right, bottom]; omit for the whole page. Only
         absence_verified=true allows a negative claim about that scope.
+        Read coverage_notes and partial_coverage_notes before answering.
         """
         return check_coverage(drawing_data, category, region)
 
@@ -136,28 +161,60 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         region. Supply supporting entity IDs if available. Returns
         supported_entities, verified_absence, or gap. A gap means further
         extraction is needed; no image fallback is currently available.
+        Returned entity evidence can itself be flagged as assumed.
         """
         return detect_gap(drawing_data, category, entity_ids, region)
+
+    if is_piping:
+        def pipe_summary_tool() -> dict:
+            """Return piping drawing metadata and indexed collection counts."""
+            return pipe_tools.pipe_summary(drawing_data)
+
+        def query_pipes_tool(collection: str, field: str = "", value: str = "", limit: int = 30) -> dict:
+            """Search active pipe_systems, pipe_types, pipe_segments, pipe_fittings, pipe_equipment, pipe_connections, texts. Exact field/value filter. Compact results."""
+            return pipe_tools.query_pipes(drawing_data, collection, field, value, limit)
+
+        def get_pipe_entity_tool(entity_id: str) -> dict:
+            """Retrieve one piping entity by its exact ID, including source geometry and measurements."""
+            return pipe_tools.get_pipe_entity(drawing_data, entity_id)
+
+        def aggregate_pipes_tool(collection: str, operation: str, measure: str = "length_m", field: str = "", value: str = "") -> dict:
+            """Count or sum/min/max/average a measured field for active piping entities. Never infer metres from pixels. Operations count, sum, min, max, average."""
+            return pipe_tools.aggregate_pipes(drawing_data, collection, operation, measure, field, value)
+
+        def pipe_connections_tool(entity_id: str, verified_only: bool = False) -> dict:
+            """List indexed graph connections touching the given pipe or node ID. Can filter is_verified."""
+            return pipe_tools.pipe_connections(drawing_data, entity_id, verified_only)
+
+        def check_pipe_coverage_tool(category: str) -> dict:
+            """Check page-wide extraction coverage for piping category; only absence_verified allows an absence claim."""
+            return pipe_tools.check_pipe_coverage(drawing_data, category)
+
+        selected_tools = [pipe_summary_tool, query_pipes_tool, get_pipe_entity_tool,
+                          aggregate_pipes_tool, pipe_connections_tool, check_pipe_coverage_tool]
+        instruction = PIPING_SYSTEM_INSTRUCTION
+    else:
+        selected_tools = [building_summary_tool, query_entities_tool, get_entity_tool,
+                          aggregate_tool, geometry_operation_tool, connected_rooms_tool,
+                          check_coverage_tool, detect_gap_tool]
+        instruction = SYSTEM_INSTRUCTION
 
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model=MODEL,
-        contents=question,
+        contents=[
+            types.Content(role="user" if turn["role"] == "user" else "model",
+                          parts=[types.Part(text=turn["content"])])
+            for turn in (history or [])[-20:]
+            if turn.get("role") in ("user", "assistant") and turn.get("content")
+        ] + [types.Content(role="user", parts=[types.Part(text=question)])],
         config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_INSTRUCTION,
-            tools=[
-                query_entities_tool,
-                get_entity_tool,
-                aggregate_tool,
-                geometry_operation_tool,
-                connected_rooms_tool,
-                check_coverage_tool,
-                detect_gap_tool,
-            ],
+            system_instruction=instruction,
+            tools=selected_tools,
             automatic_function_calling=types.AutomaticFunctionCallingConfig(
                 maximum_remote_calls=12,
             ),
-            thinking_config=types.ThinkingConfig(thinking_level="HIGH"),
+            thinking_config=types.ThinkingConfig(thinking_level="LOW"),
             temperature=0,
         ),
     )
@@ -167,6 +224,54 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
             "Tokens (final response usage): "
             f"input={usage.prompt_token_count}, "
             f"output={usage.candidates_token_count}, "
-            f"thinking={usage.thoughts_token_count}"
+            f"thinking={usage.thoughts_token_count}",
+            file=sys.stderr,
         )
-    return response.text or "No text answer was returned."
+    answer = response.text or "No text answer was returned."
+    source_ids = extract_source_ids(answer, drawing_data)
+    display_answer = re.sub(r"(?im)^\s*sources?\s*:\s*.*(?:\n|$)", "", answer).strip()
+    return {"answer": display_answer, "source_ids": source_ids}
+
+
+
+def extract_source_ids(answer: str, drawing_data: dict[str, Any]) -> list[str]:
+    """Extract cited active entity IDs, without trusting generated IDs.
+
+    Only inspect explicit Source:/Sources: lines. Coverage references are
+    deliberately excluded because they are not physical highlight targets.
+    """
+    collections = (
+        "levels", "units", "rooms", "walls", "openings", "objects",
+        "texts", "edges", "element_types", "types", "materials",
+        "material_layer_sets", "systems", "pipe_systems", "pipe_types",
+        "pipe_segments", "pipe_fittings", "pipe_equipment",
+    )
+    active_ids = {
+        entity["id"]
+        for collection in collections
+        for entity in drawing_data.get(collection, [])
+        if isinstance(entity, dict)
+        and isinstance(entity.get("id"), str)
+        and entity.get("status", "active") == "active"
+    }
+
+    cited_lines = [
+        match.group(1)
+        for line in answer.splitlines()
+        if (match := re.match(r"^\s*(?:sources?)\s*:\s*(.*)$", line, re.I))
+    ]
+    if not cited_lines or not active_ids:
+        return []
+
+    # Match whole IDs only; prevents room_1 from matching room_10.
+    # Sort longer IDs first to avoid overlapping prefix matches.
+    pattern = re.compile(
+        r"(?<![\w.$-])(?:" + "|".join(
+            re.escape(entity_id) for entity_id in sorted(active_ids, key=len, reverse=True)
+        ) + r")(?![\w.$-])"
+    )
+    return list(dict.fromkeys(
+        match.group(0)
+        for source_line in cited_lines
+        for match in pattern.finditer(source_line)
+    ))

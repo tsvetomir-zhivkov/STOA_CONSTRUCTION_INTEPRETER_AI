@@ -1,0 +1,75 @@
+[
+ {
+  "id": "d01",
+  "sheet": "heating",
+  "basis": "example",
+  "question": "How many radiators are on the heating sheet?",
+  "expected": "2 (R1 and R2): the symbols are typed from their block names",
+  "tool": true,
+  "reliable": true,
+  "answer": "There are 2 radiators on the heating sheet: R1 and R2.\n\nSource: node_5, node_7",
+  "agent": true,
+  "grounded": true,
+  "tools_used": [
+   "count_symbols"
+  ],
+  "used_reference_tool": true,
+  "usage": {
+   "input": 1344,
+   "output": 26,
+   "thinking": 64
+  },
+  "model": "gemini-3.8-flash",
+  "cost_usd": 0.0013455,
+  "cost_usd_from_2027": 0.002691
+ },
+ {
+  "id": "d02",
+  "sheet": "heating",
+  "basis": "example",
+  "question": "What is the total length of line LV-1 in metres?",
+  "expected": "4.5 m, as a lower bound: one LV-1 pipe has no written length",
+  "tool": true,
+  "reliable": true,
+  "answer": "The total recorded length for line LV-1 is at least 4.5 metres; this is a lower bound because one pipe segment (pipe_8) does not have a specified length in metres.\n\nSource: pipe_1, pipe_2, pipe_3, pipe_8",
+  "agent": true,
+  "grounded": true,
+  "tools_used": [
+   "pipe_length"
+  ],
+  "used_reference_tool": true,
+  "usage": {
+   "input": 1432,
+   "output": 59,
+   "thinking": 164
+  },
+  "model": "gemini-3.8-flash",
+  "cost_usd": 0.00191025,
+  "cost_usd_from_2027": 0.0038205
+ },
+ {
+  "id": "d03",
+  "sheet": "heating",
+  "basis": "example",
+  "question": "What is directly connected to the pump P1?",
+  "expected": "the boiler K1 and a ball valve (two symbols)",
+  "tool": true,
+  "reliable": true,
+  "answer": "The pump P1 is directly connected to the boiler K1 via pipe_1 and to an untagged ball valve via pipe_2.\n\nSource: node_1, node_2, node_3, pipe_1, pipe_2",
+  "agent": true,
+  "grounded": true,
+  "tools_used": [
+   "count_symbols",
+   "connected_to"
+  ],
+  "used_reference_tool": true,
+  "usage": {
+   "input": 1600,
+   "output": 51,
+   "thinking": 182
+  },
+  "model": "gemini-3.8-flash",
+  "cost_usd": 0.00207375,
+  "cost_usd_from_2027": 0.0041475
+ }
+]

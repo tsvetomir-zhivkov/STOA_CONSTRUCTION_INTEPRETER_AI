@@ -164,15 +164,18 @@ function collectRefs(v, out) {
  * Parse an IFC file into an entity map.
  *
  * @param {string} filePath
- * @param {{ wanted: Set<string>, pointHolders?: Set<string> }} opts
- *   wanted       entity types to keep (parsed)
+ * @param {{ wanted: { has(type:string): boolean }, pointHolders?: { has(type:string): boolean } }} opts
+ *   wanted       entity types to keep (parsed): a Set, or any object with has(type)
  *   pointHolders entity types whose ref'd IFCCARTESIANPOINTs must be loaded (default: any kept entity)
- * @returns {Promise<{ schema: string|null, entities: Map<number, {type:string, args:any[]}> }>}
+ * @returns {Promise<{ schema: string|null, fileName: string[]|null, typeCounts: Map<string, number>, entities: Map<number, {type:string, args:any[]}> }>}
+ *   fileName: the quoted strings of the FILE_NAME header (name, time stamp, author..., originating system...)
+ *   typeCounts: number of instances of EVERY entity type in the file, kept or not
  */
 export async function parseStepFile(filePath, { wanted, pointHolders }) {
   const entities = new Map();
   const neededPoints = new Set();
-  let schema = null;
+  const typeCounts = new Map();
+  let schema = null, fileName = null;
   const holders = pointHolders ?? wanted;
 
   // pass A ---------------------------------------------------------------
@@ -180,8 +183,11 @@ export async function parseStepFile(filePath, { wanted, pointHolders }) {
     if (st.header) {
       const m = /FILE_SCHEMA\s*\(\s*\(\s*'([^']+)'/i.exec(st.header);
       if (m) schema = m[1];
+      const fn = /FILE_NAME\s*\(([\s\S]*)\)\s*;?\s*$/i.exec(st.header);
+      if (fn) fileName = [...fn[1].matchAll(/'((?:[^']|'')*)'/g)].map((x) => x[1].replace(/''/g, "'"));
       continue;
     }
+    typeCounts.set(st.type, (typeCounts.get(st.type) ?? 0) + 1);
     if (!wanted.has(st.type)) continue;
     const args = parseParams(st.body);
     entities.set(st.id, { type: st.type, args });
@@ -195,5 +201,18 @@ export async function parseStepFile(filePath, { wanted, pointHolders }) {
       entities.set(st.id, { type: st.type, args: parseParams(st.body) });
     }
   }
-  return { schema, entities };
+  return { schema, fileName, typeCounts, entities };
+}
+
+/**
+ * Entity type of selected ids (one extra streaming pass; used only to NAME products the extractor does not read).
+ * @param {string} filePath @param {Set<number>} ids @returns {Promise<Map<number,string>>}
+ */
+export async function typesOfIds(filePath, ids) {
+  const out = new Map();
+  if (!ids.size) return out;
+  for await (const st of statements(filePath)) {
+    if (!st.header && ids.has(st.id)) { out.set(st.id, st.type); if (out.size === ids.size) break; }
+  }
+  return out;
 }

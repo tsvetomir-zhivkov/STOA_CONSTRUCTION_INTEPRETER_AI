@@ -13,20 +13,22 @@
  *        return interpretImage({ imagePath: filePath, outputJsonPath, schemaPath });
  *
  * CONTRACT FOR THE AGENT
- *   - Write (or merge into) `outputJsonPath`, a file that follows the JSON Schema at `schemaPath` (`schema/blueprint.schema.json`,
- *     schema_version "0.2"). Use `drawing.route = "raster"` (segmentation / OCR) or `"vlm"` (vision-language model), set
- *     `drawing.file` / `drawing.source` (passed in as `file` / `source` when known) and `drawing.read_from`.
- *     Pixel coordinates are pixels of the ORIGINAL page image; every entity needs `id`, `confidence` and
- *     `provenance: { extractor, source_ref }`. Append a `history` entry for what you did (with `cost_usd`).
- *   - If the file already exists (e.g. a vector extraction of another page of the same document) merge non-destructively:
- *     supersede, never delete (`src/mappers/merge.js` exports `mergeDocuments` for exactly that).
- *   - `detectionDetails.pages` (PDF only) lists the zero-based page indices that need the vision route.
+ *   - Write a v0.3 building document at outputJsonPath using the supplied schemaPath.
+ *   - Use source_documents[], drawings[] (route raster or vlm), source_refs and source_drawing_id.
+ *   - Keep original page pixels and record every transform on its drawing; merge all source pages.
+ *   - Preserve typed schedules separately from physical entities. Unknown values remain null.
+ *   - outputJsonPath is a staging path. This adapter validates schema and references before publishing.
+ *   - Legacy v0.2 plugin output is migrated at this boundary; invalid output leaves the target untouched.
+ *   - detectionDetails.pages identifies the zero-based pages that need vision extraction.
  */
 
 import path from 'node:path';
+import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { PipelineError } from '../util/errors.js';
 import { silentLogger } from '../util/logger.js';
+import { createValidator, readJsonIfExists, writeJsonAtomic } from '../storage/jsonStore.js';
+import { migrate, mergeBuildings } from '../storage/building.js';
 
 /**
  * @typedef {Object} VisionRouteArgs
@@ -69,8 +71,23 @@ export async function routeToVisionAgent(args, opts = {}) {
     return result;
   }
   try {
-    result.agentResult = await invokeAgent(modulePath, args);
-    result.agentInvoked = true;
+    await fs.mkdir(path.dirname(outputJsonPath), { recursive: true });
+    const staging = await fs.mkdtemp(path.join(path.dirname(outputJsonPath), '.vision-'));
+    try {
+      const stagedPath = path.join(staging, 'building.json');
+      const existing = await readJsonIfExists(outputJsonPath);
+      if (existing) await writeJsonAtomic(stagedPath, migrate(existing));
+      result.agentResult = await invokeAgent(modulePath, { ...args, outputJsonPath: stagedPath });
+      const emitted = await readJsonIfExists(stagedPath);
+      if (!emitted) throw new Error('Vision agent did not write its building document');
+      const validator = await createValidator(args.schemaPath);
+      const building = existing ? mergeBuildings([migrate(existing), migrate(emitted)]) : migrate(emitted);
+      validator.assertValid(building);
+      await writeJsonAtomic(outputJsonPath, building);
+      result.agentInvoked = true;
+    } finally {
+      await fs.rm(staging, { recursive: true, force: true });
+    }
   } catch (err) {
     throw new PipelineError(`Vision agent failed for ${path.basename(filePath)} (${reason}): ${err.message}`, 'VISION_AGENT_FAILED', { cause: err.message });
   }

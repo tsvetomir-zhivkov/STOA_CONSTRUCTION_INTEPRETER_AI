@@ -1,6 +1,6 @@
 # Stoa vision translator (Junction 2026)
 
-Turns any drawing file into one schema JSON per page, so an answering agent can
+Turns any drawing file into one schema v0.3 JSON per building, so an answering agent can
 answer questions about it. Plan: @docs/vision_translator_plan.md
 Architecture: @docs/Stoa_proposal.md
 
@@ -20,9 +20,9 @@ Never cut: eval, router, Swiss, IFC areas.
 - translator/extract/: swiss_dxf.py, ifc.py, vector_pdf.py, raster/
 - translator/fuse.py, scale.py, coverage.py, glossary.py
 - translator/modal_app.py: ALL GPU code lives here and nowhere else
-- translator/schema/drawing.schema.json: schema v0.2 (source of truth)
+- translator/schema/building.v0.3.schema.json: current contract; drawing.schema.json is frozen v0.2
 - eval/probe.py, eval/score.py, eval/failures.jsonl
-- index/<source>/<file>.json: outputs, one JSON per page
+- index/<source>/<file>.json: outputs, one JSON per building
 - index/_raw/: raw model outputs, so the GPU is never rerun while tuning
 
 ## Hand-off contract (do not change without asking)
@@ -31,11 +31,11 @@ Never cut: eval, router, Swiss, IFC areas.
 - Every write is validated with jsonschema. Fail loudly, never write invalid JSON.
 
 ## Schema rules
-- Schema v0.2 (translator/schema/drawing.schema.json) is the contract. The agent teammate reads v0.2. Do not change it without asking.
+- Schema v0.3 (translator/schema/building.v0.3.schema.json) is the contract. Keep frozen v0.2 schemas readable through translator.building migration. See docs/building-v0.3.md.
 - Every entity has source/provenance.extractor, confidence, and
   provenance.source_ref (DXF handle, PDF item index or IFC GlobalId).
 - Rooms: number, unit_id, parent_room_id, subtype, is_outdoor, polygon in pixels and metres.
-- Top level: units[], levels[], coverage[], drawing.route, drawing.read_from, drawing.transforms.
+- Top level: units[], levels[], coverage[], drawings[].route, drawings[].read_from, drawings[].transforms.
 - Fixture categories: toilet, sink, shower, bathtub, sauna_bench, stair.
 - Never delete a pipeline element when a better one is found. Mark it superseded.
 - Written areas only CROSS-CHECK. Flag check_this if >10% off (>2% for vector sources).

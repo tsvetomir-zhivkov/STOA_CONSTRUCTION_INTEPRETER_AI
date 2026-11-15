@@ -5,7 +5,7 @@
  *   processBlueprint({ inputFilePath, outputJsonPath, mode })
  *     1. classify (magic bytes + extension + content; scanned/unreadable -> vision agent)
  *     2. vector extraction (IFC / DXF / SVG / vector PDF)  -> deterministic bundles
- *     3. Gemini semantic mapping + validation + create-or-merge + atomic write
+ *     3. deterministic schema mapping + validation + create-or-merge + atomic write
  *
  * CLI:  node src/index.js <input> [--out out.json] [--mode auto|create|merge] [--frame-mismatch error|sibling|reproject] [--levels "Level 1,Level 2"] [--file data/x/plan.pdf] [--source x]
  *       node src/index.js --validate-only <file.json>
@@ -17,16 +17,16 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { loadConfig } from './config.js';
 import { createLogger } from './util/logger.js';
-import { UsageTracker } from './util/usage.js';
 import { UnsupportedFormatError, PipelineError } from './util/errors.js';
 import { classifyBlueprint } from './classifier/blueprintClassifier.js';
 import { extractIfc } from './extractors/ifcExtractor.js';
 import { extractPdf } from './extractors/pdfExtractor.js';
 import { extractDxf, extractSvg } from './extractors/cadExtractor.js';
-import { createGeminiClient } from './mappers/geminiClient.js';
-import { mapToSchema } from './mappers/geminiSchemaMapper.js';
+import { mapToSchema } from './mappers/schemaMapper.js';
+import { loadCorrections } from './mappers/corrections.js';
 import { routeToVisionAgent } from './agents/visionAgentAdapter.js';
-import { createValidator, describeErrors } from './storage/jsonStore.js';
+import { describeErrors } from './storage/jsonStore.js';
+import { createVersionedValidator } from './schema/versions.js';
 
 /**
  * @typedef {Object} ProcessOptions
@@ -36,7 +36,6 @@ import { createValidator, describeErrors } from './storage/jsonStore.js';
  * @property {Partial<import('./config.js').PipelineConfig>|Record<string,any>} [configOverrides] shallow-merged per top-level key
  * @property {NodeJS.ProcessEnv} [env]
  * @property {any} [logger]
- * @property {any} [gemini] injected client (tests)
  * @property {string[]} [levels] IFC: only these storeys
  * @property {string} [file] drawing.file: dataset-relative path (default: derived from the input path, `data/<source>/...`)
  * @property {string} [source] drawing.source: dataset folder (default: derived from the input path)
@@ -46,7 +45,7 @@ import { createValidator, describeErrors } from './storage/jsonStore.js';
  * @param {ProcessOptions} opts
  * @returns {Promise<
  *   | { status:'routed_to_vision_agent', filePath:string, reason:string, outputJsonPath:string, agentInvoked:boolean, agentResult?:any }
- *   | { status:'processed'|'processed_with_vision_routing', route:string, classification:any, outputs:any[], vision?:any, usage:any }
+ *   | { status:'processed'|'processed_with_vision_routing', route:string, classification:any, outputs:any[], vision?:any }
  * >}
  */
 export async function processBlueprint(opts) {
@@ -56,10 +55,8 @@ export async function processBlueprint(opts) {
   const logger = opts.logger ?? createLogger();
   const inputFilePath = path.resolve(opts.inputFilePath);
   const outputJsonPath = path.resolve(opts.outputJsonPath ?? path.join('out', `${path.basename(inputFilePath, path.extname(inputFilePath))}.json`));
-  const usage = new UsageTracker(config.gemini.pricing);
-  const gemini = opts.gemini ?? createGeminiClient({ config, usage, logger });
 
-  const classification = await classifyBlueprint(inputFilePath, { config, gemini, logger, allowLlm: true });
+  const classification = await classifyBlueprint(inputFilePath, { config, logger });
   logger.info(`classified ${path.basename(inputFilePath)} as ${classification.detected.format} -> ${classification.route} (${classification.reason})`);
 
   const toVision = (details) => routeToVisionAgent(
@@ -82,7 +79,9 @@ export async function processBlueprint(opts) {
   const fmt = classification.detected.format;
   const vectorPages = classification.pages?.filter((p) => p.route === 'vector_extraction').map((p) => p.index);
   const scannedPages = classification.pages?.filter((p) => p.route !== 'vector_extraction').map((p) => p.index) ?? [];
-  const exOpts = { config, logger };
+  const corrections = await loadCorrections(config.correctionsPath, { logger });
+  if (corrections.rules.length) logger.info(`${corrections.rules.length} correction rule(s) from ${corrections.path}`);
+  const exOpts = { config, logger, corrections };
   /** @type {import('./extractors/bundle.js').Bundle[]} */
   let bundles;
   if (fmt === 'ifc') bundles = await extractIfc(inputFilePath, { ...exOpts, levels: opts.levels });
@@ -96,10 +95,10 @@ export async function processBlueprint(opts) {
   }
 
   const mapped = bundles.length
-    ? await mapToSchema({ inputFilePath, outputJsonPath, mode: opts.mode ?? 'auto', bundles, config, gemini, usage, logger, file: opts.file, source: opts.source })
-    : { outputs: [], usage: usage.snapshot() };
+    ? await mapToSchema({ inputFilePath, outputJsonPath, mode: opts.mode ?? 'auto', bundles, config, logger, corrections, file: opts.file, source: opts.source })
+    : { outputs: [] };
 
-  const result = { status: /** @type {'processed'|'processed_with_vision_routing'} */ ('processed'), route: classification.route, classification: summarize(classification), outputs: mapped.outputs, usage: mapped.usage };
+  const result = { status: /** @type {'processed'|'processed_with_vision_routing'} */ ('processed'), route: classification.route, classification: summarize(classification), outputs: mapped.outputs };
   if (classification.route === 'mixed' && scannedPages.length) {
     result.vision = await toVision({ pages: scannedPages });
     result.status = 'processed_with_vision_routing';
@@ -128,18 +127,19 @@ async function main(argv) {
       file: { type: 'string' },
       source: { type: 'string' },
       'validate-only': { type: 'boolean', default: false },
+      schema: { type: 'string' },
       quiet: { type: 'boolean', short: 'q', default: false },
       help: { type: 'boolean', short: 'h', default: false },
     },
   });
   if (values.help || !positionals.length) {
-    process.stdout.write('Usage: blueprint-ingest <input> [--out out.json] [--mode auto|create|merge] [--frame-mismatch error|sibling|reproject] [--levels "A,B"] [--file data/<source>/x.pdf] [--source <source>]\n       blueprint-ingest --validate-only <file.json>\n');
+    process.stdout.write('Usage: blueprint-ingest <input> [--out out.json] [--mode auto|create|merge] [--frame-mismatch error|sibling|reproject] [--levels "A,B"] [--file data/<source>/x.pdf] [--source <source>] [--schema 0.3|0.2]\n       blueprint-ingest --validate-only <file.json>   (schema 0.2 or 0.3, picked from schema_version; 0.3 also checks every id reference)\n');
     return values.help ? 0 : 1;
   }
   if (values['validate-only']) {
-    const { validate } = await createValidator(loadConfig().schemaPath);
-    const r = validate(JSON.parse(await fs.readFile(positionals[0], 'utf8')));
-    process.stdout.write(r.valid ? 'valid\n' : `INVALID\n${describeErrors(r.errors).join('\n')}\n`);
+    const v = await createVersionedValidator();
+    const r = v.validate(JSON.parse(await fs.readFile(positionals[0], 'utf8')));
+    process.stdout.write(r.valid ? `valid (schema ${r.version})\n` : `INVALID (schema ${r.version ?? '?'})\n${v.describe(r).slice(0, 50).join('\n')}\n`);
     return r.valid ? 0 : 1;
   }
   if (!['auto', 'create', 'merge'].includes(values.mode)) throw new PipelineError(`--mode must be auto|create|merge`, 'BAD_ARGS');
@@ -151,7 +151,7 @@ async function main(argv) {
     levels: values.levels?.split(',').map((s) => s.trim()).filter(Boolean),
     file: values.file,
     source: values.source,
-    configOverrides: values['frame-mismatch'] ? { merge: { onFrameMismatch: values['frame-mismatch'] } } : undefined,
+    configOverrides: { ...(values['frame-mismatch'] ? { merge: { onFrameMismatch: values['frame-mismatch'] } } : {}), ...(values.schema ? { schemaVersion: values.schema } : {}) },
     logger,
   });
   process.stdout.write(`${JSON.stringify(res, null, 2)}\n`);
@@ -161,7 +161,9 @@ async function main(argv) {
 const isMain = process.argv[1] && (await fs.realpath(process.argv[1]).catch(() => process.argv[1])) === fileURLToPath(import.meta.url);
 if (isMain) {
   main(process.argv.slice(2)).then((code) => { process.exitCode = code; }, (err) => {
-    process.stderr.write(`${err.name ?? 'Error'}: ${err.message}\n`);
+    // a PipelineError is an expected, already-explained failure (bad input, invalid document): its message is enough.
+    // Anything else is a bug: print the stack so it can be located.
+    process.stderr.write(err instanceof PipelineError ? `${err.name ?? 'Error'}: ${err.message}\n` : `${err?.stack ?? String(err)}\n`);
     if (err.details?.errors) process.stderr.write(`${describeErrors(err.details.errors).slice(0, 10).join('\n')}\n`);
     process.exitCode = err.code === 'UNSUPPORTED_FORMAT' ? 3 : 1;
   });
