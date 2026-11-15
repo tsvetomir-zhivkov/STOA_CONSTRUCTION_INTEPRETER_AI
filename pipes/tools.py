@@ -115,6 +115,33 @@ class PipeIndex:
                 )
         return out
 
+    def _pipe_gaps(self, node_ids) -> list[dict]:
+        """Pipes/connectivity coverage entries that are not_analysed or partial over the page or over these nodes."""
+        boxes = [self.nodes[n]["bbox_px"] for n in node_ids if n in self.nodes]
+        out = []
+        for cat in ("pipes", "connectivity"):
+            for c in self._coverage(cat):
+                if c["status"] == "analysed":
+                    continue
+                if c["region"] == "page" or any(_overlap(c["region"], b) for b in boxes):
+                    out.append(c)
+        return out
+
+    def _unknown(self, tool: str, answer: dict, node_ids, gaps: list[dict]) -> dict:
+        """The honest answer when the traced graph says nothing about these nodes: unknown, not 'not connected'."""
+        why = "; ".join(
+            f"{c['category']} {c['status']}"
+            + (f" in {c['region']}" if c["region"] != "page" else " on the whole page")
+            + (f" ({c['note']})" if c.get("note") else "")
+            for c in gaps[:3]
+        )
+        answer = {**answer, "connected": None, "unknown": True, "reason": "unknown: pipes not analysed here"}
+        return self._result(
+            tool, answer, list(node_ids), [], gaps, False,
+            [f"unknown, pipes not analysed here: {why}. The absence of a route or of neighbours proves nothing."],
+            [c["region"] for c in gaps if c["region"] != "page"],
+        )  # fmt: skip
+
     def _result(self, tool, answer, node_ids, edge_ids, coverage, reliable, caveats, regions=None) -> dict:
         node_ids, edge_ids = list(dict.fromkeys(node_ids)), list(dict.fromkeys(edge_ids))
         return {
@@ -292,6 +319,19 @@ class PipeIndex:
             )
         if open_ends:
             caveats.append(f"pipes leave the sheet or end open at {open_ends}")
+        if not neighbours and (gaps := self._pipe_gaps([node])):
+            return self._unknown(
+                "connected_to",
+                {
+                    "node_id": node,
+                    "n_connected": None,
+                    "links": [],
+                    "open_ends": open_ends,
+                    "dangling_edge_ids": dangling,
+                },
+                [node],
+                gaps,
+            )
         if self.nodes[node]["type"] not in STRUCTURAL and not neighbours and not dangling:
             caveats.append("no pipe reaches this symbol in the traced graph")
         return self._result(
@@ -313,6 +353,8 @@ class PipeIndex:
         except nx.NetworkXNoPath:
             path = None
         cov = self._coverage("connectivity")
+        if path is None and (gaps := self._pipe_gaps([a, b])):
+            return self._unknown("path_between", {"a": a, "b": b, "dangling_edge_ids": []}, [a, b], gaps)
         if path is None:
             dangling = self._component_unsnapped([a, b])
             caveats = ["no pipe route between them in the traced graph"]

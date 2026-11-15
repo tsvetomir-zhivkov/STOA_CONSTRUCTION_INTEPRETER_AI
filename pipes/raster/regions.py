@@ -17,6 +17,9 @@ import numpy as np
 from pipes.glossary_pipes import LEGEND_HEADINGS
 
 MIN_AREA = 0.01  # share of the page
+MAX_SHARE = (
+    0.4  # a region bigger than this is the drawing area itself: never erased as a title block or legend
+)
 COVER = 0.5  # a side must be inked over this share of its length (text may interrupt it)
 
 
@@ -166,6 +169,7 @@ def classify(ink, w, frames, boxes, texts, text_mask=None) -> list[dict]:
     out = []
     for r in frames:
         x0, y0, x1, y1 = r
+        big = (x1 - x0) * (y1 - y0) > MAX_SHARE * W * H
         on_border = 0
         small = 0.5 * min(x1 - x0, y1 - y0)  # an in-line symbol is small next to its frame
         for bx0, by0, bx1, by1 in boxes:
@@ -185,6 +189,8 @@ def classify(ink, w, frames, boxes, texts, text_mask=None) -> list[dict]:
         elif any(h in inside for h in LEGEND_HEADINGS):
             kind, erase = "legend", "full"
         else:
+            kind, erase = "other", "outline"
+        if big:  # the drawing area itself (a sheet border): never wipe its inside, at most its own outline
             kind, erase = "other", "outline"
         out.append({"kind": kind, "bbox_px": [round(v, 1) for v in r], "erase": erase})
     return out

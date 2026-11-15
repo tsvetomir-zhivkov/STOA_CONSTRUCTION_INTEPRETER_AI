@@ -82,6 +82,8 @@ def _summary(result: dict) -> str:
     if t == "count_symbols":
         extra = "".join(f"  ({k} {a[k]})" for k in ("type_filter", "tag_filter") if a.get(k))
         return f"count = {a['count']}{extra}"
+    if a.get("unknown"):
+        return "unknown: pipes not analysed here (see the note below)"
     if t == "connected_to":
         return f"{a['node_id']} is connected to {a['n_connected']} symbol(s): {', '.join(a['connected']) or 'none'}"
     if t == "path_between":
