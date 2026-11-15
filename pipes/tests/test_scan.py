@@ -198,6 +198,9 @@ def test_command_line_dispatch_and_output(env, tmp_path, capsys, monkeypatch):
     src = tmp_path / "pipw test.webp"  # a name with a space, like the real file
     Image.open(FIX / "sheet.jpg").save(src, lossless=True)
     monkeypatch.setattr(sys, "argv", ["pipes"])
+    monkeypatch.setattr(
+        scan, "PIPES_INDEX", tmp_path / "idx"
+    )  # the CLI publishes to the default folder: keep it in tmp
     assert cli_main([str(src)]) == 0
     out = capsys.readouterr()
     assert "resolution too low, results unreliable" in out.err and out.err.startswith("warning:")
