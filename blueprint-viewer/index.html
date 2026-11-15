@@ -46,7 +46,7 @@
     .card p { margin: 0 0 18px; color: var(--muted); }
     #error { color: var(--error); margin: 16px 0 0; overflow-wrap: anywhere; white-space: pre-line; }
     #error:empty { display: none; }
-    body.dragging::after { content: "Drop .json and .ifc files to add them"; position: fixed; inset: 12px; border: 3px dashed var(--accent); border-radius: 16px; display: grid; place-items: center; font-size: 20px; font-weight: 600; background: color-mix(in srgb, var(--bg) 70%, transparent); z-index: 10; pointer-events: none; }
+    body.dragging::after { content: "Drop .ifc, .dxf, .svg, .png, .jpg or .pdf files to add them"; position: fixed; inset: 12px; border: 3px dashed var(--accent); border-radius: 16px; display: grid; place-items: center; font-size: 20px; font-weight: 600; background: color-mix(in srgb, var(--bg) 70%, transparent); z-index: 10; pointer-events: none; }
 
     #stage { position: fixed; inset: 0; display: none; }
     #stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
@@ -87,9 +87,6 @@
     .list li .warn { grid-column: 1 / -1; color: var(--warn); font-size: 12px; font-weight: 600; }
     .row { display: flex; align-items: center; gap: 6px; }
     .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border); flex: none; }
-    #legendList li { grid-template-columns: auto 1fr auto; cursor: pointer; border-radius: 6px; padding: 2px 4px; }
-    #legendList li[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 18%, transparent); }
-    #legendList li .meta { grid-column: 2 / -1; }
     dl.kv { margin: 4px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
     dl.kv dt { color: var(--muted); }
     dl.kv dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -145,9 +142,9 @@
   <main id="picker">
     <div class="card">
       <h1>Blueprint Viewer</h1>
-      <p>Open drawing JSON files and IFC models: several at once, mixed, or drop them anywhere.</p>
-      <button id="openBtn" type="button">Open files (.json, .ifc)</button>
-      <input id="fileInput" type="file" accept=".json,.ifc,application/json" multiple hidden>
+      <p>Open IFC models, drawings (DXF, SVG, PDF) and plan images (PNG, JPG): several at once, mixed, or drop them anywhere.</p>
+      <button id="openBtn" type="button">Open files (.ifc, .dxf, .svg, .png, .jpg, .pdf)</button>
+      <input id="fileInput" type="file" accept=".ifc,.dxf,.svg,.png,.jpg,.jpeg,.pdf,.json,image/png,image/jpeg,image/svg+xml,application/pdf,application/json" multiple hidden>
       <p id="error" role="alert"></p>
     </div>
   </main>
@@ -188,26 +185,11 @@
         <input id="sep" type="range" min="0" max="1" step="0.01" value="0" aria-label="Separate levels vertically"></label>
       <label class="slider"><span>Cut at <output id="cutOut">off</output></span>
         <input id="cut" type="range" min="0" max="3" step="0.05" value="3" aria-label="Cut height in metres"></label>
-      <div class="sep">
-        <label class="check"><input id="highlight" type="checkbox" checked> Highlight assumptions</label>
-        <button id="dlCorr" class="small ghost" type="button" disabled>Download corrections.json <span id="corrCount">(0)</span></button>
-      </div>
     </section>
-
-    <details id="filesPanel" class="floating" open>
-      <summary>Files</summary>
-      <ul id="fileList" class="list"></ul>
-    </details>
 
     <details id="levelsPanel" class="floating" open>
       <summary>Levels</summary>
       <ul id="levelList" class="list"></ul>
-    </details>
-
-    <details id="legendPanel" class="floating" open>
-      <summary>Fixtures legend</summary>
-      <div class="sub">Click a row to show only that category; click again for all.</div>
-      <ul id="legendList" class="list"></ul>
     </details>
 
     <details id="contents" class="floating" open>
@@ -238,22 +220,25 @@
   </aside>
 
   <script type="module">
-    import { BlueprintViewer, FIXTURE_STYLE } from './blueprintViewer.js';
+    import { BlueprintViewer } from './blueprintViewer.js';
 
     const $ = (id) => document.getElementById(id);
+    const ACCEPTED = /\.(ifc|dxf|svg|png|jpe?g|pdf|json)$/i;
     const input = $('fileInput');
     let viewer = null; // one WebGL context for the page's lifetime
     const ensureViewer = () => {
+      // the stage needs a size before the renderer measures it. Added on every load: after the last file is removed the page
+      // goes back to the picker, and a later upload must show the stage again (it used to stay on the picker)
+      document.body.classList.add('viewing');
       if (viewer) return viewer;
-      document.body.classList.add('viewing'); // the stage needs a size before the renderer measures it
-      viewer = new BlueprintViewer($('stage'), { onSelect: showSelection, onCorrectionsChange: showCorrectionCount, onChange: render });
+      viewer = new BlueprintViewer($('stage'), { onSelect: showSelection, onChange: render });
       window.viewer = viewer; // for inspection from the browser console
       applyControls();
       return viewer;
     };
 
     async function addFiles(list) {
-      const files = [...list].filter((f) => /\.(json|ifc)$/i.test(f.name));
+      const files = [...list].filter((f) => ACCEPTED.test(f.name));
       if (!files.length) return;
       $('error').textContent = '';
       const hadViewer = !!viewer;
@@ -287,7 +272,7 @@
     const explode = $('explode'), sep = $('sep'), cut = $('cut');
     function applyControls() {
       for (const c of checks) viewer.setGroupVisible(c.dataset.group, c.checked);
-      viewer.setHighlightAssumptions($('highlight').checked);
+      viewer.setHighlightAssumptions(true); // assumption outlines stay on (the toggle was removed from the sidebar)
       onExplode(); onSep(); onCut();
     }
     function onExplode() { const e = Number(explode.value); $('explodeOut').textContent = e ? `${Math.round(e * 100)}%` : 'off'; viewer?.setExplode(e); }
@@ -310,7 +295,6 @@
     const setAll = (on) => { for (const c of checks) { c.checked = on; viewer?.setGroupVisible(c.dataset.group, on); } };
     $('visAll').addEventListener('click', () => setAll(true));
     $('visNone').addEventListener('click', () => setAll(false));
-    $('highlight').addEventListener('change', () => viewer?.setHighlightAssumptions($('highlight').checked));
     explode.addEventListener('input', onExplode);
     sep.addEventListener('input', () => { onSep(); cutRange(); });
     cut.addEventListener('input', onCut);
@@ -329,24 +313,10 @@
     // ---- panels from the scene summary ---------------------------------------------------------------------------
     const LABELS = { rooms: 'Rooms', walls: 'Walls', doors: 'Doors', windows: 'Windows', fixtures: 'Fixtures', stairs: 'Stairs', text: 'Texts' };
     const ROUTE = { ifc: 'IFC model', dxf: 'DXF (CAD)', svg: 'SVG', vector_pdf: 'vector PDF', raster: 'raster image', vlm: 'vision model' };
-    let isolatedCategory = null, isolatedLevel = null;
+    let isolatedLevel = null;
 
     function render(sum) {
       if (!sum.sources.length) { document.body.classList.remove('viewing'); return; }
-      // files
-      $('fileList').replaceChildren(...sum.sources.map((s) => {
-        const li = document.createElement('li');
-        const btn = Object.assign(document.createElement('button'), { className: 'small ghost', type: 'button', textContent: 'Remove' });
-        btn.setAttribute('aria-label', `Remove ${s.name}`);
-        btn.addEventListener('click', () => { viewer.remove(s.id); cutRange(); });
-        const meta = document.createElement('span'); meta.className = 'meta';
-        if (s.kind === 'ifc') meta.textContent = `geometry: ${s.geometry} · ${s.ifc.stats.elements} elements, ${(s.ifc.stats.triangles / 1e6).toFixed(2)} M triangles, ${s.ifc.stats.ms} ms · linked to JSON: ${s.match.withJson}/${s.match.meshes} meshes${s.ifc.stats.unsupported ? ` · ${s.ifc.stats.unsupported} representation(s) web-ifc could not mesh` : ''}`;
-        else meta.textContent = `geometry: ${s.geometry}${s.match?.elements ? ` · ${s.match.withMesh}/${s.match.elements} elements have a web-ifc mesh` : ''}`;
-        li.append(Object.assign(document.createElement('span'), { className: 'name', textContent: `${s.name} (${s.kind === 'ifc' ? 'IFC' : 'JSON'})` }), btn, meta);
-        if (s.frame?.note) li.append(Object.assign(document.createElement('span'), { className: 'warn', textContent: s.frame.note }));
-        if (s.vocabulary?.unmapped.length) li.append(Object.assign(document.createElement('span'), { className: 'warn', textContent: `${s.vocabulary.unmapped.length} type/category value(s) did not map to the shared vocabulary: ${[...new Set(s.vocabulary.unmapped.map((u) => u.value))].join(', ')}` }));
-        return li;
-      }));
       // levels
       $('levelList').replaceChildren(...sum.levels.map((lv) => {
         const li = document.createElement('li');
@@ -358,18 +328,6 @@
         iso.addEventListener('click', () => { isolatedLevel = isolatedLevel === lv.key ? null : lv.key; viewer.isolateLevel(isolatedLevel); render(viewer.summary()); });
         li.append(label, iso);
         for (const n of lv.notes) li.append(Object.assign(document.createElement('span'), { className: 'warn', textContent: n }));
-        return li;
-      }));
-      // legend
-      $('legendPanel').hidden = !sum.legend.length;
-      $('legendList').replaceChildren(...sum.legend.map((g) => {
-        const li = document.createElement('li');
-        li.tabIndex = 0; li.setAttribute('role', 'button'); li.setAttribute('aria-pressed', String(isolatedCategory === g.category));
-        const sw = Object.assign(document.createElement('span'), { className: 'swatch' }); sw.style.background = g.color;
-        li.append(sw, Object.assign(document.createElement('span'), { textContent: g.category.replace(/_/g, ' ') }), Object.assign(document.createElement('span'), { textContent: String(g.count) }),
-          Object.assign(document.createElement('span'), { className: 'meta', textContent: g.from.join(' + ') + (g.from.includes('JSON polygons') && FIXTURE_STYLE[g.category] ? ` · height ${FIXTURE_STYLE[g.category].h} m (assumed)` : '') }));
-        const toggle = () => { isolatedCategory = isolatedCategory === g.category ? null : g.category; viewer.isolateCategory(isolatedCategory); render(viewer.summary()); };
-        li.addEventListener('click', toggle); li.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
         return li;
       }));
       // contents per file
@@ -386,11 +344,16 @@
 
     function contentsBlock(s) {
       const div = Object.assign(document.createElement('div'), { className: 'contentsBlock' });
+      if (s.kind === 'sheet') {
+        div.append(Object.assign(document.createElement('div'), { className: 'sub', textContent: `${s.name} · ${s.sheet.label} · ${s.sheet.pages} ${s.sheet.pages === 1 ? 'sheet' : 'sheets'}` }),
+          Object.assign(document.createElement('p'), { className: 'note', textContent: s.sheet.note }));
+        return div;
+      }
       if (s.kind === 'ifc') {
         div.append(Object.assign(document.createElement('div'), { className: 'sub', textContent: `${s.name} · IFC model · ${s.ifc.storeys.length} storeys` }));
         const dl = Object.assign(document.createElement('dl'), { className: 'kv' });
         for (const [g, n] of Object.entries(s.ifc.groups)) dl.append(Object.assign(document.createElement('dt'), { textContent: g }), Object.assign(document.createElement('dd'), { textContent: String(n) }));
-        div.append(dl, Object.assign(document.createElement('p'), { className: 'note', textContent: `Most common types: ${s.ifc.types.join(', ')}. Meshes without a JSON element: ${s.match.withoutJson}${s.match.unmatchedTypes.length ? ` (${s.match.unmatchedTypes.join(', ')})` : ''}.` }));
+        div.append(dl);
         return div;
       }
       const r = s.report;
@@ -427,7 +390,7 @@
           if (s.approximate) add('approx', 'Approximate geometry', `Drawn from 2D footprints with assumed heights. Load the .ifc as well for the real 3D solids.`, `${s.name} (needs ${r.readFrom ?? 'its .ifc'})`);
           if (s.frame?.kind === 'unscaled') add('noscale', 'No scale', s.frame.note, s.name);
           if (s.frame?.kind === 'page') add('noframe', 'Alignment not guaranteed', s.frame.note, s.name);
-        } else if (s.ifc.stats.unsupported) add('unsupported', 'Some IFC geometry not meshed', 'web-ifc 0.0.68 could not mesh some representation types; those parts are missing from the 3D view (still in the JSON if it is loaded).', `${s.name} (${s.ifc.stats.unsupported})`, 'info');
+        } else if (s.kind === 'ifc' && s.ifc.stats.unsupported) add('unsupported', 'Some IFC geometry not meshed', 'web-ifc 0.0.68 could not mesh some representation types; those parts are missing from the 3D view (still in the JSON if it is loaded).', `${s.name} (${s.ifc.stats.unsupported})`, 'info');
       }
       $('banners').replaceChildren(...[...issues].filter(([k]) => !dismissed.has(k)).map(([k, e]) => {
         const b = Object.assign(document.createElement('div'), { className: `banner floating ${e.kind}` });
@@ -445,13 +408,6 @@
     }
 
     // ---- corrections ---------------------------------------------------------------------------------------------
-    function showCorrectionCount(list) { $('corrCount').textContent = `(${list.length})`; $('dlCorr').disabled = !list.length; }
-    $('dlCorr').addEventListener('click', () => {
-      const blob = new Blob([`${JSON.stringify(viewer.correctionsFile(), null, 2)}\n`], { type: 'application/json' });
-      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'corrections.json' });
-      document.body.append(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    });
     $('corrValue').addEventListener('change', () => { if (viewer?.selected) viewer.applyCorrection(viewer.selected, $('corrScope').value, $('corrValue').value); });
     $('partOfBtn').addEventListener('click', () => { const id = Number($('partOfBtn').dataset.pick); if (id) viewer.select(id); });
 
@@ -460,7 +416,7 @@
       const panel = $('panel');
       if (!info) { panel.classList.remove('open'); return; }
       $('panelTitle').textContent = info.title;
-      $('panelSource').textContent = [info.source && `file: ${info.source}`, info.geometry && `geometry: ${info.geometry}`].filter(Boolean).join(' · ');
+      $('panelSource').textContent = info.source ? `File: ${info.source}` : '';
       const dl = $('panelRows');
       dl.replaceChildren();
       for (const [k, v, cls] of info.rows) {
@@ -468,6 +424,7 @@
         if (cls) { dt.className = cls; dd.className = cls; }
         dl.append(dt, dd);
       }
+      document.querySelector('#panel .legendKey').hidden = !info.rows.some((r) => r[2] === 'assumed');
       const conf = info.confidence;
       $('panelConf').hidden = conf == null;
       if (conf != null) {
@@ -485,8 +442,8 @@
       $('panelCorrect').hidden = !c || !c.scopes.length;
       if (c && c.scopes.length) {
         $('corrValue').replaceChildren(...c.options.map((o) => new Option(o.replace(/_/g, ' '), o, false, o === c.current)));
-        $('corrScope').replaceChildren(...c.scopes.map((sc) => new Option(`${sc.label} (${sc.key})`, sc.key)));
-        $('corrPending').textContent = c.pending ? `corrected in this session: ${c.pending.from} → ${c.pending.to} (${c.pending.key}); download corrections.json and re-run the pipeline to keep it` : '';
+        $('corrScope').replaceChildren(...c.scopes.map((sc) => new Option(sc.label, sc.key)));
+        $('corrPending').textContent = c.pending ? `corrected in this session: ${String(c.pending.from).replace(/_/g, ' ')} → ${String(c.pending.to).replace(/_/g, ' ')}` : '';
       }
       panel.classList.add('open');
     }

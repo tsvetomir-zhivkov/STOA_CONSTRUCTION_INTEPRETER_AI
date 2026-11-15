@@ -20,3 +20,6 @@ index_v03/
 
 # large local merge fixture (>100 MB, over GitHub limit)
 blueprint-ingest/big/
+
+# /workspace uploads converted to JSON (scrollcraft/builds/stoa-plan-to-evidence: npm start)
+/out/

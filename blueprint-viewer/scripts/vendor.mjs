@@ -13,3 +13,7 @@ console.log(`vendored web-ifc ${v} -> vendor/web-ifc/ (web-ifc-api.js, web-ifc.w
 const voc = path.join(here, '..', '..', 'blueprint-ingest', 'src', 'mappers', 'vocabulary.js');
 fs.copyFileSync(voc, path.join(here, '..', 'vendor', 'vocabulary.js'));
 console.log('copied blueprint-ingest vocabulary.js -> vendor/vocabulary.js');
+// the dependency-free DXF reader (2D DXF sheets in sheets.js)
+const dxf = path.join(here, '..', '..', 'blueprint-ingest', 'src', 'extractors', 'cad', 'dxfParser.js');
+fs.copyFileSync(dxf, path.join(here, '..', 'vendor', 'dxfParser.js'));
+console.log('copied blueprint-ingest dxfParser.js -> vendor/dxfParser.js');

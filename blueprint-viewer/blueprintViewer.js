@@ -20,6 +20,7 @@ import { loadIfcModel, ifcMeshes, explodeIfcMesh, elementGeometry, captureWebIfc
 export { captureWebIfcLog };
 import { checkPsetUnits, measureFromBox, measureFromFootprint } from './psetUnits.js';
 import { normalizeVocabulary } from './vendor/vocabulary.js';
+import { loadSheet, sheetFormatOf, disposeSheet } from './sheets.js';
 
 // BVH-accelerated raycasting (a clinic model is ~3 million triangles); meshes without a bounds tree raycast as usual
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -847,7 +848,16 @@ export class BlueprintScene {
     }
     for (const el of model.elements) el.pickId = this.pid();
     if (model.stats.unsupported) console.warn(`[blueprint-viewer] ${name}: web-ifc could not mesh ${model.stats.unsupported} representation(s) (unsupported type), e.g. ${model.stats.unsupportedSamples[0] ?? ''}`);
-    const src = { id: ++this.nextSourceId, name, kind: 'ifc', model, meshes, api };
+    const src = { id: ++this.nextSourceId, name, kind: 'ifc', model, meshes, api, W };
+    this.sources.push(src);
+    this.assemble();
+    return src;
+  }
+
+  /** add a 2D drawing sheet (image, PDF, DXF: see sheets.js), laid flat on its own level; returns the source record */
+  addSheet(sheet, name = 'drawing') {
+    for (const pc of sheet.pieces) { pc.pickId = this.pid(); pc.mesh.userData = { pickId: pc.pickId, size: 1e12, sheet: true }; }
+    const src = { id: ++this.nextSourceId, name, kind: 'sheet', group: sheet.group, pieces: sheet.pieces, sheet: { label: sheet.label, note: sheet.note, pages: sheet.pages } };
     this.sources.push(src);
     this.assemble();
     return src;
@@ -862,6 +872,7 @@ export class BlueprintScene {
       for (const m of s.meshes) { m.parent?.remove(m); m.geometry.disposeBoundsTree?.(); m.geometry.dispose(); m.material.dispose(); }
       s.api.CloseModel(s.model.modelID);
     }
+    if (s.kind === 'sheet') disposeSheet(s.group);
     if (!this.sources.length) this.origin = null;
     this.assemble();
   }
@@ -948,6 +959,12 @@ export class BlueprintScene {
       s.geometry = 'web-ifc (real 3D solids)';
     }
 
+    for (const s of this.sources) {
+      if (s.kind !== 'sheet') continue;
+      levelFor(s.name, 0, s).group.add(s.group);
+      s.geometry = '2D drawing laid flat';
+    }
+
     this.levels = levels;
     // duplicate elevations get a rank among equals, so "Separate levels" can still pull them apart
     const sorted = [...levels.values()].sort((a, b) => a.elevation - b.elevation || a.name.localeCompare(b.name));
@@ -965,6 +982,7 @@ export class BlueprintScene {
       const meshByKey = new Map(s.meshes.map((m) => [m.userData.ifc.batch.key, m]));
       for (const el of s.model.elements) this.pickIndex.set(el.pickId, { kind: 'ifc', source: s, el, meshByKey });
     }
+    for (const s of this.sources) if (s.kind === 'sheet') for (const pc of s.pieces) { this.pickables.push(pc.mesh); this.pickIndex.set(pc.pickId, { kind: 'sheet', source: s, piece: pc }); }
     this.unitCheck = this.computeUnitCheck();
     this.applyView();
   }
@@ -1080,6 +1098,7 @@ export class BlueprintScene {
     const e = this.pickIndex.get(id);
     if (!e) return false;
     if (e.kind === 'json') return e.meshes.some(shown);
+    if (e.kind === 'sheet') return shown(e.piece.mesh);
     return e.el.ranges.some((r) => { const m = e.meshByKey.get(r.key); return m && shown(m); });
   }
 
@@ -1106,10 +1125,10 @@ export class BlueprintScene {
     const e = this.pickIndex.get(id);
     if (!e) return null;
     if (e.kind === 'ifc') return describeIfc(e.el, e.source, this.unitCheck);
+    if (e.kind === 'sheet') return describeSheet(e.source, e.piece);
     const u = e.meshes[0].userData;
     const info = describe(u, e.model.kindOf(u.element), e.model.source?.doc?.drawing?.file, twinsOf(e.model.source, u.element), this.unitCheck, e.model.source?.doc);
     info.source = e.model.source?.name;
-    info.geometry = 'JSON polygons, extruded (heights are conventions)';
     return info;
   }
 
@@ -1124,6 +1143,7 @@ export class BlueprintScene {
         id: s.id, name: s.name, kind: s.kind, geometry: s.geometry, match: s.match, approximate: !!s.approximate,
         frame: s.frame ? { kind: s.frame.kind, note: s.frame.note } : null,
         report: s.report ?? null, contents: s.report ? contentsSummary(s.report) : null, vocabulary: s.vocabulary ? { changed: s.vocabulary.changed.length, unmapped: s.vocabulary.unmapped } : null,
+        sheet: s.sheet ?? null,
         ifc: s.kind === 'ifc' ? { stats: s.model.stats, storeys: s.model.storeys.map((x) => ({ name: x.name, elevation: x.elevation })), groups: countBy(s.model.elements, (e) => e.group), types: topTypes(s.model.elements, 8) } : null,
       })),
       levels: [...this.levels.values()].sort((a, b) => a.rank - b.rank).map((lv) => ({ key: lv.key, name: lv.name, elevation: lv.elevation, known: lv.known, notes: [...lv.notes], visible: lv.group.visible, sources: [...lv.sources] })),
@@ -1232,14 +1252,17 @@ export class BlueprintViewer {
   }
 
   /**
-   * Add files (.json and .ifc, any mix). Adds to the model, never replaces it. Returns per-file results.
+   * Add files (.ifc, .json, and 2D drawings: .dxf, .svg, .png, .jpg, .pdf; any mix). Adds to the model, never replaces it. Returns per-file results.
    * @param {Array<File | { name:string, text?:() => Promise<string>, arrayBuffer?:() => Promise<ArrayBuffer> }>} files
    */
   async addFiles(files) {
     const results = [];
     for (const f of files) {
       try {
-        if (/\.ifc$/i.test(f.name)) {
+        if (sheetFormatOf(f.name)) {
+          const src = this.bp.addSheet(await loadSheet(f), f.name);
+          results.push({ name: f.name, ok: true, kind: 'sheet', pages: src.sheet.pages });
+        } else if (/\.ifc$/i.test(f.name)) {
           const { api, W } = await this.webIfc();
           const t0 = performance.now();
           const src = this.bp.addIfc(api, W, new Uint8Array(await f.arrayBuffer()), f.name);
@@ -1427,6 +1450,9 @@ export class BlueprintViewer {
       else if (id === this.hovered) { q.material.emissive.set(p.hover); q.material.emissiveIntensity = 0.35; }
       else { q.material.emissive.set(0x000000); q.material.emissiveIntensity = 1; }
     }
+    for (const s of this.bp.sources) if (s.kind === 'sheet') for (const pc of s.pieces) {
+      pc.mesh.material.color.set(pc.pickId === this.selected ? 0xc7d8f5 : pc.pickId === this.hovered ? 0xe3ecf8 : 0xffffff);
+    }
     this.bp.setOverlay('select', this.selected, p.select);
     this.bp.setOverlay('hover', this.hovered !== this.selected ? this.hovered : null, p.hover);
   }
@@ -1493,32 +1519,6 @@ function resolveHit(h) {
   return { ...h, id: u.pickId, size: u.size };
 }
 
-// ---- inspector content: values straight from the JSON ----------------------------------------------------
-
-const fm = (v) => `${v.toFixed(2)} m`;
-const cap = (s) => String(s).charAt(0).toUpperCase() + String(s).slice(1);
-const num = (v) => (Number.isInteger(v) ? String(v) : String(Math.round(v * 1000) / 1000));
-/** top-level fields that are not measurements of the element */
-const NOT_SHOWN = new Set(['confidence']);
-
-/**
- * every numeric field the element actually has (top level, then properties.*), never a null or a default. Schema v0.3:
- * each measured field says how it was obtained (explicit / calculated / inferred, with the method); an inferred value is
- * shown in the assumption colour. IFC quantities not bound to a field are listed with their unit.
- */
-function numericRows(el) {
-  const rows = [];
-  const q = el.quantities ?? {};
-  const how = (r) => (r ? ` — ${r.status.replace('_', ' ')}${r.method ? `: ${r.method}` : ''}` : '');
-  for (const [k, v] of Object.entries(el)) if (typeof v === 'number' && Number.isFinite(v) && !NOT_SHOWN.has(k)) rows.push([k, `${num(v)}${how(q[k])}`, q[k]?.status === 'inferred' ? 'assumed' : null]);
-  for (const [k, v] of Object.entries(el.properties ?? {})) if (typeof v === 'number' && Number.isFinite(v)) rows.push([`properties.${k}`, num(v)]);
-  for (const [k, r] of Object.entries(q)) {
-    if (k in el || r.value == null) continue;
-    rows.push([`quantity ${k}`, `${num(r.value)} ${r.unit ?? ''}${r.raw && r.raw.unit && r.raw.value !== r.value ? ` (file: ${num(r.raw.value)} ${r.raw.unit})` : ''} — ${r.status.replace('_', ' ')}`.trim(), r.status === 'inferred' ? 'assumed' : null]);
-  }
-  return rows;
-}
-
 const v03Index = new WeakMap();
 /** id -> element over the v0.3 collections of a document (cached per document) */
 function v03ById(doc) {
@@ -1529,59 +1529,109 @@ function v03ById(doc) {
   return m;
 }
 
-/** schema v0.3 rows: class, type, mark, materials and layers, systems, finishes, the file's declared units. Only what the file holds. */
-function v03Rows(el, doc) {
-  if (!doc) return [];
-  const rows = [];
-  const push = (k, v, t = null) => { if (v !== null && v !== undefined && v !== '') rows.push([k, String(v), t]); };
-  const by = v03ById(doc);
-  push('ifc_class', el.ifc_class);
-  push('GlobalId', el.global_id);
+
+// ---- inspector content: only what a person can use ------------------------------------------------------------
+// Classification in plain words, measurements with units, material and a few meaningful properties. Raw identifiers
+// (GlobalId, expressID, element ids, handles, hashes), JSON keys and pipeline provenance are never shown.
+
+const cap = (s) => String(s).charAt(0).toUpperCase() + String(s).slice(1);
+const words = (s) => cap(String(s).replace(/_/g, ' ').trim());
+const fixed = (v, d) => String(Number(v.toFixed(d)));
+/** a length: below 1 m in millimetres, otherwise metres with 2 decimals */
+const fmtLen = (m) => (Math.abs(m) < 1 ? `${Math.round(m * 1000)} mm` : `${fixed(m, 2)} m`);
+const fmtArea = (m2) => `${fixed(m2, 2)} m²`;
+const fmtVol = (m3) => `${fixed(m3, 3)} m³`;
+const yesNo = (v) => (v === true || v === 'T' || v === '.T.' || v === 'TRUE' || v === 'true' ? 'Yes' : v === false || v === 'F' || v === '.F.' || v === 'FALSE' || v === 'false' ? 'No' : null);
+const fm = (v) => `${v.toFixed(2)} m`;
+
+/** a name without the identifiers CAD tools append (Revit "Basic Wall:Generic 200mm:348512", GUIDs, bare numbers) */
+function cleanName(s) {
+  if (s == null) return null;
+  let t = String(s).trim()
+    .replace(/:\s*\d{3,}$/, '') // trailing element id
+    .replace(/\b[0-9A-Za-z_$]{22}\b/g, '') // IFC GUID
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, '') // UUID
+    .replace(/\s{2,}/g, ' ').replace(/[:\s-]+$/, '').trim();
+  if (!t || /^[\d\s.#:_-]+$/.test(t)) return null; // nothing left but numbers
+  return t;
+}
+
+const IFC_LABELS = {
+  WALL: 'Wall', WALLSTANDARDCASE: 'Wall', WALLELEMENTEDCASE: 'Wall', CURTAINWALL: 'Curtain wall', SLAB: 'Slab', SLABSTANDARDCASE: 'Slab',
+  ROOF: 'Roof', DOOR: 'Door', DOORSTANDARDCASE: 'Door', WINDOW: 'Window', WINDOWSTANDARDCASE: 'Window', COLUMN: 'Column',
+  COLUMNSTANDARDCASE: 'Column', BEAM: 'Beam', BEAMSTANDARDCASE: 'Beam', MEMBER: 'Member', MEMBERSTANDARDCASE: 'Member', PLATE: 'Plate',
+  STAIR: 'Stair', STAIRFLIGHT: 'Stair flight', RAMP: 'Ramp', RAMPFLIGHT: 'Ramp flight', RAILING: 'Railing', COVERING: 'Covering',
+  FOOTING: 'Footing', PILE: 'Pile', CHIMNEY: 'Chimney', SHADINGDEVICE: 'Shading device', BUILDINGELEMENTPROXY: 'Building element',
+  BUILDINGELEMENTPART: 'Building element part', FURNISHINGELEMENT: 'Furniture', FURNITURE: 'Furniture', SYSTEMFURNITUREELEMENT: 'Furniture',
+  SANITARYTERMINAL: 'Sanitary fixture', FLOWTERMINAL: 'Fixture', AIRTERMINAL: 'Air terminal', LIGHTFIXTURE: 'Light fixture',
+  ELECTRICAPPLIANCE: 'Appliance', TRANSPORTELEMENT: 'Elevator', SPACEHEATER: 'Radiator', PIPESEGMENT: 'Pipe', PIPEFITTING: 'Pipe fitting',
+  DUCTSEGMENT: 'Duct', DUCTFITTING: 'Duct fitting', FLOWSEGMENT: 'Pipe or duct', FLOWFITTING: 'Pipe or duct fitting', VALVE: 'Valve',
+  FLOWCONTROLLER: 'Valve or damper', PUMP: 'Pump', TANK: 'Tank', FAN: 'Fan', BOILER: 'Boiler', CABLESEGMENT: 'Cable',
+  CABLECARRIERSEGMENT: 'Cable tray', OUTLET: 'Outlet', SWITCHINGDEVICE: 'Switch', SPACE: 'Room', OPENINGELEMENT: 'Opening',
+  DISCRETEACCESSORY: 'Accessory', MECHANICALFASTENER: 'Fastener', REINFORCINGBAR: 'Reinforcing bar', DISTRIBUTIONELEMENT: 'Building service',
+};
+const SLAB_KINDS = { FLOOR: 'Floor slab', ROOF: 'Roof slab', BASESLAB: 'Base slab', LANDING: 'Landing' };
+function ifcLabel(type, predefined) {
+  const k = String(type ?? '').toUpperCase().replace(/^IFC/, '');
+  if (/^SLAB/.test(k) && SLAB_KINDS[predefined]) return SLAB_KINDS[predefined];
+  return IFC_LABELS[k] ?? (k ? words(k.toLowerCase()) : 'Element');
+}
+
+const ROOM_LABELS = { wc: 'WC', living: 'Living room', entry: 'Entrance hall', closet: 'Walk-in closet', technical: 'Technical room' };
+const roomLabel = (t) => (t && t !== 'unknown' ? ROOM_LABELS[t] ?? words(t) : null);
+/** classification of a drawing-JSON element in plain words */
+function jsonClass(el, kindKey) {
+  if (kindKey === 'rooms') return roomLabel(el.type) ? `Room (${roomLabel(el.type).toLowerCase()})` : 'Room';
+  if (kindKey === 'walls') return 'Wall';
+  if (kindKey === 'openings') return el.kind === 'doorway' ? 'Doorway (no door leaf)' : words(el.kind ?? 'opening');
+  if (el.category === 'stair') return 'Stair';
+  if (el.category && el.category !== 'other') return words(el.category);
+  return el.ifc_class ? ifcLabel(el.ifc_class, el.predefined_type) : 'Object';
+}
+
+/** measurement fields of a drawing-JSON element, in reading order */
+const JSON_MEASURES = [
+  ['length_m', 'Length', fmtLen], ['width_m', 'Width', fmtLen], ['thickness_m', 'Thickness', fmtLen], ['depth_m', 'Depth', fmtLen],
+  ['height_m', 'Height', fmtLen], ['area_m2', 'Area', fmtArea], ['area_written_m2', 'Area written on the drawing', fmtArea],
+  ['net_area_m2', 'Net area', fmtArea], ['gross_area_m2', 'Gross area', fmtArea], ['net_side_area_m2', 'Wall surface (net)', fmtArea],
+  ['volume_m3', 'Volume', fmtVol], ['net_volume_m3', 'Net volume', fmtVol], ['gross_volume_m3', 'Gross volume', fmtVol],
+];
+
+/** rows of a drawing-JSON element: name, level, measurements, material, properties */
+function jsonRows(el, kindKey, doc, push) {
+  const name = kindKey === 'rooms' ? cleanName(el.label ?? el.name) : cleanName(el.name ?? el.properties?.name ?? el.properties?.ifc_name);
+  if (kindKey === 'rooms') { push('Room number', el.number); push('Outdoor', el.is_outdoor === true ? 'Yes' : null); }
+  else push('Name', name);
+  const lv = asArray(doc?.levels).find((l) => l.id === el.level_id) ?? (asArray(doc?.levels).length === 1 ? doc.levels[0] : null);
+  push('Level', lv ? cleanName(lv.name) ?? null : null);
+  const by = doc ? v03ById(doc) : new Map();
   const t = el.type_id ? by.get(el.type_id) : null;
-  if (t) push('type', `${[t.name, t.predefined_type, t.ifc_class].filter(Boolean).join(' · ')} (${asArray(t.instance_ids).length} instances)`);
-  push('mark', el.mark);
-  push('operation', el.operation);
+  const type = cleanName(t?.name ?? el.type_name);
+  const bare = (x) => String(x).toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+  if (type && !(name && (bare(type).startsWith(bare(name)) || bare(name).startsWith(bare(type))))) push('Type', type); // not when it only repeats the name
+  const q = el.quantities ?? {};
+  for (const [k, label, f] of JSON_MEASURES) {
+    if (!Number.isFinite(el[k])) continue;
+    if (k === 'area_written_m2' && el.area_m2 === el.area_written_m2) continue;
+    push(q[k]?.status === 'inferred' ? `${label} (assumed)` : label, f(el[k]));
+  }
+  push('Material', materialText(el, by));
+  push('Load-bearing', yesNo(el.is_load_bearing));
+  push('Location', el.is_external === true ? 'Exterior' : el.is_external === false ? 'Interior' : null);
+  push('Fire rating', el.fire_rating);
+  push('Acoustic rating', el.acoustic_rating);
+  for (const [k, f] of Object.entries(el.finishes ?? {})) if (f && f.status !== 'not_available' && f.value) push(`${words(k)} finish`, f.value);
+}
+
+/** material in words: layers with thicknesses, or a list of names */
+function materialText(el, by) {
   const set = el.material_layer_set_id ? by.get(el.material_layer_set_id) : null;
   if (set) {
-    const parts = asArray(set.layers).map((l) => `${by.get(l.material_id)?.name ?? 'unnamed'}${Number.isFinite(l.thickness_m) ? ` ${num(l.thickness_m)} m` : ''}`);
-    push(set.kind === 'layer_set' ? 'material layers' : `materials (${String(set.kind).replace('_', ' ')})`, `${parts.join(' + ')}${Number.isFinite(set.total_thickness_m) ? ` = ${num(set.total_thickness_m)} m` : ''}`);
-  } else if (asArray(el.material_ids).length) push('materials', el.material_ids.map((m) => by.get(m)?.name ?? m).join(', '));
-  if (asArray(el.system_ids).length) push('systems', el.system_ids.map((sid) => { const sy = by.get(sid); return sy ? `${sy.name ?? sid} (${sy.kind})` : sid; }).join(', '));
-  for (const [k, f] of Object.entries(el.finishes ?? {})) if (f) push(`finish ${k}`, f.status === 'not_available' ? 'not in the file' : `${f.value} (${f.source})`);
-  if (asArray(el.boundary_element_ids).length) push('bounded by', `${el.boundary_element_ids.length} elements (space boundaries)`);
-  const u = doc.project?.units;
-  if (u) push('file units', ['length', 'area', 'volume'].map((k) => `${k} ${u[k]?.unit ?? 'not declared'}${u[k]?.status && u[k].status !== 'explicit' ? ` (${u[k].status.replace('_', ' ')})` : ''}`).join(', '), ['length', 'area', 'volume'].some((k) => u[k]?.status === 'inferred') ? 'assumed' : null);
-  return rows;
-}
-
-/**
- * Inspector content. File values are shown as they are; viewer conventions are separate rows marked "(assumed)".
- * @returns {{ title:string, rows:Array<[string,string]>, confidence:number|null, flags:string[], notes:string[],
- *   partOf: null | { label:string, pickId:number }, correct: null | { field:string, options:string[], current:string, scopes:Array<{key:string,label:string}>, pending:any } }}
- */
-/** rows of an element's provenance (always shown) */
-function provenanceRows(el) {
-  const p = el.provenance ?? {}, rows = [];
-  if (p.extractor) rows.push(['provenance.extractor', String(p.extractor)]);
-  if (p.source_ref) rows.push(['provenance.source_ref', String(p.source_ref)]);
-  if (p.layer) rows.push(['provenance.layer', String(p.layer)]);
-  if (p.details?.rule) rows.push(['provenance.rule', String(p.details.rule)]);
-  return rows;
-}
-
-/**
- * numeric pset values. A value whose unit the pset check VERIFIED is shown converted (and named); every other pset number
- * is labelled raw: IFC psets are copied as they are, and their units are not consistent.
- */
-function psetRows(psets, unitCheck = []) {
-  const rows = [];
-  for (const [pset, props] of Object.entries(psets ?? {})) for (const [key, v] of Object.entries(props ?? {})) {
-    if (typeof v !== 'number' || !Number.isFinite(v)) continue;
-    // converted only when THIS pset.key is the one whose unit was verified against geometry
-    const r = unitCheck.find((x) => x.verdict === 'verified' && x.pset === pset && x.psetKey === key);
-    rows.push(r ? [`${pset}.${key}`, `${num(v * r.toMetres)} m (file: ${num(v)} ${r.unit}, unit verified against geometry)`] : [`${pset}.${key}`, `${num(v)} (raw: unit not verified)`, 'raw']);
+    const parts = asArray(set.layers).map((l) => [cleanName(by.get(l.material_id)?.name) ?? 'Unnamed material', Number.isFinite(l.thickness_m) ? fmtLen(l.thickness_m) : null].filter(Boolean).join(' '));
+    if (parts.length) return parts.join(' + ');
   }
-  return rows;
+  const names = asArray(el.material_ids).map((m) => cleanName(by.get(m)?.name)).filter(Boolean);
+  return names.length ? [...new Set(names)].join(', ') : null;
 }
 
 function describe(u, kindKey, file, twins = [], unitCheck = [], doc = null) {
@@ -1589,97 +1639,192 @@ function describe(u, kindKey, file, twins = [], unitCheck = [], doc = null) {
   const rows = [];
   const notes = [];
   let title, partOf = null, correct = null;
-  const confidence = Number.isFinite(el.confidence) ? el.confidence : null;
   const flags = (el.flags ?? []).map((f) => FLAG_TEXT[f] ?? f.replace(/_/g, ' '));
   // a row whose label says "(assumed)" is a convention, not file data: the page shows it in the assumption colour
   const push = (k, v) => { if (v !== null && v !== undefined && v !== '') rows.push([k, String(v), /\(assumed\)/.test(k) ? 'assumed' : null]); };
-  const layer = () => push('layer', el.provenance?.layer ?? (el.ifc_class ? `${el.ifc_class} (IFC)` : null));
 
   if (u.kind === 'wallBand') {
     // wall material above/below an opening: a WALL piece; the opening is a separate, clickable "part of" row
     title = u.band === 'below' ? 'Wall below window' : el.kind === 'window' ? 'Wall above window' : 'Wall above door';
-    push('kind', 'wall');
-    push('height (assumed)', `${u.height.from.toFixed(2)}–${u.height.to.toFixed(2)} m`);
-    if (Number.isFinite(el.width_m)) push('length (opening width_m)', num(el.width_m));
-    layer();
-    partOf = { label: `${el.kind ?? 'opening'} ${el.id}`, pickId: u.partOf.pickId };
-    return { title, rows, confidence: null, flags: [], notes: ['wall band over the opening footprint, not an element of the file; its heights are viewer assumptions'], partOf, correct };
+    push('Classification', 'Wall');
+    push('Height (assumed)', `${u.height.from.toFixed(2)}–${u.height.to.toFixed(2)} m`);
+    if (Number.isFinite(el.width_m)) push('Length', fmtLen(el.width_m));
+    partOf = { label: words(el.kind ?? 'opening'), pickId: u.partOf.pickId };
+    return { title, rows, confidence: null, flags: [], notes: ['Wall over the opening; its heights are drawing conventions.'], partOf, correct };
   }
 
-  push('id', el.id);
-  if (u.kind === 'room') {
-    title = el.label ?? el.name ?? 'Room';
-    push('kind', 'room'); push('type', el.type); push('name', el.label ?? el.name); push('number', el.number);
-    // a floor has no height: the slab is a drawing convention
-    notes.push('floor drawn 20 mm below the walls and 10 mm inset: room outlines and wall faces come from different layers');
-  } else if (u.kind === 'wall') {
-    title = 'Wall';
-    push('kind', 'wall');
-  } else if (u.kind === 'opening') {
-    title = cap(el.kind ?? 'opening');
-    push('kind', el.kind); push('subtype', el.subtype);
-  } else if (el.category === 'stair') {
-    title = 'Stair';
-    push('kind', 'object'); push('category', 'stair');
-  } else {
-    title = cap(el.category ?? 'object');
-    push('kind', 'object'); push('category', [el.category, el.subtype].filter(Boolean).join(' / '));
-    push('source_block', el.properties?.source_block); push('name', el.properties?.name ?? el.properties?.ifc_name);
-  }
-  rows.push(...numericRows(el));
-  layer();
-  rows.push(...v03Rows(el, doc));
-  rows.push(...provenanceRows(el));
-  if (el.properties?.psets) rows.push(...psetRows(el.properties.psets, unitCheck));
+  const cls = jsonClass(el, kindKey);
+  title = kindKey === 'rooms' ? (cleanName(el.label ?? el.name) ?? cls) : cls;
+  push('Classification', cls);
+  jsonRows(el, kindKey, doc, push);
 
   // viewer conventions, always labelled
-  if (u.kind === 'wall') push(`height${u.height.measured ? '' : ' (assumed)'}`, fm(u.height.value));
-  else if (u.kind === 'opening' && el.kind === 'window') push('sill / head (assumed)', `${fm(u.height.sill)} / ${fm(u.height.head)}`);
-  else if (u.kind === 'opening') {
-    push('head (assumed)', fm(u.height.head));
-    if (u.leaf) push('leaf swing (assumed)', `${u.leaf.swingDeg}° open, ${Math.round(u.leaf.thickness * 1000)} mm thick`);
-    if (u.leaf) notes.push('the leaf angle and hinge side are a drawing convention, not data');
-    if (el.kind === 'doorway') notes.push('doorway without a leaf: no leaf is drawn');
-  } else if (el.category === 'stair') {
+  if (u.kind === 'wall' && !Number.isFinite(el.height_m)) push(`Height${u.height.measured ? '' : ' (assumed)'}`, fm(u.height.value));
+  else if (u.kind === 'opening' && el.kind === 'window') push('Sill / head height (assumed)', `${fm(u.height.sill)} / ${fm(u.height.head)}`);
+  else if (u.kind === 'opening') push('Head height (assumed)', fm(u.height.head));
+  else if (el.category === 'stair') {
     const p = el.properties ?? {}, st = u.stair;
-    if (Array.isArray(p.flights)) p.flights.forEach((f, i) => push(`flight ${i + 1}`, [f.tread_count != null && `${f.tread_count} treads`, Number.isFinite(f.direction_deg) && `${f.direction_deg}°`, Number.isFinite(f.going_m) && `going ${f.going_m} m`, Number.isFinite(f.width_m) && `width ${f.width_m} m`].filter(Boolean).join(', ')));
-    if (Array.isArray(p.landings)) p.landings.forEach((l, i) => push(`landing ${i + 1}`, `after tread ${l.after_tread}${l.side === 'assumed' ? ' (side assumed)' : ''}`));
-    push('rise_direction', p.rise_direction);
-    push(`steps drawn (${st.floorHeight.measured ? 'level height' : 'assumed height'})`, st.n ? `${st.n} × riser ${st.riser.toFixed(3)} m${st.landings ? ` + ${st.landings} landing(s)` : ''}` : 'none (footprint has no usable axis): drawn as a block');
-    notes.push(FLAG_TEXT.generated_geometry);
-    if (st.from === 'footprint') notes.push('no tread data in the file: long axis of the footprint, 0.17 m risers');
-    if (p.rise_direction !== 'up') notes.push('which way is up is not known from the drawing; steps rise in flight order');
-  } else if (u.height) push('height (assumed)', fm(u.height.value));
-  if (el.provenance?.extractor === 'human') notes.push(`corrected by a human (${el.provenance.details?.rule ?? 'corrections.json'})`);
-  if (twins?.length) notes.push(`same footprint as ${twins.join(', ')} (possibly a duplicate in the drawing): click again to cycle`);
+    if (Array.isArray(p.flights)) push('Flights', p.flights.length);
+    const treads = Array.isArray(p.flights) ? p.flights.reduce((s, f) => s + (Number.isFinite(f.tread_count) ? f.tread_count : 0), 0) : 0;
+    if (treads) push('Treads', treads);
+    if (st.n) push(`Riser height${st.floorHeight.measured ? '' : ' (assumed)'}`, fmtLen(st.riser));
+  } else if (u.height && !Number.isFinite(el.height_m)) push('Height (assumed)', fm(u.height.value));
+  if (el.kind === 'doorway') notes.push('An open doorway without a door leaf.');
+  if (twins?.length) notes.push('Another element has the same outline (possibly a duplicate): click again to cycle.');
+  if (rows.some((r) => r[2] === 'assumed')) notes.push('Values marked (assumed) are drawing conventions, not data from the file.');
 
   const field = { rooms: 'type', openings: 'kind', objects: 'category' }[kindKey];
   if (field) {
     const options = { rooms: ROOM_TYPES, openings: OPENING_KINDS, objects: OBJECT_CATEGORIES }[kindKey];
     correct = { field, options: options.includes(el[field]) ? options : [el[field], ...options], current: el[field], scopes: correctionScopes(kindKey, el, file), pending: el._pendingCorrection ?? null };
   }
-  if (el.ifc_class) notes.push('geometry extruded from the 2D footprint (load the .ifc for the real solid): heights are conventions');
-  return { title, rows, confidence, flags, notes, partOf, correct };
+  return { title, rows, confidence: null, flags, notes, partOf, correct };
 }
 
+// ---- IFC properties, read synchronously from the open web-ifc model -------------------------------------------
+
+const ref = (x) => (x && typeof x === 'object' && 'value' in x ? x.value : x);
+const refs = (x) => (Array.isArray(x) ? x : x == null ? [] : [x]).map(ref).filter((v) => v != null);
+const ifcVal = (x) => { const v = ref(x); return typeof v === 'string' ? v.replace(/^\.|\.$/g, '') : v; };
+
+/** element / type id -> property definitions, type object and material (built once per model, on first selection) */
+function ifcRelations(src) {
+  if (src.rels) return src.rels;
+  const { api, W } = src, id = src.model.modelID;
+  const out = { defs: new Map(), type: new Map(), material: new Map() };
+  const each = (T, f) => { const ids = api.GetLineIDsWithType(id, T); for (let i = 0; i < ids.size(); i++) { try { f(api.GetLine(id, ids.get(i))); } catch { /* unreadable line: skip */ } } };
+  each(W.IFCRELDEFINESBYPROPERTIES, (r) => { const d = refs(r.RelatingPropertyDefinition); for (const o of refs(r.RelatedObjects)) out.defs.set(o, [...(out.defs.get(o) ?? []), ...d]); });
+  each(W.IFCRELDEFINESBYTYPE, (r) => { for (const o of refs(r.RelatedObjects)) out.type.set(o, ref(r.RelatingType)); });
+  each(W.IFCRELASSOCIATESMATERIAL, (r) => { for (const o of refs(r.RelatedObjects)) out.material.set(o, ref(r.RelatingMaterial)); });
+  src.rels = out;
+  return out;
+}
+
+/** psets and quantities of an element (its own first, then its type's), as { props, quants } keyed by property name */
+function ifcProperties(src, eid) {
+  const { api, W } = src, id = src.model.modelID, L = src.model.lenM ?? 1;
+  const rels = ifcRelations(src);
+  const props = new Map(), quants = new Map();
+  const line = (x) => { try { return api.GetLine(id, x); } catch { return null; } };
+  const readDef = (did) => {
+    const d = line(did);
+    if (!d) return;
+    if (d.type === W.IFCPROPERTYSET) for (const pid of refs(d.HasProperties)) {
+      const p = line(pid);
+      if (p?.type !== W.IFCPROPERTYSINGLEVALUE) continue;
+      const name = ifcVal(p.Name);
+      if (name && !props.has(name)) props.set(name, ifcVal(p.NominalValue));
+    } else if (d.type === W.IFCELEMENTQUANTITY) for (const qid of refs(d.Quantities)) {
+      const q = line(qid);
+      const name = q && ifcVal(q.Name);
+      if (!name || quants.has(name)) continue;
+      if (q.type === W.IFCQUANTITYLENGTH) quants.set(name, { kind: 'length', v: ifcVal(q.LengthValue) * L });
+      else if (q.type === W.IFCQUANTITYAREA) quants.set(name, { kind: 'area', v: ifcVal(q.AreaValue) * L * L });
+      else if (q.type === W.IFCQUANTITYVOLUME) quants.set(name, { kind: 'volume', v: ifcVal(q.VolumeValue) * L * L * L });
+    }
+  };
+  for (const did of rels.defs.get(eid) ?? []) readDef(did);
+  const typeId = rels.type.get(eid);
+  const typeLine = typeId != null ? line(typeId) : null;
+  if (typeLine) { for (const did of refs(typeLine.HasPropertySets)) readDef(did); for (const did of rels.defs.get(typeId) ?? []) readDef(did); }
+  return { props, quants, typeLine, material: ifcMaterial(src, rels.material.get(eid) ?? (typeId != null ? rels.material.get(typeId) : null)) };
+}
+
+/** material in words: layer sets with thicknesses, lists, constituents, profiles */
+function ifcMaterial(src, mid) {
+  if (mid == null) return null;
+  const { api, W } = src, id = src.model.modelID, L = src.model.lenM ?? 1;
+  const line = (x) => { try { return api.GetLine(id, x); } catch { return null; } };
+  const name = (x) => cleanName(ifcVal(line(x)?.Name)) ?? 'Unnamed material';
+  const layers = (setId) => refs(line(setId)?.MaterialLayers).map((lid) => {
+    const l = line(lid);
+    const t = Number(ifcVal(l?.LayerThickness));
+    return [l?.Material != null ? name(ref(l.Material)) : 'Air gap', Number.isFinite(t) && t > 0 ? fmtLen(t * L) : null].filter(Boolean).join(' ');
+  }).join(' + ');
+  const m = line(mid);
+  if (!m) return null;
+  switch (m.type) {
+    case W.IFCMATERIAL: return name(mid);
+    case W.IFCMATERIALLAYERSETUSAGE: return layers(ref(m.ForLayerSet)) || null;
+    case W.IFCMATERIALLAYERSET: return layers(mid) || null;
+    case W.IFCMATERIALLAYER: return name(ref(m.Material));
+    case W.IFCMATERIALLIST: return [...new Set(refs(m.Materials).map(name))].join(', ') || null;
+    case W.IFCMATERIALCONSTITUENTSET: return [...new Set(refs(m.MaterialConstituents).map((c) => name(ref(line(c)?.Material))))].join(', ') || null;
+    case W.IFCMATERIALPROFILESETUSAGE: return [...new Set(refs(line(ref(m.ForProfileSet))?.MaterialProfiles).map((p) => name(ref(line(p)?.Material))))].join(', ') || null;
+    case W.IFCMATERIALPROFILESET: return [...new Set(refs(m.MaterialProfiles).map((p) => name(ref(line(p)?.Material))))].join(', ') || null;
+    default: return null;
+  }
+}
+
+/** IFC quantity names -> plain labels, first match per label wins (net before gross) */
+const IFC_QUANTITIES = [
+  ['Length', ['Length', 'NetLength', 'GrossLength']], ['Width', ['Width', 'NominalWidth']], ['Thickness', ['Thickness']],
+  ['Height', ['Height', 'NominalHeight']], ['Depth', ['Depth']], ['Perimeter', ['Perimeter']],
+  ['Area', ['NetArea', 'NetFloorArea', 'GrossArea', 'GrossFloorArea', 'NetFootprintArea', 'GrossFootprintArea', 'CrossSectionArea', 'OuterSurfaceArea']],
+  ['Wall surface', ['NetSideArea', 'GrossSideArea']], ['Volume', ['NetVolume', 'GrossVolume']],
+];
+
 /**
- * Inspector content for a web-ifc element. Its geometry is REAL: nothing vertical is assumed. The meaning (confidence,
- * flags, provenance, type) comes from the matched drawing-JSON element when one is loaded.
+ * Inspector content for a web-ifc element: plain classification, the level, measurements (IFC quantities, door/window
+ * sizes, else the measured overall size), material and the meaningful common properties. No identifiers.
  */
 function describeIfc(el, src, unitCheck = []) {
   const j = el.json;
   const rows = [];
-  const push = (k, v) => { if (v !== null && v !== undefined && v !== '') rows.push([k, String(v)]); };
-  const title = j ? (j.label ?? j.name ?? cap(j.category ?? j.kind ?? j.type ?? el.ifcType)) : cap(el.name ?? el.ifcType);
-  if (j) { push('id', j.id); push('kind', el.jsonKind?.replace(/s$/, '')); push('type', j.type); push('category', j.category); push('opening kind', j.kind); }
-  push('ifc_type', el.ifcType); push('GlobalId', el.globalId); push('expressID', el.expressID); push('name', el.name); push('object type', el.objectType);
-  push('measured size (x × y × z)', `${num(el.dims.x)} × ${num(el.dims.z)} × ${num(el.dims.y)} m (from the real geometry)`);
-  if (j) { rows.push(...numericRows(j)); rows.push(...v03Rows(j, el.jsonSource?.doc).filter(([k]) => k !== 'ifc_class' && k !== 'GlobalId')); rows.push(...provenanceRows(j)); if (j.properties?.psets) rows.push(...psetRows(j.properties.psets, unitCheck)); }
-  const notes = ['geometry: real 3D solid read with web-ifc; nothing vertical is assumed'];
-  if (!j) notes.push('not in any loaded drawing JSON: no confidence, flags or coverage for it (load the matching JSON to add its meaning)');
+  const push = (k, v) => { if (v !== null && v !== undefined && v !== '' && !rows.some((r) => r[0] === k)) rows.push([k, String(v), /\(assumed\)/.test(k) ? 'assumed' : null]); };
+  let info = { props: new Map(), quants: new Map(), typeLine: null, material: null }, line = null;
+  try { if (src.api && src.W) { info = ifcProperties(src, el.expressID); line = src.api.GetLine(src.model.modelID, el.expressID); } } catch { /* properties are optional */ }
+  const predefined = ifcVal(line?.PredefinedType) ?? ifcVal(info.typeLine?.PredefinedType);
+  const cls = j ? jsonClass(j, el.jsonKind) : el.category && el.category !== 'other' && el.group === 'fixtures' ? words(el.category) : ifcLabel(el.ifcType, predefined);
+  const name = cleanName(j?.label ?? j?.name ?? el.name);
+  const title = name && name !== cls ? name : cls;
+  push('Classification', cls);
+  push('Name', name);
+  const type = cleanName(ifcVal(info.typeLine?.Name)) ?? cleanName(el.objectType);
+  if (type && type !== name) push('Type', type);
+  const storey = src.model.storeys.find((s) => s.expressID === el.storeyId);
+  push('Level', storey ? `${cleanName(storey.name) ?? 'Level'}${Number.isFinite(storey.elevation) ? ` (${storey.elevation >= 0 ? '+' : ''}${storey.elevation.toFixed(2)} m)` : ''}` : null);
+  // measurements: the drawing JSON's own fields when loaded, then IFC quantities, door/window sizes, else the real geometry
+  if (j) for (const [k, label, f] of JSON_MEASURES) if (Number.isFinite(j[k])) push(label, f(j[k]));
+  const L = src.model.lenM ?? 1;
+  const ow = Number(ifcVal(line?.OverallWidth)), oh = Number(ifcVal(line?.OverallHeight));
+  if (ow > 0) push('Width', fmtLen(ow * L));
+  if (oh > 0) push('Height', fmtLen(oh * L));
+  for (const [label, names] of IFC_QUANTITIES) {
+    const q = names.map((n) => info.quants.get(n)).find((x) => x && Number.isFinite(x.v) && x.v > 0);
+    if (q) push(label, q.kind === 'area' ? fmtArea(q.v) : q.kind === 'volume' ? fmtVol(q.v) : fmtLen(q.v));
+  }
+  if (!rows.some((r) => ['Length', 'Width', 'Height', 'Thickness'].includes(r[0])) && el.dims) {
+    const a = Math.max(el.dims.x, el.dims.z), b = Math.min(el.dims.x, el.dims.z);
+    push('Overall size (L × W × H)', `${fmtLen(a)} × ${fmtLen(b)} × ${fmtLen(el.dims.y)}`);
+  }
+  push('Material', info.material ?? (j ? materialText(j, v03ById(j && el.jsonSource?.doc ? el.jsonSource.doc : {})) : null));
+  const p = (k) => info.props.get(k);
+  push('Load-bearing', yesNo(p('LoadBearing')) ?? (j ? yesNo(j.is_load_bearing) : null));
+  const ext = yesNo(p('IsExternal')) ?? (j?.is_external != null ? yesNo(j.is_external) : null);
+  push('Location', ext === 'Yes' ? 'Exterior' : ext === 'No' ? 'Interior' : null);
+  push('Fire rating', p('FireRating') ?? j?.fire_rating);
+  push('Acoustic rating', p('AcousticRating') ?? j?.acoustic_rating);
+  const u = Number(p('ThermalTransmittance'));
+  if (Number.isFinite(u) && u > 0) push('Thermal transmittance (U-value)', `${fixed(u, 3)} W/m²K`);
+  push('Combustible', yesNo(p('Combustible')));
+  const notes = [];
+  if (el.group === 'doors' && ifcVal(line?.OperationType)) notes.push(`Opens as: ${words(String(ifcVal(line.OperationType)).toLowerCase())}.`);
   return {
-    title, rows, notes, partOf: null, correct: null, source: src.name, geometry: 'web-ifc (real 3D)',
-    confidence: j && Number.isFinite(j.confidence) ? j.confidence : null,
+    title, rows, notes, partOf: null, correct: null, source: src.name, confidence: null,
     flags: (j?.flags ?? []).map((f) => FLAG_TEXT[f] ?? f.replace(/_/g, ' ')),
   };
+}
+
+/** a 2D drawing sheet (image, PDF page, DXF) */
+function describeSheet(src, piece) {
+  const i = piece.info, rows = [];
+  const push = (k, v) => { if (v !== null && v !== undefined && v !== '') rows.push([k, String(v)]); };
+  push('Classification', `Drawing sheet (${i.format})`);
+  push('Page', i.page);
+  push('Size on the ground', `${fixed(i.widthM, 2)} × ${fixed(i.heightM, 2)} m`);
+  push('Scale', i.scale);
+  push('Image size', i.pixels ? `${i.pixels} px` : null);
+  push('Layers', i.layers);
+  return { title: i.page ? `${src.name}, page ${i.page.split(' ')[0]}` : src.name, rows, notes: [src.sheet.note], flags: [], partOf: null, correct: null, source: src.name, confidence: null };
 }

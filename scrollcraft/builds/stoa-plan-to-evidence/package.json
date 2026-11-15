@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build-cad.mjs",
+    "start": "node scripts/start.mjs",
+    "build": "node scripts/build-cad.mjs && node scripts/sync-viewer.mjs",
     "preview": "node ../../../.agents/skills/scroll-craft/scripts/serve.mjs --root . --port 4500",
-    "check": "node scripts/functional-check.mjs"
+    "check": "node scripts/functional-check.mjs",
+    "sync-viewer": "node scripts/sync-viewer.mjs"
   },
   "dependencies": {
     "playwright-core": "^1.55.0"

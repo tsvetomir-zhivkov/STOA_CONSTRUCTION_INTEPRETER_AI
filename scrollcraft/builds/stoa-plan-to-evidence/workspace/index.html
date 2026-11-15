@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stoa Workspace</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <!-- same pins as the viewer: the 2D helpers reused from /workspace/viewer/sheets.js import three -->
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+  <!-- absolute paths: the page is served at /workspace (no trailing slash) as well as /workspace/ -->
+  <link rel="stylesheet" href="/workspace/workspace.css">
+</head>
+<body>
+  <!-- initial state: the viewer's centered upload card -->
+  <main id="picker">
+    <div class="card">
+      <h1>Blueprint Viewer</h1>
+      <p>Open an IFC model, a drawing (DXF, SVG, PDF) or a plan image (PNG, JPG), or drop it anywhere.</p>
+      <button id="openBtn" type="button">Open files (.ifc, .dxf, .svg, .png, .jpg, .pdf)</button>
+      <p id="error" role="alert"></p>
+    </div>
+  </main>
+  <input id="fileInput" type="file" accept=".ifc,.dxf,.svg,.png,.jpg,.jpeg,.pdf,image/png,image/jpeg,image/svg+xml,application/pdf" hidden>
+
+  <!-- uploaded state -->
+  <div id="workspace" hidden>
+    <header class="topbar">
+      <div class="file"><span id="fileName" class="name"></span><span id="fileFormat" class="format"></span></div>
+      <button id="uploadBtn" type="button">Upload file</button>
+    </header>
+    <main class="columns">
+      <section class="chat" aria-label="AI chat">
+        <h2>AI assistant</h2>
+        <ol id="messages" class="messages" aria-live="polite"></ol>
+        <form id="chatForm" class="composer">
+          <input id="question" type="text" autocomplete="off" placeholder="Ask about this drawing" aria-label="Message">
+          <button type="submit">Send</button>
+        </form>
+      </section>
+      <section class="view" aria-label="Blueprints">
+        <div class="viewbar">
+          <div id="levelNav" class="levelnav" hidden>
+            <button id="prevLevel" type="button" class="ghost" aria-label="Previous level">‹</button>
+            <select id="levelSelect" aria-label="Level"></select>
+            <button id="nextLevel" type="button" class="ghost" aria-label="Next level">›</button>
+          </div>
+          <h2 id="viewTitle">Blueprint</h2>
+          <button id="toggle3d" type="button" class="ghost" hidden aria-pressed="false">3D View</button>
+        </div>
+        <div class="stage">
+          <div id="blueprint" class="blueprint"></div>
+          <div id="viewer3d" class="viewer3d"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="/workspace/workspace.js"></script>
+</body>
+</html>
