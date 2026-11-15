@@ -166,7 +166,8 @@ def test_translate_all_without_raw_marks_nothing_analysed(plan_with_raw):
     path, root = plan_with_raw
     (cc.raw_dir() / "synthetic.seg.json").unlink()
     (doc,) = translate_all(str(path), str(root))
-    assert doc["openings"] == [] and "no raw segmentation" in doc["history"][-1]["note"]
+    # the last history entry is the v0.2 -> v0.3 schema migration
+    assert doc["openings"] == [] and any("no raw segmentation" in h.get("note", "") for h in doc["history"])
 
 
 def test_raw_size_mismatch_fails_loudly(plan_with_raw):

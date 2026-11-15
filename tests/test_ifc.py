@@ -280,17 +280,18 @@ def test_cache_is_used_on_second_read(tmp_path, monkeypatch):
 
 def test_translate_all_parts_and_translate_part(tmp_path):
     path = build(tmp_path)
-    docs = translate_all(str(path), str(tmp_path))
-    assert [d["drawing"]["part"] for d in docs] == ["00-EG", "01-OG", "no-storey"]
-    for d in docs:
-        validate(d)
-        assert d["drawing"]["route"] == "ifc"
-        assert all(
-            o["provenance"]["source_ref"] for o in d["rooms"] + d["walls"] + d["openings"] + d["objects"]
-        )
-    assert translate(str(path), str(tmp_path), part="01-OG")["levels"][0]["name"] == "OG"
-    with pytest.raises(ValueError, match="translate_all"):
-        translate(str(path), str(tmp_path))
+    # schema v0.3 (building.schema.v0.3.json): one document per IFC building, with all its storeys and the
+    # elements without a storey
+    (d,) = translate_all(str(path), str(tmp_path))
+    validate(d)
+    assert d["schema_version"] == "0.3" and d["drawing"]["route"] == "ifc" and d["drawing"]["part"] is None
+    assert sorted(lv["name"] for lv in d["levels"]) == ["EG", "OG"]
+    assert all(o["provenance"]["source_ref"] for o in d["rooms"] + d["walls"] + d["openings"] + d["objects"])
+    assert any(o.get("level_id") is None for o in d["walls"] + d["openings"] + d["objects"])  # no-storey kept
+    rooms = sorted(r["id"] for r in d["rooms"])
+    assert sorted(r["id"] for r in translate(str(path), str(tmp_path))["rooms"]) == rooms
+    with pytest.raises(KeyError, match="no part"):
+        translate(str(path), str(tmp_path), part="01-OG")
 
 
 def test_probe_reads_ifc_documents(tmp_path):

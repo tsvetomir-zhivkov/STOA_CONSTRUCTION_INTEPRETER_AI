@@ -2,8 +2,7 @@
  * The Extraction Bundle: the intermediate representation every extractor (IFC / PDF / DXF / SVG) returns.
  *
  * Design rule: extractors produce GEOMETRY and RAW FACTS deterministically, already in the schema's pixel
- * space. The LLM never invents coordinates - it only adds semantics (room types, text roles, titles...)
- * afterwards. `buildDocument()` turns a bundle into a schema-shaped document.
+ * space. Semantics (room types, text roles...) are added afterwards by deterministic code (glossary, regexes, geometry). `buildDocument()` turns a bundle into a schema-shaped document.
  */
 
 /** @typedef {[number, number]} Pt */
@@ -53,6 +52,8 @@
  * @property {number|null} [elevationM]
  * @property {number|null} [heightM]
  * @property {number} [confidence]
+ * @property {string} [key] identity within a multi-level bundle (elements point to it through `levelKey`)
+ * @property {string|null} [longName]
  *
  * @typedef {{ kind:'resize'|'deskew'|'affine'|'upscale'|'invert'|'other', from?:string, to?:string, scale_x?:number, scale_y?:number, angle_deg?:number, matrix?:number[][], residual_px?:number, note?:string }} Transform
  *   schema v0.2 drawing.transforms item (already in schema shape)
@@ -61,15 +62,17 @@
  * @property {'ifc'|'pdf'|'dxf'|'svg'} format
  * @property {{ id:string, name:string, version:string|null }} extractor  id is the provenance.extractor value, e.g. "vector_ifc"
  * @property {{ widthPx:number, heightPx:number, renderDpi:number|null, pageIndex:number, pageCount?:number|null, title?:string|null, labelSuffix?:string|null, transforms?: Transform[] }} page
- * @property {BundleLevel|null} [level]
+ * @property {BundleLevel|null} [level] the single level of a page / storey bundle
+ * @property {BundleLevel[]} [levels] several levels (an IFC building, one JSON per building); each element then carries `levelKey`
  * @property {{ metresPerPx:number|null, source:'vector_units'|'scale_note'|'dimension_lines'|'door_width'|'none', confidence:number, scaleText?:string|null, evidenceTextKey?:string|null }} scale
  * @property {BundleRoom[]} rooms
  * @property {BundleWall[]} walls
  * @property {BundleOpening[]} openings
  * @property {BundleText[]} texts
  * @property {BundleObject[]} objects
+ * @property {Array<BundleCommon & { key:string, polygonPx:number[][], confidence?:number }>} [units] apartment outlines (label from the unit-label text inside)
  * @property {BundleCoverage[]} coverage
- * @property {Record<string, any>} semantic compact, LLM-facing extras that have no home in the schema (materials, layer names...)
+ * @property {Record<string, any>} semantic compact extras that have no home in the schema (materials, layer names...)
  * @property {Record<string, number|string|boolean>} stats
  * @property {string[]} warnings
  */
@@ -84,7 +87,7 @@ export function emptyBundle(partial) {
     page: { widthPx: 1, heightPx: 1, renderDpi: null, pageIndex: 0, pageCount: 1, transforms: [] },
     level: null,
     scale: { metresPerPx: null, source: 'none', confidence: 0 },
-    rooms: [], walls: [], openings: [], texts: [], objects: [], coverage: [],
+    rooms: [], walls: [], openings: [], texts: [], objects: [], units: [], coverage: [],
     semantic: {}, stats: {}, warnings: [],
     ...partial,
   };

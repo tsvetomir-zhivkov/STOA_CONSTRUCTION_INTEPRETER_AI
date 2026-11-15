@@ -1,0 +1,38 @@
+﻿[
+    {
+        "Path":  "D:\\George\\VS_Studio_Projects\\STOA_CONSTRUCTION_INTEPRETER_AI\\scrollcraft\\builds\\stoa-plan-to-evidence\\index.html",
+        "Hash":  "F4CCBEA366756796DA40ACAAA63DCA6F8683DFB921EAA7A8A8B4504876839A72"
+    },
+    {
+        "Path":  "D:\\George\\VS_Studio_Projects\\STOA_CONSTRUCTION_INTEPRETER_AI\\scrollcraft\\builds\\stoa-plan-to-evidence\\site.css",
+        "Hash":  "8E3558359349AD1896C7E8961D01EFE54FEC5915A6EC8E5416335253392C77F9"
+    },
+    {
+        "Path":  "D:\\George\\VS_Studio_Projects\\STOA_CONSTRUCTION_INTEPRETER_AI\\scrollcraft\\builds\\stoa-plan-to-evidence\\site.js",
+        "Hash":  "DF72FB409424BC05BF2EAD9FF4B0FCF16D9716EFF3F543AB5E558F5EF089A8F5"
+    },
+    {
+        "Path":  "D:\\George\\VS_Studio_Projects\\STOA_CONSTRUCTION_INTEPRETER_AI\\scrollcraft\\builds\\stoa-plan-to-evidence\\scripts\\build-cad.mjs",
+        "Hash":  "B95A1F581F077804CD4DB57420A07BEACE43EF2859CB9B38A8178D0AAA56BE53"
+    },
+    {
+        "Path":  "D:\\George\\VS_Studio_Projects\\STOA_CONSTRUCTION_INTEPRETER_AI\\scrollcraft\\builds\\stoa-plan-to-evidence\\scripts\\functional-check.mjs",
+        "Hash":  "0451C3CC80E5A6C672774C7560294083F9595554C742C63C1F5BC418540ECB77"
+    },
+    {
+        "Path":  "D:\\George\\VS_Studio_Projects\\STOA_CONSTRUCTION_INTEPRETER_AI\\scrollcraft\\builds\\stoa-plan-to-evidence\\scrollcraft.js",
+        "Hash":  "91A8E57CEC07B7B977584885741F07D93FD1CD08FDBEA623D5432FCEDE66FD38"
+    },
+    {
+        "Path":  "D:\\George\\VS_Studio_Projects\\STOA_CONSTRUCTION_INTEPRETER_AI\\scrollcraft\\builds\\stoa-plan-to-evidence\\scrollcraft.css",
+        "Hash":  "519E254C1877A50EB724153D483CCFF5B3B434FBAF3BAF9C5BC1179EC28B075A"
+    },
+    {
+        "Path":  "D:\\George\\VS_Studio_Projects\\STOA_CONSTRUCTION_INTEPRETER_AI\\scrollcraft\\builds\\stoa-plan-to-evidence\\assets\\cad-plan.svg",
+        "Hash":  "0329C8DE13908E0843BB166C7524D45C23BDF22566EB42C364604A8F34BAA0A9"
+    },
+    {
+        "Path":  "D:\\George\\VS_Studio_Projects\\STOA_CONSTRUCTION_INTEPRETER_AI\\scrollcraft\\builds\\stoa-plan-to-evidence\\assets\\cad-plan-mobile.svg",
+        "Hash":  "4CA91DCABBAAF47849BA540EDEFFB86BB3CB46394DD09D8D65F713377B398D22"
+    }
+]

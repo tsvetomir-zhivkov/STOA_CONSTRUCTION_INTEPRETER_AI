@@ -1,6 +1,7 @@
 # Stoa vision translator (Junction 2026)
 
-Turns any drawing file into one schema JSON per page, so an answering agent can
+Turns any drawing file into schema v0.3 JSON (one per drawing page; an IFC model: one per IFC building,
+with all its storeys), so an answering agent can
 answer questions about it. Plan: @docs/vision_translator_plan.md
 Architecture: @docs/Stoa_proposal.md
 
@@ -20,9 +21,11 @@ Never cut: eval, router, Swiss, IFC areas.
 - translator/extract/: swiss_dxf.py, ifc.py, vector_pdf.py, raster/
 - translator/fuse.py, scale.py, coverage.py, glossary.py
 - translator/modal_app.py: ALL GPU code lives here and nowhere else
-- translator/schema/drawing.schema.json: schema v0.2 (source of truth)
+- translator/schema/building.schema.v0.3.json: current contract (synced copy of
+  blueprint-ingest/schema/building.schema.v0.3.json); drawing.schema.json is frozen v0.2;
+  building.v0.3.schema.json is the building-model schema (translator.building), not the contract
 - eval/probe.py, eval/score.py, eval/failures.jsonl
-- index/<source>/<file>.json: outputs, one JSON per page
+- index/<source>/<file>.json: outputs, one JSON per drawing page (IFC model: per IFC building)
 - index/_raw/: raw model outputs, so the GPU is never rerun while tuning
 
 ## Hand-off contract (do not change without asking)
@@ -31,11 +34,13 @@ Never cut: eval, router, Swiss, IFC areas.
 - Every write is validated with jsonschema. Fail loudly, never write invalid JSON.
 
 ## Schema rules
-- Schema v0.2 (translator/schema/drawing.schema.json) is the contract. The agent teammate reads v0.2. Do not change it without asking.
+- Schema v0.3 (translator/schema/building.schema.v0.3.json = blueprint-ingest/schema/building.schema.v0.3.json)
+  is the contract (k, 2026-11-15). Extractors build v0.2 documents; translator.schema_compat.migrate_v02_to_v03
+  converts them and store.write_drawing validates both. Keep frozen v0.2 documents readable. See docs/schema-v0.3.md.
 - Every entity has source/provenance.extractor, confidence, and
   provenance.source_ref (DXF handle, PDF item index or IFC GlobalId).
 - Rooms: number, unit_id, parent_room_id, subtype, is_outdoor, polygon in pixels and metres.
-- Top level: units[], levels[], coverage[], drawing.route, drawing.read_from, drawing.transforms.
+- Top level: units[], levels[], coverage[], drawings[].route, drawings[].read_from, drawings[].transforms.
 - Fixture categories: toilet, sink, shower, bathtub, sauna_bench, stair.
 - Never delete a pipeline element when a better one is found. Mark it superseded.
 - Written areas only CROSS-CHECK. Flag check_this if >10% off (>2% for vector sources).

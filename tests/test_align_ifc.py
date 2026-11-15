@@ -119,7 +119,8 @@ def test_map_ifc_document_needs_guid_matches(tmp_path):
 )
 def test_real_rendered_plans_align(path, monkeypatch):
     monkeypatch.setattr(ifc, "CACHE_DIR", INDEX_DIR / "_raw" / "ifc")  # reuse the real cache
-    doc = translate(path)
+    from translator.building import page_views
+    doc = next(v for v in page_views(translate(path)) if v["drawing"]["file"] == path)
     aff = next(t for t in doc["drawing"]["transforms"] if t["kind"] == "affine")
     assert aff["residual_px"] < align.MAX_RESIDUAL_PX
     assert all(r["polygon_px"] for r in doc["rooms"] if r["polygon_m"])

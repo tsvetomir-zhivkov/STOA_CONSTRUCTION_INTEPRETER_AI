@@ -6,12 +6,21 @@
  * What it drops: all tessellated mesh data. Footprints come from IfcExtrudedAreaSolid profiles / FootPrint curves;
  * only if neither exists is `web-ifc` (optional) used to read a bounding box.
  *
- * One bundle is produced per building storey, because the schema is "one file per drawing page".
+ * One bundle is produced per IfcBuilding (all its storeys as levels).
+ *
+ * Schema v0.3 data (ifcSemantics.js) rides along on the bundle: `bundle.bim` (project, units, site, building, types,
+ * materials, layer sets, systems, relationships, coverage) and `element.v03` (GlobalId, class, type, materials, systems,
+ * mark, explicit measures, raw quantities with units, finishes, space boundaries). Elements v0.2 never emitted (the
+ * count-only classes, classes outside the v0.2 table, elements without a plan footprint, objects beyond the cap) are
+ * marked `v03Only`, so a v0.2 run still reproduces the v0.2 output.
  */
 
 import fs from 'node:fs/promises';
-import { parseStepFile, unwrap, isRef } from './ifc/stepParser.js';
+import { parseStepFile, typesOfIds, unwrap, isRef } from './ifc/stepParser.js';
+import { readSemantics, SEMANTIC_TYPES, QUANTITY_FIELDS, quantityMeasures } from './ifcSemantics.js';
+import { ELEMENT_CLASSES, NOT_EMITTED, classNoun, isTypeClass } from '../schema/ifcClasses.js';
 import { emptyBundle, makeCanvas } from './bundle.js';
+import { normalizeIfc } from './ifc/building.js';
 import { polygonArea, polygonCenterline, minAreaRect, cleanRing, bboxOfPoints, round, circlePolygon } from '../geometry/geom.js';
 
 // ---- IFC type tables ---------------------------------------------------------------------------------
@@ -30,8 +39,10 @@ const ELEMENTS = {
   IFCDISTRIBUTIONELEMENT: ['object', 'distribution_element'], IFCDISTRIBUTIONFLOWELEMENT: ['object', 'distribution_element'], IFCBUILDINGELEMENTPROXY: ['object', 'element'],
   IFCFIREFIGHTING: ['object', 'fire_equipment'], IFCALARM: ['object', 'alarm'], IFCSENSOR: ['object', 'sensor'],
 };
-/** counted in stats but not emitted: they cover whole floors/roofs and would swamp a plan */
+/** v0.2 counted these but did not emit them (they cover whole floors/roofs); v0.3 emits them as objects */
 const COUNT_ONLY = new Set(['IFCSLAB', 'IFCROOF', 'IFCCOVERING', 'IFCFOOTING', 'IFCPLATE', 'IFCMEMBER']);
+/** classes v0.3 reads in addition: everything in ifcClasses.js the v0.2 table did not list */
+const V03_ELEMENTS = Object.fromEntries(ELEMENT_CLASSES.filter((c) => !ELEMENTS[c]).map((c) => [c, ['object', classNoun(c)]]));
 
 const STRUCTURE = ['IFCPROJECT', 'IFCSITE', 'IFCBUILDING', 'IFCBUILDINGSTOREY', 'IFCRELAGGREGATES', 'IFCRELCONTAINEDINSPATIALSTRUCTURE',
   'IFCRELVOIDSELEMENT', 'IFCRELFILLSELEMENT', 'IFCOPENINGELEMENT', 'IFCRELDEFINESBYPROPERTIES', 'IFCRELASSOCIATESMATERIAL'];
@@ -39,10 +50,12 @@ const PROPS = ['IFCPROPERTYSET', 'IFCPROPERTYSINGLEVALUE', 'IFCPROPERTYENUMERATE
   'IFCMATERIAL', 'IFCMATERIALLAYERSET', 'IFCMATERIALLAYERSETUSAGE', 'IFCMATERIALLAYER', 'IFCMATERIALCONSTITUENTSET', 'IFCMATERIALCONSTITUENT'];
 const GEOM = ['IFCLOCALPLACEMENT', 'IFCAXIS2PLACEMENT3D', 'IFCAXIS2PLACEMENT2D', 'IFCDIRECTION', 'IFCPRODUCTDEFINITIONSHAPE', 'IFCSHAPEREPRESENTATION', 'IFCEXTRUDEDAREASOLID',
   'IFCRECTANGLEPROFILEDEF', 'IFCCIRCLEPROFILEDEF', 'IFCISHAPEPROFILEDEF', 'IFCARBITRARYCLOSEDPROFILEDEF', 'IFCARBITRARYPROFILEDEFWITHVOIDS', 'IFCPOLYLINE', 'IFCINDEXEDPOLYCURVE',
-  'IFCCARTESIANPOINTLIST2D', 'IFCBOOLEANCLIPPINGRESULT', 'IFCBOOLEANRESULT', 'IFCMAPPEDITEM', 'IFCREPRESENTATIONMAP', 'IFCCARTESIANTRANSFORMATIONOPERATOR3D'];
+  'IFCCARTESIANPOINTLIST2D', 'IFCGEOMETRICCURVESET', 'IFCGEOMETRICSET', 'IFCBOOLEANCLIPPINGRESULT', 'IFCBOOLEANRESULT', 'IFCMAPPEDITEM', 'IFCREPRESENTATIONMAP', 'IFCCARTESIANTRANSFORMATIONOPERATOR3D'];
 const UNITS = ['IFCSIUNIT', 'IFCUNITASSIGNMENT', 'IFCCONVERSIONBASEDUNIT', 'IFCMEASUREWITHUNIT'];
 
-const WANTED = new Set([...Object.keys(ELEMENTS), ...COUNT_ONLY, ...STRUCTURE, ...PROPS, ...GEOM, ...UNITS]);
+// NOT_EMITTED classes are parsed (never emitted) so a reference to one can name its GlobalId and class (elementRef)
+const WANTED_SET = new Set([...Object.keys(ELEMENTS), ...Object.keys(V03_ELEMENTS), ...COUNT_ONLY, ...STRUCTURE, ...PROPS, ...GEOM, ...UNITS, ...SEMANTIC_TYPES, ...Object.keys(NOT_EMITTED)]);
+const WANTED = { has: (t) => WANTED_SET.has(t) || isTypeClass(t) };
 // only geometry holders reference points we care about (keeps pass B small on tessellated models)
 const POINT_HOLDERS = new Set(['IFCAXIS2PLACEMENT3D', 'IFCAXIS2PLACEMENT2D', 'IFCPOLYLINE', 'IFCCARTESIANTRANSFORMATIONOPERATOR3D']);
 
@@ -81,7 +94,13 @@ const groupPsets = (props) => {
   return out;
 };
 
-const guidKey = (guid, fallback) => `ifc_${String(guid ?? fallback).replace(/[^A-Za-z0-9_$.-]/g, '_')}`;
+/**
+ * Element key from an IFC GlobalId. The GUID alphabet is [0-9A-Za-z_$]; ids may only hold [A-Za-z0-9_.-], so '_' and '$'
+ * are escaped INJECTIVELY ('_' -> '_u', '$' -> '_d', anything else -> '_x' + hex): '...q$' and '...q_' stay distinct.
+ * (A plain "replace with _" made 7 pairs of clinic GUIDs collide across levels.) provenance.source_ref keeps the raw GUID.
+ */
+export const encodeGuid = (g) => String(g).replace(/[^A-Za-z0-9.-]/g, (c) => (c === '_' ? '_u' : c === '$' ? '_d' : `_x${c.codePointAt(0).toString(16)}`));
+const guidKey = (guid, fallback) => `ifc_${encodeGuid(guid ?? fallback)}`;
 const slug = (s) => String(s ?? 'level').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'level';
 
 /**
@@ -97,10 +116,33 @@ const slug = (s) => String(s ?? 'level').toLowerCase().replace(/[^a-z0-9]+/g, '-
  * @returns {Promise<import('./bundle.js').Bundle[]>}
  */
 export async function extractIfc(filePath, opts) {
-  const { entities, schema } = await parseStepFile(filePath, { wanted: WANTED, pointHolders: POINT_HOLDERS });
+  const { entities, schema, fileName, typeCounts } = await parseStepFile(filePath, { wanted: WANTED, pointHolders: POINT_HOLDERS });
   const model = new IfcModel(entities, schema);
+  model.typeCounts = typeCounts;
+  model.fileName = fileName;
   const size = (await fs.stat(filePath)).size;
   return buildBundles(model, { ...opts, filePath, fileSize: size });
+}
+
+/** Public building output. Keep all entity classes/properties; geometry retains the existing engine. */
+export async function extractIfcBuildings(filePath, opts) {
+  if (opts.levels?.length) throw new Error('Building extraction includes every level; filter levels when querying the saved document');
+  const { entities, schema } = await parseStepFile(filePath, { wanted: { has: type => type !== 'IFCCARTESIANPOINT' }, pointHolders: POINT_HOLDERS });
+  const model = new IfcModel(entities, schema);
+  const records = new Map();
+  for (const [id, ent] of entities) if (ent.args.length >= 7 && isRef(ent.args[6])) {
+    records.set(id, { id, ent, shape: model.shapeOf(ent), world: isRef(ent.args[5]) ? model.placement(ent.args[5]) : ID3() });
+  }
+  let bounds = new Map();
+  const missing = new Set([...records].filter(([, r]) => r.shape.meshOnly && !r.shape.outline).map(([id]) => id));
+  if (missing.size && opts.config.ifc.webIfc !== 'off' && (await fs.stat(filePath)).size <= opts.config.ifc.webIfcMaxBytes) {
+    try { bounds = await webIfcBounds(filePath, missing); } catch (error) { opts.logger?.warn?.(`Geometry unavailable: ${error.message}`); }
+  }
+  return normalizeIfc(model, filePath, opts, (id, ent, length) => {
+    const record = records.get(id);
+    if (!record || (!record.shape.outline && !bounds.has(id))) return null;
+    return worldFootprint(model, record, length, bounds);
+  });
 }
 
 // =====================================================================================================
@@ -251,7 +293,7 @@ class IfcModel {
       }
       case 'IFCCIRCLEPROFILEDEF': {
         const m = pos2(2);
-        ring = circlePolygon([0, 0], Number(p.args[3]), 16).map((q) => apply3(m, [q[0], q[1], 0]).slice(0, 2));
+        ring = circlePolygon([0, 0], Number(p.args[3]), 64).map((q) => apply3(m, [q[0], q[1], 0]).slice(0, 2));
         break;
       }
       case 'IFCARBITRARYCLOSEDPROFILEDEF':
@@ -290,7 +332,7 @@ class IfcModel {
 
   /**
    * Plan outline of a representation item in PRODUCT-LOCAL coordinates.
-   * @returns {{ ring: number[][], depth: number|null, source: 'extrusion'|'curve' } | null}
+   * @returns {{ ring: number[][], depth: number|null, source: 'extrusion'|'swept'|'curve' } | null}
    */
   itemOutline(ref, depth = 0) {
     const it = this.get(ref);
@@ -302,12 +344,20 @@ class IfcModel {
         const pos = this.axis(it.args[1]);
         const dir = this.dir(it.args[2]) ?? [0, 0, 1];
         const dLocal = apply3({ ...pos, t: [0, 0, 0] }, dir);
-        if (Math.abs(dLocal[2]) < 0.85) return null; // not a vertical extrusion: cannot be read as a plan footprint
-        return { ring: prof.map((q) => apply3(pos, [q[0], q[1], 0])), depth: Number(it.args[3]) || null, source: 'extrusion' };
+        const depthU = Number(it.args[3]) || 0;
+        if (Math.abs(dLocal[2]) < 0.85) {
+          // not vertical (a horizontal pipe, a beam): the plan footprint is the convex hull of the profile at both ends of the sweep
+          const ends = prof.flatMap((q) => { const p0 = apply3(pos, [q[0], q[1], 0]); return [p0, [p0[0] + dLocal[0] * depthU, p0[1] + dLocal[1] * depthU, p0[2] + dLocal[2] * depthU]]; });
+          const ring = convexHull2(ends);
+          if (ring.length < 3) return null;
+          const zMin = Math.min(...ends.map((p) => p[2]));
+          return { ring: ring.map((p) => [p[0], p[1], zMin]), depth: Math.max(...ends.map((p) => p[2])) - zMin || null, source: 'swept' };
+        }
+        return { ring: prof.map((q) => apply3(pos, [q[0], q[1], 0])), depth: depthU || null, source: 'extrusion' };
       }
       case 'IFCBOOLEANCLIPPINGRESULT':
       case 'IFCBOOLEANRESULT':
-        return this.itemOutline(it.args[1], depth + 1);
+        { const outline = this.itemOutline(it.args[1], depth + 1); return outline ? { ...outline, approximate: true } : null; }
       case 'IFCMAPPEDITEM': {
         const map = this.get(it.args[0]);
         const rep = this.get(map?.args?.[1]);
@@ -326,9 +376,19 @@ class IfcModel {
         const m = compose(target, origin);
         for (const sub of rep.args[3] ?? []) {
           const o = this.itemOutline(sub, depth + 1);
-          if (o) return { ...o, ring: o.ring.map((p) => apply3(m, p)) };
+          if (o) return { ...o, ring: o.ring.map((p) => apply3(m, p)), holes: (o.holes ?? []).map(h => h.map(p => apply3(m, p))), extrusion: o.extrusion ? apply3({ ...m, t: [0, 0, 0] }, o.extrusion) : null };
         }
         return null;
+      }
+      case 'IFCGEOMETRICCURVESET':
+      case 'IFCGEOMETRICSET': {
+        // a FootPrint representation (IfcSpace in IFC2X3 exports): the largest closed curve of the set is the outline
+        let best = null;
+        for (const el of it.args[0] ?? []) {
+          const o = this.itemOutline(el, depth + 1);
+          if (o && (!best || Math.abs(polygonArea(o.ring)) > Math.abs(polygonArea(best.ring)))) best = o;
+        }
+        return best;
       }
       case 'IFCPOLYLINE':
       case 'IFCINDEXEDPOLYCURVE': {
@@ -434,9 +494,11 @@ async function buildBundles(model, opts) {
   const countOnly = {};
   const typeCounts = {};
   for (const [id, ent] of model.e) {
-    if (COUNT_ONLY.has(ent.type)) { countOnly[ent.type] = (countOnly[ent.type] ?? 0) + 1; continue; }
-    const cls = ELEMENTS[ent.type];
+    const countOnlyCls = COUNT_ONLY.has(ent.type);
+    if (countOnlyCls) countOnly[ent.type] = (countOnly[ent.type] ?? 0) + 1;
+    const cls = ELEMENTS[ent.type] ?? V03_ELEMENTS[ent.type] ?? (countOnlyCls ? ['object', classNoun(ent.type)] : null);
     if (!cls) continue;
+    const v03Class = !ELEMENTS[ent.type]; // not emitted by v0.2
     typeCounts[ent.type] = (typeCounts[ent.type] ?? 0) + 1;
     const guid = ent.args[0];
     const shape = model.shapeOf(ent);
@@ -444,7 +506,7 @@ async function buildBundles(model, opts) {
     const { props, quantities } = model.propsOf(id);
     recs.push({
       id, ent, bucket: cls[0], category: cls[1] ?? null, key: guidKey(guid, id), name: ent.args[2] ?? null,
-      shape, world, props, quantities, host: model.fillerHost.get(id) ?? null,
+      shape, world, props, quantities, host: model.fillerHost.get(id) ?? null, v03Class,
     });
   }
 
@@ -477,15 +539,30 @@ async function buildBundles(model, opts) {
     (groups.get(sid) ?? groups.set(sid, []).get(sid)).push(r);
   }
 
+  // ---- buildings: ONE bundle (one JSON) per IfcBuilding, all its storeys as levels on one shared canvas ------------------
   const wanted = opts.levels?.length ? new Set(opts.levels.map((s) => s.toLowerCase())) : null;
-  const bundles = [];
   const order = storeys.length ? storeys : [{ id: 0, name: null, elevationM: 0, guid: null }];
-  const usedSuffix = new Map(); // two storeys may share a name: keep output file names unique
+  const buildingOf = (sid) => { let c = sid; for (let k = 0; k < 16 && c != null; k++) { if (model.e.get(c)?.type === 'IFCBUILDING') return c; c = model.parent.get(c); } return 0; };
+  const byBuilding = new Map(); // building id (0 = none) -> [{ st, list }]
   for (const st of order) {
     if (wanted && !(wanted.has(String(st.name).toLowerCase()) || wanted.has(String(st.guid).toLowerCase()))) continue;
     const list = groups.get(st.id) ?? [];
     if (!list.length) continue;
-    const b = storeyBundle(model, st, list, meshBounds, { config, lenM, typeCounts, countOnly, warnings: [...warnings], schema: model.schema, fileName: opts.filePath });
+    const bid = st.id ? buildingOf(st.id) : 0;
+    (byBuilding.get(bid) ?? byBuilding.set(bid, []).get(bid)).push({ st, list });
+  }
+  // ---- schema v0.3 semantics (shared by all buildings of the file) -------------------------------------------------------------
+  const sem = readSemantics(model, { fileName: model.fileName });
+  const unread = await unreadProducts(model, opts.filePath);
+  const reg = { materials: new Map(), layerSets: new Map(), types: new Map(), systems: new Map() };
+  const bundles = [];
+  const usedSuffix = new Map(); // two buildings may share a name: keep output file names unique
+  for (const [bid, parts] of byBuilding) {
+    const be = bid ? model.e.get(bid) : null;
+    const building = { id: bid, name: be?.args?.[2] != null ? String(be.args[2]) : null, longName: be?.args?.[7] != null ? String(be.args[7]) : null, guid: be?.args?.[0] ?? null };
+    const b = buildingBundle(model, building, parts, meshBounds, { config, lenM, typeCounts, countOnly, warnings: [...warnings], schema: model.schema, fileName: opts.filePath, sem, reg, unread });
+    // file suffix only when the model has several buildings (one building -> exactly the requested output path)
+    b.page.labelSuffix = byBuilding.size > 1 ? slug(building.name ?? building.longName ?? `building-${bid}`) : null;
     const sfx = b.page.labelSuffix;
     if (sfx) {
       const n = (usedSuffix.get(sfx) ?? 0) + 1;
@@ -497,11 +574,28 @@ async function buildBundles(model, opts) {
   return bundles;
 }
 
+/** 2D convex hull (x, y of 3D points), counter-clockwise */
+function convexHull2(points) {
+  const p = [...points].map((q) => [q[0], q[1]]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (p.length < 3) return p;
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (const q of p.reverse()) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return [...lo.slice(0, -1), ...up.slice(0, -1)];
+}
+
 /** Convert an element's outline to world XY (metres). Returns ring or null, plus method & elevation. */
 function worldFootprint(model, r, lenM, meshBounds) {
   if (r.shape.outline) {
     const ring = r.shape.outline.ring.map((p) => apply3(r.world, p));
-    return { ring: cleanRing(ring.map((p) => [p[0] * lenM, p[1] * lenM]), 1e-9), z: Math.min(...ring.map((p) => p[2])) * lenM, depthM: r.shape.outline.depth != null ? r.shape.outline.depth * lenM : null, method: 'extrusion', confidence: 0.95 };
+    const vector = r.shape.outline.extrusion ? apply3({ ...r.world, t: [0, 0, 0] }, r.shape.outline.extrusion) : null;
+    if (vector && (Math.abs(vector[0]) > 1e-6 || Math.abs(vector[1]) > 1e-6)) return null;
+    // a swept solid's outline carries its vertical extent as `depth` (no `extrusion` vector): keep it as the height
+    const depthU = vector ? Math.abs(vector[2]) : r.shape.outline.depth ?? null;
+    const points = vector ? [...ring, ...ring.map(p => p.map((x, i) => x + vector[i]))] : depthU ? [...ring, ...ring.map(p => [p[0], p[1], p[2] + depthU])] : ring;
+    const bbox = [...[0, 1, 2].map(i => Math.min(...points.map(p => p[i])) * lenM), ...[0, 1, 2].map(i => Math.max(...points.map(p => p[i])) * lenM)];
+    return { ring: cleanRing(ring.map((p) => [p[0] * lenM, p[1] * lenM]), 1e-9), holes: (r.shape.outline.holes ?? []).map(h => h.map(p => apply3(r.world, p).slice(0, 2).map(x => x * lenM))), bbox, z: bbox[2], depthM: depthU != null ? depthU * lenM : null, method: r.shape.outline.approximate ? 'approximate_profile' : 'extrusion', confidence: r.shape.outline.approximate ? .6 : .95 };
   }
   const mb = meshBounds.get(r.id);
   if (mb) {
@@ -537,30 +631,46 @@ const doorSubtype = (op, isExternal) => {
   return null;
 };
 
-function storeyBundle(model, st, list, meshBounds, ctx) {
+/**
+ * One bundle for one building: every storey becomes a level, every element keeps its storey (`levelKey`), and all
+ * storeys share ONE canvas (one page frame, one transform), so coordinates are consistent across floors.
+ * @param {{ id:number, name:string|null, longName:string|null, guid:any }} building
+ * @param {Array<{ st:any, list:any[] }>} parts storeys of the building, lowest first, with their element records
+ */
+function buildingBundle(model, building, parts, meshBounds, ctx) {
   const { lenM, config } = ctx;
   const warnings = [...ctx.warnings];
-  /** @type {Array<{r:any, fp:any}>} */
+  /** @type {Array<{r:any, fp:any, st:any}>} */
   const placed = [];
   let noGeometry = 0;
-  for (const r of list) {
-    const fp = worldFootprint(model, r, lenM, meshBounds);
-    if (!fp || fp.ring.length < 3) { noGeometry++; continue; }
-    placed.push({ r, fp });
+  for (const { st, list } of parts) {
+    for (const r of list) {
+      const fp = worldFootprint(model, r, lenM, meshBounds);
+      if (!fp || fp.ring.length < 3) { noGeometry++; placed.push({ r, fp: null, st }); continue; } // kept for v0.3, no plan geometry
+      placed.push({ r, fp, st });
+    }
   }
-  if (noGeometry) warnings.push(`${noGeometry} elements had no usable plan footprint and were skipped`);
+  if (noGeometry) warnings.push(`${noGeometry} elements had no usable plan footprint: skipped in schema 0.2, kept without geometry (flag no_plan_geometry) in 0.3`);
 
-  const all = placed.flatMap((p) => p.fp.ring);
+  // the canvas is fixed by the elements schema 0.2 emits, so 0.2 and 0.3 share ONE pixel frame (a 0.3 run can merge into
+  // an existing 0.2 file); 0.3-only classes (slabs, members...) may reach a little past it, which coordinates allow
+  const frameOf = placed.filter((p) => p.fp && !p.r.v03Class);
+  const all = (frameOf.length ? frameOf : placed).flatMap((p) => p.fp?.ring ?? []);
   const ext = all.length ? (([x0, y0, x1, y1]) => ({ minX: x0, minY: y0, maxX: x1, maxY: y1 }))(bboxOfPoints(all)) : { minX: 0, minY: 0, maxX: 1, maxY: 1 };
   const canvas = makeCanvas(ext, 1, config.ifc.targetPixelSide);
   const ppm = canvas.pxPerUnit;
   const px = (ring) => ring.map(([x, y]) => canvas.toPx(x, y).map((v) => round(v, 2)));
 
+  const levelKeyOf = (st) => (st.name != null ? `storey_${st.id}` : null);
   const bundle = emptyBundle({
     format: 'ifc',
     extractor: { id: 'vector_ifc', name: 'IFC STEP extractor (streaming)', version: model.schema },
-    page: { widthPx: canvas.widthPx, heightPx: canvas.heightPx, renderDpi: null, pageIndex: 0, pageCount: null, title: st.longName && st.longName !== st.name ? String(st.longName) : null, labelSuffix: st.name != null ? slug(st.name) : null, transforms: [canvas.transform] },
-    level: st.name != null ? { name: String(st.name), sourceRef: st.guid ? String(st.guid) : null, elevationM: round(st.elevationM, 3), heightM: st.heightM ?? null, confidence: 1 } : null,
+    page: { widthPx: canvas.widthPx, heightPx: canvas.heightPx, renderDpi: null, pageIndex: 0, pageCount: null, title: building.longName ?? building.name ?? null, labelSuffix: null, transforms: [canvas.transform] },
+    // every storey of the building, lowest first; elements point to theirs through levelKey
+    levels: parts.filter(({ st }) => st.name != null).map(({ st }) => ({
+      key: levelKeyOf(st), name: String(st.name), sourceRef: st.guid ? String(st.guid) : null, elevationM: round(st.elevationM, 3), heightM: st.heightM ?? null, confidence: 1,
+      longName: st.longName && st.longName !== st.name ? String(st.longName) : null,
+    })),
     scale: { metresPerPx: canvas.metresPerPx, source: 'vector_units', confidence: 1, scaleText: null },
   });
 
@@ -569,21 +679,28 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
     sourceRef: r.ent.args[0] != null ? String(r.ent.args[0]) : `#${r.id}`,
     properties: { ifc_type: r.ent.type, ...(r.name != null ? { ifc_name: String(r.name) } : {}), ...(r.props.size ? { psets: groupPsets(r.props) } : {}), ...(r.quantities.size ? { quantities: Object.fromEntries(r.quantities) } : {}) },
   });
-  const keyOf = new Set(placed.map((p) => p.r.key));
+  const keyOf = new Set(placed.filter((p) => p.fp).map((p) => p.r.key));
+  const keyAll = new Set(placed.map((p) => p.r.key));
   const materials = new Set();
-  let objCount = 0, objCapped = 0;
-  for (const { r, fp } of placed) {
-    const poly = px(fp.ring);
+  let objCapped = 0;
+  const objCount = new Map(); // the object cap applies per storey, as before
+  const sem = ctx.sem, reg = ctx.reg;
+  for (const { r, fp: fp0, st } of placed) {
+    const fp = fp0 ?? { ring: null, z: st.elevationM, depthM: null, method: 'none', confidence: 0.3 };
+    const poly = fp0 ? px(fp.ring) : null;
+    const levelKey = levelKeyOf(st);
     const isExt = r.props.get('IsExternal');
     const mats = model.materialsOf(r.id);
     mats.forEach((m) => materials.add(m));
     const zRel = fp.z - st.elevationM;
+    const v03Only = r.v03Class || !fp0;
+    const extra = { v03: elementV03(model, sem, reg, r, fp, keyAll), ...(v03Only ? { v03Only: true } : {}), ...(fp0 ? {} : { flags: ['no_plan_geometry'] }) };
     switch (r.bucket) {
       case 'space': {
         // IfcSpace: Name is usually the room number ("2.10"), LongName the room name ("Kitchen")
         const nm = r.ent.args[2] != null ? String(r.ent.args[2]) : null, ln = r.ent.args[7] != null ? String(r.ent.args[7]) : null;
         bundle.rooms.push({
-          ...common(r), key: r.key, polygonPx: poly, rawName: ln || nm || null, rawNumber: ln && nm && nm !== ln ? nm : null,
+          ...common(r), ...extra, key: r.key, levelKey, polygonPx: poly, rawName: ln || nm || null, rawNumber: ln && nm && nm !== ln ? nm : null,
           writtenAreaM2: r.quantities.get('NetFloorArea') ?? r.quantities.get('GrossFloorArea') ?? null,
           heightM: fp.depthM != null ? round(fp.depthM, 3) : (r.quantities.get('Height') ?? null), floorElevationM: round(st.elevationM, 3), confidence: fp.confidence,
         });
@@ -591,24 +708,24 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
       }
       case 'wall': {
         let centerline = null, thickness = null;
-        if (r.shape.axisLine) {
+        if (r.shape.axisLine && fp0) {
           const pts = r.shape.axisLine.map((p) => apply3(r.world, p)).map((p) => canvas.toPx(p[0] * lenM, p[1] * lenM).map((v) => round(v, 2)));
           centerline = [pts[0], pts[pts.length - 1]];
         }
-        const cl = polygonCenterline(poly);
+        const cl = poly ? polygonCenterline(poly) : null;
         if (cl) { thickness = round(cl.thickness, 2); if (!centerline) centerline = [cl.a, cl.b].map((q) => q.map((v) => round(v, 2))); }
         const lb = r.props.get('LoadBearing');
-        bundle.walls.push({ ...common(r), key: r.key, polygonPx: poly, centerlinePx: centerline, thicknessPx: thickness, isExterior: typeof isExt === 'boolean' ? isExt : null, isLoadBearing: typeof lb === 'boolean' ? lb : null,
+        bundle.walls.push({ ...common(r), ...extra, key: r.key, levelKey, polygonPx: poly, centerlinePx: centerline, thicknessPx: thickness, isExterior: typeof isExt === 'boolean' ? isExt : null, isLoadBearing: typeof lb === 'boolean' ? lb : null,
           netSideAreaM2: r.quantities.get('NetSideArea') ?? null, netVolumeM3: r.quantities.get('NetVolume') ?? null, heightM: fp.depthM != null ? round(fp.depthM, 3) : (r.quantities.get('Height') ?? null), confidence: fp.confidence });
         break;
       }
       case 'door':
       case 'window': {
         const wM = Number(r.ent.args[9]) * lenM, hM = Number(r.ent.args[8]) * lenM;
-        const rect = minAreaRect(poly);
+        const rect = poly ? minAreaRect(poly) : null;
         const sill = Math.max(0, round(zRel, 3));
         bundle.openings.push({
-          ...common(r), key: r.key, kind: r.bucket, heightM: Number.isFinite(hM) && hM > 0 ? round(hM, 3) : null, isEntrance: r.bucket === 'door' && isExt === true ? true : null,
+          ...common(r), ...extra, key: r.key, levelKey, kind: r.bucket, heightM: Number.isFinite(hM) && hM > 0 ? round(hM, 3) : null, isEntrance: r.bucket === 'door' && isExt === true ? true : null,
           subtype: r.bucket === 'door' ? doorSubtype(unwrap(r.ent.args[11]), isExt === true) : (unwrap(r.ent.args[11]) ? String(unwrap(r.ent.args[11])).toLowerCase() : null),
           polygonPx: poly, widthPx: Number.isFinite(wM) && wM > 0 ? round(wM * ppm, 2) : (rect ? round(rect.length, 2) : null),
           wallKey: r.host != null && keyOf.has(guidKey(model.e.get(r.host)?.args?.[0], r.host)) ? guidKey(model.e.get(r.host).args[0], r.host) : null,
@@ -617,19 +734,23 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
         break;
       }
       case 'object': {
-        if (objCount >= config.ifc.maxObjects) { objCapped++; break; }
-        objCount++;
-        bundle.objects.push({ ...common(r), key: r.key, category: r.category, name: r.name ? String(r.name) : null, polygonPx: poly, netVolumeM3: r.quantities.get('NetVolume') ?? null, confidence: fp.confidence });
+        // the v0.2 cap applies to the objects v0.2 emitted; beyond it they are kept for v0.3 only (never dropped there)
+        let capped = false;
+        if (!v03Only) {
+          if ((objCount.get(st.id) ?? 0) >= config.ifc.maxObjects) { objCapped++; capped = true; }
+          else objCount.set(st.id, (objCount.get(st.id) ?? 0) + 1);
+        }
+        bundle.objects.push({ ...common(r), ...extra, ...(capped ? { v03Only: true } : {}), key: r.key, levelKey, category: r.category, name: r.name ? String(r.name) : null, polygonPx: poly, netVolumeM3: r.quantities.get('NetVolume') ?? null, confidence: fp.confidence });
         break;
       }
       default:
     }
   }
-  if (objCapped) warnings.push(`${objCapped} objects beyond the cap of ${config.ifc.maxObjects} were not emitted`);
+  if (objCapped) warnings.push(`${objCapped} objects beyond the cap of ${config.ifc.maxObjects} per storey were not emitted in schema 0.2 (schema 0.3 keeps them)`);
 
   const has = (arr) => arr.length > 0;
   const cov = (category, status, confidence, note) => bundle.coverage.push({ category, status, confidence, ...(note ? { note } : {}) });
-  cov('rooms', 'analysed', 0.95, has(bundle.rooms) ? undefined : 'IFC contains no IfcSpace elements for this storey');
+  cov('rooms', 'analysed', 0.95, has(bundle.rooms) ? undefined : 'IFC contains no IfcSpace elements for this building');
   cov('walls', 'analysed', 0.95);
   cov('doors', 'analysed', 0.95);
   cov('windows', 'analysed', 0.95);
@@ -641,10 +762,203 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
   cov('symbols', 'not_analysed', 0.5);
   cov('legend', 'not_analysed', 0.5);
 
+  bundle.bim = buildingBim(model, sem, reg, building, placed, { ...ctx, objCapped });
   bundle.stats = { elements: placed.length, skippedNoGeometry: noGeometry, rooms: bundle.rooms.length, walls: bundle.walls.length, openings: bundle.openings.length, objects: bundle.objects.length, lengthUnitMetres: lenM };
-  bundle.semantic = { schema: ctx.schema, storey: st.name, elevationM: round(st.elevationM, 3), elementTypes: ctx.typeCounts, ignoredTypes: ctx.countOnly, materials: [...materials].slice(0, 12), pxPerMetre: ppm };
+  bundle.semantic = { schema: ctx.schema, building: building.name, buildingRef: building.guid ?? null, storeys: parts.map(({ st }) => ({ name: st.name, elevationM: round(st.elevationM, 3) })), elementTypes: ctx.typeCounts, ignoredTypes: ctx.countOnly, materials: [...materials].slice(0, 12), pxPerMetre: ppm };
   bundle.warnings = warnings;
   return bundle;
+}
+
+// =====================================================================================================
+// schema v0.3 data per element and per building
+// =====================================================================================================
+
+const keyOfId = (model, id) => guidKey(model.e.get(id)?.args?.[0], id);
+
+/**
+ * A reference from one element to another (express id `id`), resolved with the SAME key the target entity is emitted
+ * under (keyOfId = guidKey, as for every element record). `reason` is null when the target is emitted in this bundle
+ * (`keyAll`), else why not:
+ *   entity_not_in_file   the id does not exist in the STEP file
+ *   not_emitted_class    the class is deliberately not emitted (NOT_EMITTED, e.g. IfcVirtualElement)
+ *   class_not_read       the class is unknown to the extractor
+ *   outside_document     an emitted class, but not in this building's storeys (another building, or no storey)
+ * @returns {{ key: string, expressId: number, globalId: string|null, ifcClass: string|null, reason: string|null, detail?: string }}
+ */
+export function elementRef(model, id, keyAll) {
+  const ent = model.e.get(id);
+  const key = keyOfId(model, id);
+  const globalId = ent?.args?.[0] != null ? String(unwrap(ent.args[0])) : null;
+  const base = { key, expressId: id, globalId, ifcClass: ent?.type ?? null };
+  if (keyAll.has(key)) return { ...base, reason: null };
+  if (!ent) return { ...base, reason: 'entity_not_in_file' };
+  if (NOT_EMITTED[ent.type]) return { ...base, reason: 'not_emitted_class', detail: NOT_EMITTED[ent.type] };
+  if (!(ELEMENTS[ent.type] ?? V03_ELEMENTS[ent.type]) && !COUNT_ONLY.has(ent.type)) return { ...base, reason: 'class_not_read' };
+  return { ...base, reason: 'outside_document', detail: 'not contained in a storey of this building' };
+}
+const sval = (v) => { const u = unwrap(v); return u == null || typeof u === 'object' ? null : String(u); };
+
+/** boundary / covering indexes, built once per model */
+function semIndex(sem) {
+  if (sem._idx) return sem._idx;
+  const push = (m, k, v) => (m.get(k) ?? m.set(k, []).get(k)).push(v);
+  const elementSpaces = new Map(), spaceElements = new Map(), spaceCoverings = new Map();
+  for (const [sp, el] of sem.boundaries) { push(elementSpaces, el, sp); push(spaceElements, sp, el); }
+  for (const [sp, c] of sem.coversSpaces) push(spaceCoverings, sp, c);
+  sem._idx = { elementSpaces, spaceElements, spaceCoverings };
+  return sem._idx;
+}
+
+/** explicit / calculated measure record */
+const measure = (value, unit, status, method, source, raw = null) => ({ value, unit, status, method, source, ...(raw ? { raw } : {}) });
+
+/**
+ * v0.3 extras of one element. Explicit IFC values (quantities, OverallWidth/Height) become measures that win over
+ * geometry; geometry-derived ones are marked calculated with their method.
+ */
+function elementV03(model, sem, reg, r, fp, keyAll) {
+  const lenM = sem.lenM;
+  const lenUnit = sem.units.length.unit;
+  const typeId = sem.typeOf.get(r.id);
+  const type = typeId ? sem.typeRecord(typeId, model.materialOf, reg) : null;
+  const own = model.materialOf.get(r.id);
+  let mat = own ? sem.resolveMaterial(own, reg) : null;
+  let materialFrom = own ? 'element' : null;
+  if ((!mat || (!mat.materialKeys.length && !mat.layerSetKey)) && type && (type.materialKeys.length || type.layerSetKey)) { mat = { materialKeys: type.materialKeys, layerSetKey: type.layerSetKey }; materialFrom = 'type'; }
+  const systemKeys = [...new Set((sem.groupsOf.get(r.id) ?? []).map((g) => sem.systemRecord(g, reg)?.key).filter(Boolean))];
+  const rawQuantities = sem.quantitiesOfDefs(model.defs.get(r.id) ?? []);
+  const bucket = r.bucket === 'space' || r.bucket === 'wall' || r.bucket === 'door' || r.bucket === 'window' ? r.bucket : 'object';
+  const measures = quantityMeasures(rawQuantities, QUANTITY_FIELDS[bucket]);
+
+  if (bucket === 'door' || bucket === 'window') {
+    const cls = r.ent.type;
+    const w = Number(unwrap(r.ent.args[9])), h = Number(unwrap(r.ent.args[8]));
+    if (Number.isFinite(w) && w > 0) measures.width_m = measure(round(w * lenM, 6), 'm', sem.units.length.status === 'explicit' ? 'explicit' : 'inferred', `${cls}.OverallWidth`, `${cls}.OverallWidth (${lenUnit})`, { value: w, unit: lenUnit });
+    if (Number.isFinite(h) && h > 0) measures.height_m = measure(round(h * lenM, 6), 'm', sem.units.length.status === 'explicit' ? 'explicit' : 'inferred', `${cls}.OverallHeight`, `${cls}.OverallHeight (${lenUnit})`, { value: h, unit: lenUnit });
+  }
+  if ((bucket === 'space' || bucket === 'wall') && !measures.height_m && fp.depthM != null) {
+    measures.height_m = measure(round(fp.depthM, 3), 'm', 'calculated', fp.method === 'extrusion' ? 'extrusion depth of the representation' : 'mesh bounding box height (web-ifc)', fp.method === 'extrusion' ? 'IfcExtrudedAreaSolid.Depth' : 'web-ifc mesh');
+  }
+  if (bucket === 'wall' && !measures.thickness_m && mat?.layerSetKey) {
+    const set = reg.layerSets.get(mat.layerSetKey);
+    if (set?.kind === 'layer_set' && set.layers.length && set.layers.every((l) => typeof l.thicknessM === 'number')) {
+      measures.thickness_m = measure(round(set.layers.reduce((a, l) => a + l.thicknessM, 0), 6), 'm', 'calculated', 'sum of IfcMaterialLayer.LayerThickness', `IfcMaterialLayerSet ${set.sourceRef}`);
+    }
+  }
+
+  const idx = semIndex(sem);
+  const out = {
+    globalId: r.ent.args[0] != null ? String(unwrap(r.ent.args[0])) : null,
+    ifcClass: r.ent.type,
+    classifications: sem.classificationsOf(r.id),
+    typeKey: type?.key ?? null,
+    materialKeys: mat?.materialKeys ?? [],
+    layerSetKey: mat?.layerSetKey ?? null,
+    materialFrom,
+    systemKeys,
+    measures,
+    rawQuantities,
+  };
+  if (bucket !== 'space') out.mark = sval(r.ent.args[7]);
+  if (bucket === 'door' || bucket === 'window') out.operation = sval(r.ent.args[11]) ?? type?.operation ?? null;
+  if (bucket === 'object' && r.host != null) out.hostKey = keyOfId(model, r.host);
+  if (bucket !== 'space') out.roomKeys = (idx.elementSpaces.get(r.id) ?? []).map((sp) => keyOfId(model, sp));
+  if (bucket === 'space') {
+    const refs = [...new Set(idx.spaceElements.get(r.id) ?? [])].map((el) => elementRef(model, el, keyAll));
+    out.boundaryKeys = [...new Set(refs.filter((x) => !x.reason).map((x) => x.key))];
+    // boundary elements this extraction does not emit: never invented, never silently dropped
+    out.unresolvedBoundaries = refs.filter((x) => x.reason);
+    out.finishes = roomFinishes(model, sem, reg, r);
+  }
+  return out;
+}
+
+/** floor / wall / ceiling finish of a space: IfcRelCoversSpaces coverings first, then the space's covering psets */
+function roomFinishes(model, sem, reg, r) {
+  const idx = semIndex(sem);
+  const slot = { FLOORING: 'floor', CEILING: 'ceiling', CLADDING: 'wall' };
+  const got = { floor: [], wall: [], ceiling: [] };
+  for (const c of idx.spaceCoverings.get(r.id) ?? []) {
+    const ent = model.e.get(c);
+    if (!ent) continue;
+    const k = slot[sval(ent.args[8])];
+    if (!k) continue;
+    const typeId = sem.typeOf.get(c);
+    const assoc = model.materialOf.get(c) ?? (typeId ? model.materialOf.get(typeId) : null);
+    const mat = assoc ? sem.resolveMaterial(assoc, reg) : { materialKeys: [] };
+    got[k].push({ key: keyOfId(model, c), name: sval(ent.args[2]), materialKeys: mat.materialKeys });
+  }
+  const out = {};
+  for (const k of ['floor', 'wall', 'ceiling']) {
+    if (got[k].length) {
+      const matNames = got[k].flatMap((g) => g.materialKeys.map((m) => reg.materials.get(m)?.name)).filter(Boolean);
+      const names = got[k].map((g) => g.name).filter(Boolean);
+      out[k] = { value: [...new Set(matNames.length ? matNames : names)].join('; ') || null, status: 'explicit', source: 'IfcRelCoversSpaces', coveringKeys: got[k].map((g) => g.key), materialKeys: [...new Set(got[k].flatMap((g) => g.materialKeys))] };
+      continue;
+    }
+    const want = { floor: 'FloorCovering', wall: 'WallCovering', ceiling: 'CeilingCovering' }[k];
+    const hit = [...r.props].find(([name, v]) => name.endsWith(`.${want}`) && v != null && String(v).trim() !== '');
+    out[k] = hit ? { value: String(hit[1]), status: 'explicit', source: hit[0], coveringKeys: [], materialKeys: [] } : { value: null, status: 'not_available', source: null, coveringKeys: [], materialKeys: [] };
+  }
+  return out;
+}
+
+/** products contained in / aggregated into the spatial structure whose class this extractor does not read */
+async function unreadProducts(model, filePath) {
+  const ids = new Set();
+  for (const [, r] of model.e) {
+    if (r.type === 'IFCRELCONTAINEDINSPATIALSTRUCTURE') for (const c of r.args[4] ?? []) if (isRef(c) && !model.e.has(c.ref)) ids.add(c.ref);
+    if (r.type === 'IFCRELAGGREGATES') for (const c of r.args[5] ?? []) if (isRef(c) && !model.e.has(c.ref)) ids.add(c.ref);
+  }
+  const types = await typesOfIds(filePath, ids);
+  const counts = new Map();
+  for (const t of types.values()) counts.set(t, (counts.get(t) ?? 0) + 1);
+  return counts;
+}
+
+/** bundle.bim for one building: everything the v0.3 lift needs that is not an element field */
+function buildingBim(model, sem, reg, building, placed, ctx) {
+  const keyById = new Map(placed.map(({ r }) => [r.id, r.key]));
+  const bld = sem.building(building.id);
+  const rel = [];
+  const both = (a, b) => keyById.has(a) && keyById.has(b);
+  for (const [w, p, g] of sem.aggregates) if (both(w, p)) rel.push({ kind: 'aggregates', fromKey: keyById.get(w), toKey: keyById.get(p), sourceRef: g ?? 'IfcRelAggregates' });
+  for (const [w, p, g] of sem.nests) if (both(w, p)) rel.push({ kind: 'nests', fromKey: keyById.get(w), toKey: keyById.get(p), sourceRef: g ?? 'IfcRelNests' });
+  for (const [a, b, g, props] of sem.connects) if (both(a, b)) rel.push({ kind: 'connects', fromKey: keyById.get(a), toKey: keyById.get(b), sourceRef: g ?? 'IfcRelConnectsPathElements', properties: props });
+  for (const [sp, c, g] of sem.coversSpaces) if (both(sp, c)) rel.push({ kind: 'covers', fromKey: keyById.get(c), toKey: keyById.get(sp), sourceRef: g ?? 'IfcRelCoversSpaces' });
+  for (const [el, c, g] of sem.coversElements) if (both(el, c)) rel.push({ kind: 'covers', fromKey: keyById.get(c), toKey: keyById.get(el), sourceRef: g ?? 'IfcRelCoversBldgElements' });
+  for (const [sys, b, g] of sem.servesBuildings) {
+    if (b !== building.id || !bld) continue;
+    const s = sem.systemRecord(sys, reg);
+    if (s) rel.push({ kind: 'serves', fromKey: s.key, toKey: bld.id, sourceRef: g ?? 'IfcRelServicesBuildings' });
+  }
+  const systems = [...reg.systems.values()].map((s) => ({ ...s, memberKeys: s.memberIds.map((id) => keyById.get(id)).filter(Boolean) }));
+
+  // classes: what was emitted, what was counted only, what this extractor cannot read
+  const emitted = new Map();
+  for (const { r } of placed) emitted.set(r.ent.type, (emitted.get(r.ent.type) ?? 0) + 1);
+  const notEmitted = Object.keys(NOT_EMITTED).map((t) => [t, model.typeCounts?.get(t) ?? 0]).filter(([, n]) => n);
+  const unknown = [...ctx.unread].filter(([t]) => !NOT_EMITTED[t]);
+  const fmt = (list) => list.map(([t, n]) => `${t} ${n}`).join(', ');
+  const units = sem.units;
+  const inferredUnits = Object.entries(units).filter(([, u]) => u.status !== 'explicit').map(([k]) => k);
+  const coverage = [
+    { category: 'ifc_classes', status: unknown.length ? 'partial' : 'analysed', confidence: unknown.length ? 0.7 : 0.95,
+      note: [`emitted: ${fmt([...emitted].sort())}`, notEmitted.length ? `counted, not emitted: ${fmt(notEmitted)} (${[...new Set(notEmitted.map(([t]) => NOT_EMITTED[t]))].join('; ')})` : null, unknown.length ? `NOT READ (class unknown to the extractor): ${fmt(unknown)}` : null].filter(Boolean).join('. ') },
+    { category: 'units', status: inferredUnits.length ? 'partial' : 'analysed', confidence: inferredUnits.length ? 0.6 : 1, note: inferredUnits.length ? `not declared in the file: ${inferredUnits.join(', ')} (see project.units)` : 'all units declared in IfcUnitAssignment' },
+    { category: 'materials', status: 'analysed', confidence: 0.95, note: model.materialOf.size ? 'IfcRelAssociatesMaterial (element, else its type)' : 'the model has no material associations' },
+    { category: 'element_types', status: 'analysed', confidence: 0.95, note: sem.typeOf.size ? 'IfcRelDefinesByType' : 'the model has no type objects' },
+    { category: 'systems', status: 'analysed', confidence: 0.95, note: sem.groupMembers.size ? 'IfcRelAssignsToGroup (systems, circuits, zones, groups)' : 'the model has no systems or zones' },
+    { category: 'schedules', status: 'analysed', confidence: 0.9, note: 'derived from types (IfcRelDefinesByType) or instance marks; schedule objects in the file are not read' },
+    { category: 'relationships', status: 'analysed', confidence: 0.9, note: 'aggregation, nesting, path connections, coverings, systems serving the building; space boundaries are in rooms[].boundary_element_ids and room_ids' },
+    { category: 'finishes', status: 'analysed', confidence: 0.9, note: 'IfcRelCoversSpaces coverings, else FloorCovering / WallCovering / CeilingCovering psets' },
+    ...(ctx.objCapped ? [{ category: 'fixtures', status: 'analysed', confidence: 0.8, note: `all objects emitted (schema 0.2 capped ${ctx.objCapped})` }] : []),
+  ];
+  return {
+    project: sem.project(), site: sem.site(), building: bld, georeference: sem.georeference(),
+    types: [...reg.types.values()], materials: [...reg.materials.values()], layerSets: [...reg.layerSets.values()], systems,
+    relationships: rel, coverage,
+  };
 }
 
 // =====================================================================================================
@@ -653,7 +967,7 @@ function storeyBundle(model, st, list, meshBounds, ctx) {
 
 /**
  * Stream meshes with web-ifc and keep only an axis-aligned bounding box per requested express id; vertex data is
- * discarded immediately so memory stays flat. Coordinates come back in web-ifc's world units (metres for most models).
+ * discarded immediately so memory stays flat. Coordinates come back in metres, Y-up; they are converted to IFC Z-up here.
  *
  * @param {string} filePath
  * @param {Set<number>} ids
@@ -667,6 +981,8 @@ export async function webIfcBounds(filePath, ids) {
   const modelId = api.OpenModel(data, { COORDINATE_TO_ORIGIN: false });
   const out = new Map();
   try {
+    // StreamAllMeshes, not StreamMeshes(ids): it skips IfcSpace, so mesh-only spaces get no axis-aligned box footprint
+    // (a box overstates non-rectangular rooms ~2x). Switching needs a real mesh footprint for spaces first.
     api.StreamAllMeshes(modelId, (mesh) => {
       if (!ids.has(mesh.expressID)) return;
       let b = null;
@@ -678,7 +994,9 @@ export async function webIfcBounds(filePath, ids) {
         const m = pg.flatTransformation; // column-major 4x4
         for (let k = 0; k < v.length; k += 6) {
           const x = v[k], y = v[k + 1], z = v[k + 2];
-          const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14];
+          // web-ifc returns Y-UP geometry (IFC x, z, -y): convert back to IFC Z-up (x, y = north, z = up)
+          const ux = m[0] * x + m[4] * y + m[8] * z + m[12], uy = m[1] * x + m[5] * y + m[9] * z + m[13], uz = m[2] * x + m[6] * y + m[10] * z + m[14];
+          const wx = ux, wy = -uz, wz = uy;
           b = b ? { minX: Math.min(b.minX, wx), maxX: Math.max(b.maxX, wx), minY: Math.min(b.minY, wy), maxY: Math.max(b.maxY, wy), minZ: Math.min(b.minZ, wz), maxZ: Math.max(b.maxZ, wz) } : { minX: wx, maxX: wx, minY: wy, maxY: wy, minZ: wz, maxZ: wz };
         }
         g.delete?.();

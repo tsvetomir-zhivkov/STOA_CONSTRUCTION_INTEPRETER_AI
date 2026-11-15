@@ -1,4 +1,6 @@
-"""Stoa vision translator: any drawing file -> one schema v0.2 JSON per page.
+"""Stoa vision translator: supported sources -> schema v0.3 JSON (building.schema.v0.3.json).
+
+One document per drawing page; an IFC model gives one document per IFC building with all its storeys.
 
 Hand-off contract: translate(path) -> dict, and `python -m translator <path>`.
 Outputs go to index/<source>/<file>.json (see translator.store.index_path).
@@ -9,7 +11,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 COVERAGE_CATEGORIES = ("rooms", "doors", "windows", "fixtures", "walls", "text")
 
@@ -53,16 +55,16 @@ def _page_image(r: dict, file_path: Path) -> tuple[dict | None, int | None, int 
 def translate(
     path: str, data: str | None = None, part: str | None = None, allow_holdout: bool = False
 ) -> dict:
-    """Translate one drawing file into one schema v0.2 document (validated, not written).
+    """Translate one drawing file into one schema v0.3 document (validated, not written).
 
-    Most files give one document. A file that gives several (an IFC model: one per storey) needs
+    Most files give one document. A file that gives several (an IFC model with several IFC buildings) needs
     part=<drawing.part>, or use translate_all(path). Hold-out files are refused unless allow_holdout=True.
     """
     docs = translate_all(path, data, allow_holdout=allow_holdout)
     if part is not None:
         hits = [d for d in docs if d["drawing"].get("part") == part]
         if not hits:
-            raise KeyError(f"{path}: no part {part!r}; parts are {[d['drawing'].get('part') for d in docs]}")
+            raise KeyError(f"{path}: no part {part!r}")
         return hits[0]
     if len(docs) > 1:
         parts = [d["drawing"].get("part") for d in docs]
@@ -80,7 +82,11 @@ def translate_all(
     fuse_params: dict | None = None,
     allow_holdout: bool = False,
 ) -> list[dict]:
-    """Every document for one file: one per page, or one per storey for an IFC model. Validated.
+    """Every document for one file, schema v0.3 (building.schema.v0.3.json), validated.
+
+    The extractors build schema v0.2 page documents (drawing.schema.json); each is validated, then converted
+    with translator.schema_compat.migrate_v02_to_v03 and validated again against building.schema.v0.3.json.
+    One document per drawing page; an IFC model gives one per IFC building, with all its storeys.
 
     Hold-out files (eval/holdout_files.txt) are refused (HoldoutError) by the same filename guard as
     translator/vlm, before any file is read; allow_holdout=True overrides it with a warning.
@@ -90,6 +96,7 @@ def translate_all(
     """
     from translator import router
     from translator.config import data_root
+    from translator.schema_compat import migrate_v02_to_v03
     from translator.store import validate
     from translator.vlm.base import HoldoutError, default_guard
 
@@ -143,10 +150,117 @@ def translate_all(
         ],
         "history": [{"extractor": "router", "action": "route", "note": note}],
     }
-    docs = _run_extractor(doc, r, root, file_path, cubicasa_params, ocr_params, fuse_params)
-    for d in docs:
-        validate(d, where=f"{r['file']} {d['drawing'].get('part') or ''}".strip())
-    return docs
+    out = []
+    for d in _run_extractor(doc, r, root, file_path, cubicasa_params, ocr_params, fuse_params):
+        validate(d, where=r["file"])  # schema v0.2: what the extractors produce
+        v03 = migrate_v02_to_v03(d)
+        validate(v03, where=r["file"])  # the contract: building.schema.v0.3.json + relationship check
+        out.append(v03)
+    return out
+
+
+def _ifc_documents(base: dict, r: dict, root: Path, file_path: Path) -> list[dict]:
+    """IFC route. A rendered plan of one storey gets that storey (mapped onto the page); the model itself gets
+    one document per IFC building with all its storeys (and the elements without a storey)."""
+    import copy
+
+    from translator.extract import ifc
+
+    data = ifc.extract_records(_abs(root, r["read_from"]))
+    scale = {
+        "m_per_px": None,
+        "source": "vector_units",
+        "confidence": 1.0,
+        "note": f"IFC model units converted to metres ({data['schema']})",
+    }
+    level = r.get("level") if file_path.suffix.lower() != ".ifc" else None
+    if level is not None:
+        out = []
+        for parts in ifc.documents(data, r["read_from"], level_name=level):
+            d = copy.deepcopy(base)
+            parts.pop("part")
+            d["drawing"]["part"] = None
+            d["drawing"]["scale"] = dict(scale)
+            d["history"].extend(parts.pop("history"))
+            d.update(parts)
+            _voids_to_objects(d)
+            _map_ifc_to_page(d, file_path)
+            out.append(d)
+        if not out:
+            base["history"].append(
+                {"extractor": "ifc", "action": "skip", "note": f"no storey named {level!r}"}
+            )
+            return [base]
+        return out
+    buildings = [b["global_id"] for b in data.get("metadata", {}).get("buildings", [])] or [None]
+    if len(buildings) > 1 and any(rec.get("building") is None for rec in data["records"]):
+        buildings.append(None)
+    out = []
+    for gid in buildings:
+        subset = data
+        if len(buildings) > 1:
+            subset = {
+                **data,
+                "storeys": [st for st in data["storeys"] if st.get("building") == gid],
+                "records": [rec for rec in data["records"] if rec.get("building") == gid],
+            }
+        d = copy.deepcopy(base)
+        d["drawing"]["part"] = None if len(buildings) == 1 else f"building-{gid or 'none'}"
+        d["drawing"]["scale"] = dict(scale)
+        _merge_storeys(d, ifc.documents(subset, r["read_from"]))
+        _voids_to_objects(d)
+        out.append(d)
+    return out
+
+
+_OPENING_ONLY = ("kind", "width_m", "height_m", "wall_id", "room_ids", "is_entrance", "mark", "operation")
+
+
+def _voids_to_objects(doc: dict) -> None:
+    """IfcOpeningElement records (kind 'void') are cuts, not doors or windows; the schema's openings[] has no
+    kind for them. Keep them as objects[] (category 'other', subtype 'opening_void'), same id and geometry."""
+    voids = [o for o in doc["openings"] if o.get("kind") == "void"]
+    if not voids:
+        return
+    doc["openings"] = [o for o in doc["openings"] if o.get("kind") != "void"]
+    for o in voids:
+        obj = {k: v for k, v in o.items() if k not in _OPENING_ONLY}
+        obj.update(category="other", subtype="opening_void")
+        doc["objects"].append(obj)
+    doc["history"].append(
+        {
+            "extractor": "ifc",
+            "action": "map",
+            "note": f"{len(voids)} IfcOpeningElement void(s) kept as objects[] (category other, "
+            "subtype opening_void): openings[] only has door / window / doorway",
+        }
+    )
+
+
+_STATUS_RANK = {"not_analysed": 0, "partial": 1, "analysed": 2}
+
+
+def _merge_storeys(doc: dict, parts: list[dict]) -> None:
+    """All storey parts of one IFC building into one v0.2 document. Coverage per category keeps the weakest
+    status and the lowest confidence over the storeys (coverage regions are page-level only)."""
+    for key in ("levels", "rooms", "walls", "openings", "objects"):
+        doc[key] = [e for p in parts for e in p[key]]
+    for p in parts:
+        doc["history"].extend(p["history"])
+    by_cat: dict[str, list[dict]] = {}
+    for p in parts:
+        for c in p["coverage"]:
+            by_cat.setdefault(c["category"], []).append(c)
+    coverage = []
+    for cs in by_cat.values():
+        worst = min(cs, key=lambda c: (_STATUS_RANK[c["status"]], c["confidence"]))
+        entry = {**worst, "region": "page", "confidence": min(c["confidence"] for c in cs)}
+        if len(parts) > 1:
+            notes = sorted({c["note"] for c in cs if c.get("note")})
+            entry["note"] = f"{len(parts)} storey parts: " + "; ".join(notes)
+        coverage.append(entry)
+    if parts:
+        doc["coverage"] = coverage
 
 
 def _abs(root: Path, p: str) -> Path:
@@ -177,36 +291,7 @@ def _run_extractor(
         _map_to_page(doc, file_path)
         return [doc]
     if r["route"] == "ifc":
-        import copy
-
-        from translator.extract import ifc
-
-        data = ifc.extract_records(_abs(root, r["read_from"]))
-        # a rendered plan of one storey gets that storey; the model itself gets every storey
-        level = r.get("level") if file_path.suffix.lower() != ".ifc" else None
-        out = []
-        for parts in ifc.documents(data, r["read_from"], level_name=level):
-            d = copy.deepcopy(doc)
-            part = parts.pop("part")
-            d["drawing"]["part"] = part if level is None else None
-            d["drawing"]["scale"] = {
-                "m_per_px": None,
-                "source": "vector_units",
-                "confidence": 1.0,
-                "note": f"IFC model units converted to metres ({data['schema']})",
-            }
-            d["history"].extend(parts.pop("history"))
-            for key, value in parts.items():
-                d[key] = value
-            if level is not None:
-                _map_ifc_to_page(d, file_path)
-            out.append(d)
-        if not out:
-            doc["history"].append(
-                {"extractor": "ifc", "action": "skip", "note": f"no storey named {level!r}"}
-            )
-            return [doc]
-        return out
+        return _ifc_documents(doc, r, root, file_path)
     if r["route"] == "raster" and r.get("source") == "cubicasa5k":
         # CubiCasa5K segmentation + OCR from their raw GPU results (modal_app.py); never calls the GPU,
         # then fusion, priors, scale and coverage (translator.fuse.fuse_raster)

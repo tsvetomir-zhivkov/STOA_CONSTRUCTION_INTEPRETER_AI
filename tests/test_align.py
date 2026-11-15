@@ -74,7 +74,7 @@ def test_too_few_anchors_leaves_pixels_empty(tmp_path):
     doc = translate(str(pdf), str(tmp_path))
     assert all(r["polygon_px"] is None for r in doc["rooms"])
     assert not doc["drawing"]["transforms"]
-    assert "fewer than 3" in doc["history"][-1]["note"]
+    assert "fewer than 3" in doc["history"][-2]["note"]  # [-1] is the v0.2 -> v0.3 schema migration
 
 
 @needs_data

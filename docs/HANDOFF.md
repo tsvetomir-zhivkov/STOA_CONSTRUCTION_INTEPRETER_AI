@@ -1,4 +1,4 @@
-# Hand-off: vision translator (updated 2026-11-14, after Step 10)
+# Hand-off: vision translator (updated 2026-11-15, branch merge-v03: step-7-ocr + origin/main schema v0.3)
 
 Single source of truth for a fresh session. `docs/HANDOFF_vision_translator.md` only points here.
 Read first: `CLAUDE.md`, `docs/vision_translator_plan.md`, this file. Full history per step: `docs/TODO.md`.
@@ -6,12 +6,39 @@ Final numbers: `docs/EVAL_TABLE.md` (generated, see section 5).
 
 ## 1. Architecture and routes
 
-One schema v0.2 JSON per page (`translator/schema/drawing.schema.json`, the contract with the agent teammate;
-never change it without asking k). Every write is validated with jsonschema and fails loudly.
+**Contract (k, 2026-11-15): schema v0.3, `translator/schema/building.schema.v0.3.json`**, the synced copy
+of `blueprint-ingest/schema/building.schema.v0.3.json` (spec: `docs/schema-v0.3.md`). One document per drawing
+page; an IFC model gives one document per IFC building with all its storeys. Other schema files, not the
+contract: `drawing.schema.json` (frozen v0.2, what the extractors build in memory), `building.v0.3.schema.json`
+(the building model in `translator/building.py`, `config.BUILDING_MODEL_SCHEMA_PATH`), `ifc_disciplines.json`
+(IFC discipline table, used by `schema_compat`).
+
+How a document reaches disk:
+- `translate_all()` builds v0.2 page documents exactly as in Steps 5-10 (CubiCasa pipeline, Swiss DXF, IFC),
+  validates each against `drawing.schema.json`, converts it with
+  `translator.schema_compat.migrate_v02_to_v03` (Python mirror of `blueprint-ingest/src/schema/v03.js`; maps
+  fields, infers nothing) and validates it against `building.schema.v0.3.json` + `validate_relationships`.
+- `translator.store.write_drawing()` validates, converts (`schema_compat.as_v03`; a v0.3 document is kept),
+  validates again and writes `index/<source>/<stem>[__<part>].json`. `store.validate` / `store.read_drawing`
+  use `schema_compat.validate_document` for v0.3; `store.SchemaError` is `schema_compat.SchemaError`.
+- IFC (`translator/__init__.py::_ifc_documents`): a rendered storey plan (`ifc_models/<model>_<level>.pdf`)
+  gets that storey, mapped onto the page; the model gets one document per IFC building (storeys merged;
+  coverage per category = weakest status, lowest confidence). **`IfcOpeningElement` voids** (`kind: "void"`
+  from the IFC extractor) have no opening kind in the contract; they are kept as `objects[]` with category
+  `other`, subtype `opening_void` (same id and geometry; a `history` entry counts them).
+- IFC-only v0.3 data (`materials`, `element_types`, `systems`, declared units) is not filled on the Python
+  path: coverage says `not_analysed` ("not present in the v0.2 source document"). The Node path
+  (blueprint-ingest) fills it.
+- Checked: our markers survive the conversion (flags `assumed_prior`, `inferred_from_icon`,
+  `prior_stepped_back`; extractor `vlm_check` + `properties.box_quality`; `history[].cost_usd`; `status`
+  `superseded` + `superseded_by`; coverage notes `prior:` / `inferred`; `drawing.transforms`). The conversion
+  appends one `history` entry (`schema_migration`), so it is always the last one.
+
+Every write is validated with jsonschema and fails loudly.
 
 | route (router.py) | input | path to JSON |
 |---|---|---|
-| `ifc` | `<model>.ifc`, or `ifc_models/<model>_<level>.pdf` rendered from it | IFC extractor, one doc per storey; mapped onto the page via the SVG sibling |
+| `ifc` | `<model>.ifc`, or `ifc_models/<model>_<level>.pdf` rendered from it | IFC extractor; model: one doc per IFC building (all storeys); rendered plan: that storey, mapped onto the page via the SVG sibling |
 | `dxf` | Swiss PDF with a same-stem `.dxf` | Swiss DXF extractor (layers ROOM_OUTLINE, ROOM_TEXT, UNIT_OUTLINE, DOOR, WINDOW, FIXTURE, WALL), affine-mapped to the PDF page |
 | `vector_pdf` | PDF with words + > 50 drawings | **no extractor yet** (Step 11) |
 | `raster` | PNG/JPG (CubiCasa) | see below |
@@ -40,8 +67,8 @@ with a coverage note giving the reason.
 
 ## 2. How to run
 
-- `translate(path) -> dict` (one document; an IFC model needs `part=`), `translate_all(path) -> list[dict]`
-  (one per page / storey), both validated. Raster options: `cubicasa_params`, `ocr_params`, `fuse_params`
+- `translate(path) -> dict` (one contract-v0.3 document; an IFC model with several IFC buildings needs
+  `part=` or `translate_all`), `translate_all(path) -> list[dict]`, both validated, nothing written. Raster options: `cubicasa_params`, `ocr_params`, `fuse_params`
   (`priors`, `vlm`, `vlm_enabled`, `vlm_runs`, `shower_prior`, `grid`).
 - CLI: `python -m translator <path> [...] [--write] [--source NAME] [--data ROOT] [--allow-holdout]`.
 - **Hold-out guard in the library and the CLI** (same filename guard as `translator/vlm`: normalised path,
@@ -71,6 +98,18 @@ with a coverage note giving the reason.
   python eval/score.py --split dev --index $C
   ```
   Full table with every configuration and the baseline: `python eval/priors_report.py [--write-md docs/EVAL_TABLE.md]`.
+- **What the scorer reads:** `eval/score.py` loads every JSON with `store.read_drawing` (v0.2 →
+  `drawing.schema.json`; v0.3 → `building.schema.v0.3.json` via `schema_compat`), `building.page_views`
+  passes v0.2 and contract-v0.3 documents through unchanged (it only splits building-model documents), and
+  `eval/probe.py` answers from them: the v0.2 field names are unchanged in v0.3. Dev score of the v0.3 index
+  (2026-11-15, unpatched scorer, clean copy): **5471/6388 = 85.6% (85.9% of the 6369 scoreable)**, every
+  template identical to the v0.2 index.
+- **Index on disk (2026-11-15):** `index/<source>/` = the full dev index in the contract format, rebuilt on
+  merge-v03 (256 dev files, all re-extracted incl. IFC, 727 s, cache only, `STOA_VLM=fake`; 152 MB). The
+  previous v0.2 index is kept in `index/_v02_backup_2026-11-15/<source>/` (git-ignored). The default
+  `eval/score.py` run loads everything under `index/`, including that backup: always score a clean copy.
+  opening_design files in sub-folders land in `index/Full size sheets/` and `index/Sheets - Current Set/`
+  (`index_path` uses the parent folder name; unchanged behaviour).
 - Checks before every commit (with `STOA_DATA` set): `pytest -q`, `ruff check translator tests`,
   `ruff format --check translator tests`.
 
@@ -192,8 +231,23 @@ Disclosures (also in docs/EVAL_TABLE.md):
 
 ## 6. Open items
 
-- `schema-update` branch: 5 object categories (stove, fridge, washing_machine, elevator, radiator; additive,
-  stays 0.2), 4 commits, **not merged** into step-7-ocr.
+- `schema-update` branch: 5 object categories (stove, fridge, washing_machine, elevator, radiator), **not
+  merged**; superseded by schema v0.3, which already has them (plus `closet`). It edits the frozen v0.2 schema.
+- `tests/test_building.py` (teammates', tests the building model; identical to origin/main): 20
+  failures/errors. 19 fail on origin/main too (missing fixture `blueprint-ingest/out/plan.level-1.json`, Node
+  not installed for the JavaScript tests, the old schema mismatch); `test_statistics_require_complete_measurements`
+  fails since the contract change because `translate()` no longer returns the building model. Not touched.
+- Answering agent (`answering_agent/tools.py`, Eric): `building_summary` reads `data['building_id']` and
+  `data['source_documents']` (building model) and raises KeyError on contract documents; the other tools ran
+  on a CubiCasa document. Not touched.
+- `blueprint-ingest/README.md` on origin/main contains an unresolved conflict block (`<<<<<<< HEAD` …
+  `>>>>>>> 19fec63`, "Project layout", from c46e41b). Kept exactly as on origin/main; **Tsvetomir's to fix**.
+- Ruff: 43 lint errors (`schema_compat.py`, `to_v03.py`) and 4 unformatted files (`schema_compat.py`,
+  `to_v03.py`, `extract/ifc_metadata.py`, `tests/test_align_ifc.py`), all unchanged origin/main files.
+- IFC cache: the new IFC code uses a new `index/_raw/ifc/` cache format; a cold rebuild is slow
+  (`bsc-clinic_clinic-plumbing` alone > 25 min). All dev models are cached as of 2026-11-15.
+- `translator/migrate.py` and `translator/to_v03.py` (teammates' CLIs) still write building-model / `index_v03/`
+  outputs; not part of the contract path.
 - Branches: `step-3-swiss` is fully contained in `step-7-ocr` (same as origin/step-3-swiss); decide which branch
   is handed off / merged (k). Local `main` is behind `origin/main`; there is also a `pipes` branch (teammate).
 - Mirrored-image margin rule: 18 dev images read flipped, only 6 clearly mirrored (unverified by eye).
@@ -201,7 +255,7 @@ Disclosures (also in docs/EVAL_TABLE.md):
 - Walls are not written to `walls[]` for raster plans.
 - Fuzzy OCR matching (e.g. PARVERE) not done; single-letter K often not detected.
 - Generic vector PDF extractor (Step 11; mine, only if time); opening_design has no template (19 questions).
-- Teammate: validate the DXF/IFC/PDF documents against schema v0.2 on their side.
+- Teammate: validate the DXF/IFC/PDF documents against the contract (`building.schema.v0.3.json`) on their side.
 - VLM: gate 5 (low-confidence windows/doors) and the 82 prior-fired kitchen/bathroom tasks are deferred; e1 on
   the remaining ~103 shower pages not run. **Remaining VLM budget ≈ $0.12** (cap $1.50 reached otherwise).
 - Blueprint-or-noise gate (teammate, interface in section 1).

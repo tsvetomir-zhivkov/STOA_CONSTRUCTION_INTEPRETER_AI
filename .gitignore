@@ -18,6 +18,7 @@ index/*
 
 # Python and tool caches
 __pycache__/
+.venv/
 *.pyc
 .pytest_cache/
 .ruff_cache/
@@ -36,3 +37,8 @@ uv.lock
 
 # local debug overlay, never committed (k)
 overlay_9385_crop.png*
+
+# teammate (origin/main): v0.3 output folder and a large local merge fixture (>100 MB, over GitHub limit).
+# Their unanchored drawing.schema.json / sample_drawing.json rules are covered by the anchored ones above.
+index_v03/
+blueprint-ingest/big/

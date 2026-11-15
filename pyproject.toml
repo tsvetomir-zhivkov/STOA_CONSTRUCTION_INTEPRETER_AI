@@ -1,6 +1,6 @@
 [project]
 name = "stoa-translator"
-version = "0.2.0"
+version = "0.3.0"
 requires-python = ">=3.10"
 dependencies = [
     "dotenv>=0.9.9",
@@ -8,7 +8,20 @@ dependencies = [
     "numpy",
     "opencv-python-headless",
     "shapely>=2.1.2",
+    "ifcopenshell>=0.8.0",
+    "jsonschema>=4.23",
+    "numpy>=2",
+    "trimesh>=4",
+    "pymupdf>=1.24",
+    "ezdxf>=1.3",
+    "opencv-python-headless>=4.10",
+    "pillow>=10",
+    "scipy>=1.14",
+    "pandas>=2.2",
 ]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "ruff>=0.9"]
 
 [tool.ruff]
 line-length = 110

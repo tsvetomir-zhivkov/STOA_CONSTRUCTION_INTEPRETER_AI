@@ -1,0 +1,519 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stoa.local/building.schema.v0.3.json",
+  "title": "Stoa building index, schema v0.3",
+  "description": "One document per building (IFC) or per drawing page (DXF, SVG, PDF, raster). Superset of v0.2: every v0.2 entity field keeps its name and meaning. Lengths are metres, areas m2, volumes m3, angles degrees. Pixel coordinates are pixels of the ORIGINAL page image (or of the rendered plan canvas for vector sources). Unknown values are null, never guessed. Measured values carry a quantity record saying whether they are explicit (read from the source), calculated (derived by code from explicit data), inferred (a rule or convention) or not available. Entities are never deleted: replaced ones get status=superseded. Ids are unique across the whole document and every id reference must resolve (checked by the relationship validator, not by this schema).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "project", "site", "building", "drawing", "sources", "levels", "units", "rooms", "walls", "openings", "objects", "element_types", "materials", "material_layer_sets", "systems", "schedules", "relationships", "texts", "edges", "coverage", "history"],
+  "properties": {
+    "schema_version": {"const": "0.3"},
+    "project": {"$ref": "#/$defs/project"},
+    "site": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/site"}]},
+    "building": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/building"}]},
+    "drawing": {"$ref": "#/$defs/drawing"},
+    "sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/source"}},
+    "levels": {"type": "array", "items": {"$ref": "#/$defs/level"}},
+    "units": {"type": "array", "description": "Dwelling units (apartments), as in v0.2. Units of MEASURE are in project.units.", "items": {"$ref": "#/$defs/unit"}},
+    "rooms": {"type": "array", "items": {"$ref": "#/$defs/room"}},
+    "walls": {"type": "array", "items": {"$ref": "#/$defs/wall"}},
+    "openings": {"type": "array", "description": "Opening INSTANCES (one per door/window in the building). Their types are in element_types, schedule rows in schedules.", "items": {"$ref": "#/$defs/opening"}},
+    "objects": {"type": "array", "description": "Every other element: architectural, structural and MEP. ifc_class keeps the source class, so no IFC class is folded away.", "items": {"$ref": "#/$defs/object"}},
+    "element_types": {"type": "array", "description": "Reusable types (IfcDoorType, IfcWallType, IfcDoorStyle...). Instances point to them with type_id.", "items": {"$ref": "#/$defs/element_type"}},
+    "materials": {"type": "array", "items": {"$ref": "#/$defs/material"}},
+    "material_layer_sets": {"type": "array", "items": {"$ref": "#/$defs/material_layer_set"}},
+    "systems": {"type": "array", "description": "MEP systems, circuits and zones (IfcSystem, IfcDistributionSystem, IfcZone...).", "items": {"$ref": "#/$defs/system"}},
+    "schedules": {"type": "array", "items": {"$ref": "#/$defs/schedule"}},
+    "relationships": {"type": "array", "description": "Relations that no entity field already encodes (level_id, wall_id, type_id, system_ids and material links are fields, not relationships).", "items": {"$ref": "#/$defs/relationship"}},
+    "texts": {"type": "array", "items": {"$ref": "#/$defs/text"}},
+    "edges": {"type": "array", "items": {"$ref": "#/$defs/edge"}},
+    "coverage": {"type": "array", "items": {"$ref": "#/$defs/coverage"}},
+    "history": {"type": "array", "items": {"$ref": "#/$defs/history"}},
+    "statistics": {"type": "array", "items": {"$ref": "#/$defs/statistic"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "pattern": "^\\S+$", "description": "No whitespace. Node ids use [A-Za-z0-9_.-]; Python translator ids may contain a raw IFC GlobalId ($)."},
+    "id_or_null": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
+    "ids": {"type": "array", "items": {"$ref": "#/$defs/id"}},
+    "num_or_null": {"type": ["number", "null"]},
+    "str_or_null": {"type": ["string", "null"]},
+    "point": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 3},
+    "polygon": {"type": ["array", "null"], "items": {"$ref": "#/$defs/point"}},
+    "polygons": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/$defs/point"}}},
+    "bbox": {"type": ["array", "null"], "items": {"type": "number"}, "minItems": 4, "maxItems": 4, "description": "[x0, y0, x1, y1] in page pixels"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "status_value": {"enum": ["explicit", "calculated", "inferred", "not_available"], "description": "explicit: read from the source (an IFC attribute or quantity, a written area). calculated: derived by code from explicit data (polygon area, sum of layers). inferred: from a rule or convention (a default unit, a glossary match). not_available: the source does not say; value is null."},
+
+    "quantity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit", "status", "method", "source"],
+      "properties": {
+        "value": {"type": ["number", "null"], "description": "In SI (m, m2, m3, kg, s) or degrees, or a plain count"},
+        "unit": {"enum": ["m", "m2", "m3", "kg", "s", "deg", "count", "ratio", null]},
+        "status": {"$ref": "#/$defs/status_value"},
+        "method": {"type": ["string", "null"], "description": "How the value was obtained, e.g. IfcQuantityArea, polygon area x scale^2, sum of layer thicknesses"},
+        "source": {"type": ["string", "null"], "description": "Where it came from, e.g. Qto_SpaceBaseQuantities.NetFloorArea, polygon_px, text_12"},
+        "raw": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["value", "unit"],
+          "properties": {"value": {"type": ["number", "string", "boolean", "null"]}, "unit": {"type": ["string", "null"]}},
+          "description": "The value as stored in the source, before unit conversion"
+        }
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"const": "not_available"}}}, "then": {"properties": {"value": {"type": "null"}}}, "else": {"properties": {"value": {"type": "number"}}}}
+      ]
+    },
+    "quantities": {"type": "object", "description": "Key = the entity field it describes (area_m2, length_m...) or an IFC quantity as <QtoSet>.<Name>.", "propertyNames": {"minLength": 1}, "additionalProperties": {"$ref": "#/$defs/quantity"}},
+
+    "unit_decl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "to_si", "status", "source"],
+      "properties": {
+        "unit": {"type": ["string", "null"], "description": "Declared unit as named in the source, e.g. MILLI METRE, FOOT, SQUARE_METRE, DEGREE"},
+        "to_si": {"type": ["number", "null"], "description": "Multiply a source value by this to get m / m2 / m3 / kg; for plane angles, to get degrees"},
+        "status": {"$ref": "#/$defs/status_value"},
+        "source": {"type": ["string", "null"]}
+      }
+    },
+    "units_decl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["length", "area", "volume", "angle"],
+      "properties": {
+        "length": {"$ref": "#/$defs/unit_decl"},
+        "area": {"$ref": "#/$defs/unit_decl"},
+        "volume": {"$ref": "#/$defs/unit_decl"},
+        "angle": {"$ref": "#/$defs/unit_decl"},
+        "mass": {"$ref": "#/$defs/unit_decl"}
+      }
+    },
+
+    "provenance": {
+      "type": "object",
+      "required": ["extractor", "source_ref"],
+      "properties": {
+        "extractor": {"type": "string", "minLength": 1},
+        "source_ref": {"type": "string", "minLength": 1, "description": "DXF handle, PDF item index, IFC GlobalId, or extractor-local id"},
+        "file": {"type": "string"},
+        "layer": {"type": "string"},
+        "details": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "code", "name"],
+      "properties": {"system": {"$ref": "#/$defs/str_or_null"}, "code": {"$ref": "#/$defs/str_or_null"}, "name": {"$ref": "#/$defs/str_or_null"}}
+    },
+
+    "entity": {
+      "type": "object",
+      "required": ["id", "confidence", "provenance"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "provenance": {"$ref": "#/$defs/provenance"},
+        "status": {"enum": ["active", "superseded"], "default": "active"},
+        "superseded_by": {"$ref": "#/$defs/id_or_null"},
+        "level_id": {"$ref": "#/$defs/id_or_null"},
+        "flags": {"type": "array", "items": {"type": "string"}},
+        "properties": {"type": "object", "description": "Free-form extras, e.g. raw IFC property sets (properties.psets: values as stored, unit not declared)"},
+        "global_id": {"type": ["string", "null"], "description": "IFC GlobalId (raw, 22 characters), when the source has one"},
+        "ifc_class": {"type": ["string", "null"], "description": "Source IFC class in upper case, e.g. IFCWALLSTANDARDCASE"},
+        "quantities": {"$ref": "#/$defs/quantities"},
+        "classifications": {"type": "array", "items": {"$ref": "#/$defs/classification"}}
+      }
+    },
+
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "global_id", "schema_identifier", "application", "units"],
+      "properties": {
+        "name": {"$ref": "#/$defs/str_or_null"},
+        "long_name": {"$ref": "#/$defs/str_or_null"},
+        "description": {"$ref": "#/$defs/str_or_null"},
+        "phase": {"$ref": "#/$defs/str_or_null"},
+        "global_id": {"$ref": "#/$defs/str_or_null"},
+        "schema_identifier": {"type": ["string", "null"], "description": "IFC2X3, IFC4, IFC4X3... (FILE_SCHEMA)"},
+        "application": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["name", "version", "developer"],
+          "properties": {"name": {"$ref": "#/$defs/str_or_null"}, "version": {"$ref": "#/$defs/str_or_null"}, "developer": {"$ref": "#/$defs/str_or_null"}, "identifier": {"$ref": "#/$defs/str_or_null"}, "originating_system": {"$ref": "#/$defs/str_or_null"}}
+        },
+        "created_at": {"$ref": "#/$defs/str_or_null"},
+        "units": {"$ref": "#/$defs/units_decl"}
+      }
+    },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "global_id", "name"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "global_id": {"$ref": "#/$defs/str_or_null"},
+        "name": {"$ref": "#/$defs/str_or_null"},
+        "long_name": {"$ref": "#/$defs/str_or_null"},
+        "ref_latitude_deg": {"$ref": "#/$defs/num_or_null"},
+        "ref_longitude_deg": {"$ref": "#/$defs/num_or_null"},
+        "ref_elevation_m": {"$ref": "#/$defs/num_or_null"},
+        "address": {"$ref": "#/$defs/str_or_null"}
+      }
+    },
+    "building": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "global_id", "name"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "global_id": {"$ref": "#/$defs/str_or_null"},
+        "name": {"$ref": "#/$defs/str_or_null"},
+        "long_name": {"$ref": "#/$defs/str_or_null"},
+        "elevation_of_ref_height_m": {"$ref": "#/$defs/num_or_null"},
+        "elevation_of_terrain_m": {"$ref": "#/$defs/num_or_null"},
+        "address": {"$ref": "#/$defs/str_or_null"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "file", "role", "format"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "file": {"type": "string"},
+        "role": {"enum": ["primary", "sibling", "merged"]},
+        "format": {"enum": ["ifc", "dxf", "svg", "pdf", "raster", "json", "other"]},
+        "schema_identifier": {"$ref": "#/$defs/str_or_null"},
+        "size_bytes": {"type": ["integer", "null"], "minimum": 0},
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "georeference": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "description": "IfcMapConversion: model coordinates (metres) -> projected CRS",
+          "properties": {
+            "eastings": {"$ref": "#/$defs/num_or_null"},
+            "northings": {"$ref": "#/$defs/num_or_null"},
+            "orthogonal_height": {"$ref": "#/$defs/num_or_null"},
+            "x_axis_abscissa": {"$ref": "#/$defs/num_or_null"},
+            "x_axis_ordinate": {"$ref": "#/$defs/num_or_null"},
+            "scale": {"$ref": "#/$defs/num_or_null"},
+            "target_crs": {"$ref": "#/$defs/str_or_null"}
+          }
+        }
+      }
+    },
+
+    "drawing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "source", "route", "read_from"],
+      "properties": {
+        "file": {"type": "string"},
+        "source": {"type": "string"},
+        "page_index": {"type": ["integer", "null"], "minimum": 0},
+        "page_count": {"type": ["integer", "null"], "minimum": 1},
+        "part": {"type": ["string", "null"]},
+        "image": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["width_px", "height_px"],
+          "properties": {"width_px": {"type": "integer", "minimum": 1}, "height_px": {"type": "integer", "minimum": 1}, "dpi": {"$ref": "#/$defs/num_or_null"}}
+        },
+        "route": {"enum": ["ifc", "dxf", "svg", "vector_pdf", "raster", "vlm", "none"]},
+        "read_from": {"type": "string"},
+        "transforms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind"],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {"enum": ["resize", "deskew", "affine", "upscale", "invert", "other"]},
+              "from": {"type": "string"}, "to": {"type": "string"},
+              "scale_x": {"type": "number"}, "scale_y": {"type": "number"}, "angle_deg": {"type": "number"},
+              "matrix": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}},
+              "residual_px": {"type": "number"}, "note": {"type": "string"}
+            }
+          }
+        },
+        "scale": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["source", "confidence"],
+          "properties": {
+            "m_per_px": {"$ref": "#/$defs/num_or_null"},
+            "source": {"enum": ["vector_units", "scale_note", "dimension_lines", "door_width", "none"]},
+            "confidence": {"$ref": "#/$defs/confidence"},
+            "note": {"type": "string"}
+          }
+        },
+        "translator_version": {"type": "string"},
+        "created_at": {"type": "string"}
+      }
+    },
+
+    "level": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}], "required": ["name"],
+      "properties": {"name": {"type": "string"}, "long_name": {"$ref": "#/$defs/str_or_null"}, "elevation_m": {"$ref": "#/$defs/num_or_null"}, "height_m": {"$ref": "#/$defs/num_or_null"}, "bbox_px": {"$ref": "#/$defs/bbox"}}
+    },
+    "unit": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}], "required": ["label"],
+      "properties": {"label": {"type": "string"}, "label_raw": {"$ref": "#/$defs/str_or_null"}, "polygon_px": {"$ref": "#/$defs/polygon"}, "polygon_m": {"$ref": "#/$defs/polygon"}, "area_m2": {"$ref": "#/$defs/num_or_null"}}
+    },
+
+    "finish": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["value", "status", "source"],
+      "properties": {
+        "value": {"$ref": "#/$defs/str_or_null"},
+        "status": {"$ref": "#/$defs/status_value"},
+        "source": {"$ref": "#/$defs/str_or_null"},
+        "covering_ids": {"$ref": "#/$defs/ids"},
+        "material_ids": {"$ref": "#/$defs/ids"}
+      }
+    },
+    "room": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}], "required": ["name", "type", "is_outdoor"],
+      "properties": {
+        "name": {"$ref": "#/$defs/str_or_null"},
+        "number": {"$ref": "#/$defs/str_or_null"},
+        "label": {"$ref": "#/$defs/str_or_null"},
+        "type": {"enum": ["bedroom", "living", "kitchen", "dining", "bathroom", "wc", "sauna", "entry", "corridor", "closet", "storage", "utility", "technical", "stair", "balcony", "terrace", "garage", "office", "outdoor", "shaft", "other", "unknown"]},
+        "subtype": {"$ref": "#/$defs/str_or_null"},
+        "unit_id": {"$ref": "#/$defs/id_or_null"},
+        "parent_room_id": {"$ref": "#/$defs/id_or_null"},
+        "is_outdoor": {"type": "boolean"},
+        "polygon_px": {"$ref": "#/$defs/polygon"},
+        "polygon_m": {"$ref": "#/$defs/polygon"},
+        "holes_px": {"$ref": "#/$defs/polygons"},
+        "holes_m": {"$ref": "#/$defs/polygons"},
+        "area_m2": {"$ref": "#/$defs/num_or_null"},
+        "area_written_m2": {"$ref": "#/$defs/num_or_null"},
+        "area_computed_m2": {"$ref": "#/$defs/num_or_null"},
+        "height_m": {"$ref": "#/$defs/num_or_null"},
+        "volume_m3": {"$ref": "#/$defs/num_or_null"},
+        "text_ids": {"$ref": "#/$defs/ids"},
+        "finishes": {
+          "type": "object", "additionalProperties": false,
+          "properties": {"floor": {"$ref": "#/$defs/finish"}, "wall": {"$ref": "#/$defs/finish"}, "ceiling": {"$ref": "#/$defs/finish"}}
+        },
+        "boundary_element_ids": {"$ref": "#/$defs/ids", "description": "Elements bounding this space (IfcRelSpaceBoundary)"},
+        "type_id": {"$ref": "#/$defs/id_or_null", "description": "IfcSpaceType"}
+      }
+    },
+    "wall": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}],
+      "properties": {
+        "polyline_px": {"$ref": "#/$defs/polygon"},
+        "polygon_px": {"$ref": "#/$defs/polygon"},
+        "polygon_m": {"$ref": "#/$defs/polygon"},
+        "length_m": {"$ref": "#/$defs/num_or_null"},
+        "thickness_m": {"$ref": "#/$defs/num_or_null"},
+        "height_m": {"$ref": "#/$defs/num_or_null"},
+        "net_side_area_m2": {"$ref": "#/$defs/num_or_null"},
+        "net_volume_m3": {"$ref": "#/$defs/num_or_null"},
+        "is_external": {"type": ["boolean", "null"]},
+        "is_load_bearing": {"type": ["boolean", "null"]},
+        "room_ids": {"$ref": "#/$defs/ids"},
+        "type_id": {"$ref": "#/$defs/id_or_null"},
+        "material_layer_set_id": {"$ref": "#/$defs/id_or_null"},
+        "material_ids": {"$ref": "#/$defs/ids"}
+      }
+    },
+    "opening": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}], "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["door", "window", "doorway"]},
+        "bbox_px": {"$ref": "#/$defs/bbox"},
+        "polygon_px": {"$ref": "#/$defs/polygon"},
+        "polygon_m": {"$ref": "#/$defs/polygon"},
+        "width_m": {"$ref": "#/$defs/num_or_null"},
+        "height_m": {"$ref": "#/$defs/num_or_null"},
+        "is_entrance": {"type": ["boolean", "null"]},
+        "wall_id": {"$ref": "#/$defs/id_or_null"},
+        "room_ids": {"$ref": "#/$defs/ids"},
+        "type_id": {"$ref": "#/$defs/id_or_null"},
+        "mark": {"type": ["string", "null"], "description": "Instance mark / tag as in the source (IfcElement.Tag); joins the instance to its schedule row"},
+        "operation": {"type": ["string", "null"], "description": "Operation type as in the source, e.g. SINGLE_SWING_LEFT"},
+        "material_ids": {"$ref": "#/$defs/ids"}
+      }
+    },
+    "object": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}], "required": ["category", "discipline"],
+      "properties": {
+        "category": {"enum": ["toilet", "sink", "shower", "bathtub", "sauna_bench", "stair", "stove", "fridge", "washing_machine", "elevator", "radiator", "closet", "other"], "description": "Fixture category as in v0.2 (questions count these). Everything else is other; subtype and ifc_class say what it is."},
+        "discipline": {"enum": ["architectural", "structural", "mep", "furnishing", "other"]},
+        "subtype": {"$ref": "#/$defs/str_or_null"},
+        "bbox_px": {"$ref": "#/$defs/bbox"},
+        "polygon_px": {"$ref": "#/$defs/polygon"},
+        "polygon_m": {"$ref": "#/$defs/polygon"},
+        "room_id": {"$ref": "#/$defs/id_or_null"},
+        "net_volume_m3": {"$ref": "#/$defs/num_or_null"},
+        "area_m2": {"$ref": "#/$defs/num_or_null"},
+        "type_id": {"$ref": "#/$defs/id_or_null"},
+        "system_ids": {"$ref": "#/$defs/ids"},
+        "material_ids": {"$ref": "#/$defs/ids"},
+        "material_layer_set_id": {"$ref": "#/$defs/id_or_null"},
+        "host_id": {"$ref": "#/$defs/id_or_null"}
+      }
+    },
+
+    "element_type": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}], "required": ["name", "kind", "instance_ids"],
+      "properties": {
+        "name": {"$ref": "#/$defs/str_or_null"},
+        "kind": {"enum": ["door", "window", "wall", "slab", "column", "beam", "covering", "stair", "railing", "furniture", "sanitary", "mep", "other"]},
+        "predefined_type": {"$ref": "#/$defs/str_or_null"},
+        "operation": {"$ref": "#/$defs/str_or_null"},
+        "tag": {"$ref": "#/$defs/str_or_null"},
+        "width_m": {"$ref": "#/$defs/num_or_null"},
+        "height_m": {"$ref": "#/$defs/num_or_null"},
+        "material_ids": {"$ref": "#/$defs/ids"},
+        "material_layer_set_id": {"$ref": "#/$defs/id_or_null"},
+        "instance_ids": {"$ref": "#/$defs/ids"}
+      }
+    },
+    "material": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}], "required": ["name"],
+      "properties": {"name": {"type": "string"}, "category": {"$ref": "#/$defs/str_or_null"}, "description": {"$ref": "#/$defs/str_or_null"}}
+    },
+    "material_layer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["material_id", "thickness_m"],
+      "properties": {
+        "material_id": {"$ref": "#/$defs/id_or_null"},
+        "thickness_m": {"$ref": "#/$defs/num_or_null", "description": "Explicit IfcMaterialLayer.LayerThickness converted with the declared length unit"},
+        "name": {"$ref": "#/$defs/str_or_null"},
+        "category": {"$ref": "#/$defs/str_or_null"},
+        "is_ventilated": {"type": ["boolean", "string", "null"]},
+        "priority": {"type": ["integer", "null"]}
+      }
+    },
+    "material_layer_set": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}], "required": ["name", "layers", "total_thickness_m"],
+      "properties": {
+        "name": {"$ref": "#/$defs/str_or_null"},
+        "kind": {"enum": ["layer_set", "constituent_set", "profile_set", "list"]},
+        "layers": {"type": "array", "items": {"$ref": "#/$defs/material_layer"}},
+        "total_thickness_m": {"$ref": "#/$defs/num_or_null", "description": "Sum of the layer thicknesses (calculated); null for constituent / profile sets and lists"}
+      }
+    },
+    "system": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}], "required": ["name", "kind", "member_ids"],
+      "properties": {
+        "name": {"$ref": "#/$defs/str_or_null"},
+        "long_name": {"$ref": "#/$defs/str_or_null"},
+        "kind": {"enum": ["system", "distribution_system", "distribution_circuit", "building_system", "structural_analysis", "zone", "group", "other"]},
+        "predefined_type": {"$ref": "#/$defs/str_or_null"},
+        "object_type": {"$ref": "#/$defs/str_or_null"},
+        "member_ids": {"$ref": "#/$defs/ids"},
+        "unresolved_member_count": {"type": "integer", "minimum": 0, "description": "Members of the source group that are not in this document (other building, not emitted)"}
+      }
+    },
+    "schedule_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mark", "type_id", "instance_ids", "count"],
+      "properties": {
+        "mark": {"$ref": "#/$defs/str_or_null"},
+        "type_id": {"$ref": "#/$defs/id_or_null"},
+        "name": {"$ref": "#/$defs/str_or_null"},
+        "instance_ids": {"$ref": "#/$defs/ids"},
+        "count": {"type": "integer", "minimum": 0},
+        "width_m": {"$ref": "#/$defs/num_or_null"},
+        "height_m": {"$ref": "#/$defs/num_or_null"}
+      }
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "status", "method", "source", "entries"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "name": {"type": "string"},
+        "kind": {"enum": ["door", "window", "wall", "object", "room", "other"]},
+        "status": {"$ref": "#/$defs/status_value"},
+        "method": {"type": "string"},
+        "source": {"type": "string"},
+        "entries": {"type": "array", "items": {"$ref": "#/$defs/schedule_entry"}}
+      }
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "from_id", "to_id", "provenance"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "kind": {"enum": ["aggregates", "bounds", "covers", "connects", "nests", "serves", "other"], "description": "aggregates: from = whole, to = part. bounds: from = element, to = room (space boundary). covers: from = covering, to = room or element. connects: wall-to-wall path connection. serves: system -> building."},
+        "from_id": {"$ref": "#/$defs/id"},
+        "to_id": {"$ref": "#/$defs/id"},
+        "provenance": {"$ref": "#/$defs/provenance"},
+        "properties": {"type": "object"}
+      }
+    },
+
+    "text": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}], "required": ["text"],
+      "properties": {
+        "text": {"type": "string"}, "bbox_px": {"$ref": "#/$defs/bbox"}, "polygon_px": {"$ref": "#/$defs/polygon"}, "angle_deg": {"$ref": "#/$defs/num_or_null"},
+        "role": {"enum": ["room_label", "room_number", "area", "dimension", "scale_note", "title", "level_title", "unit_label", "legend", "other"]},
+        "room_id": {"$ref": "#/$defs/id_or_null"}
+      }
+    },
+    "edge": {
+      "type": "object", "unevaluatedProperties": false, "allOf": [{"$ref": "#/$defs/entity"}], "required": ["kind", "from_id"],
+      "properties": {"kind": {"enum": ["reference", "legend"]}, "from_id": {"$ref": "#/$defs/id"}, "to": {"type": ["string", "null"]}, "meaning": {"type": ["string", "null"]}}
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category", "region", "status", "extractor", "confidence"],
+      "properties": {
+        "category": {"type": "string"},
+        "region": {"oneOf": [{"const": "page"}, {"$ref": "#/$defs/bbox"}]},
+        "status": {"enum": ["analysed", "partial", "not_analysed"]},
+        "extractor": {"type": "string"},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "note": {"type": "string"}
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["extractor", "action"],
+      "properties": {
+        "at": {"type": "string"}, "extractor": {"type": "string"}, "action": {"type": "string"},
+        "entity_ids": {"type": "array", "items": {"type": "string"}}, "cost_usd": {"$ref": "#/$defs/num_or_null"}, "note": {"type": "string"}
+      }
+    },
+    "statistic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "value", "unit", "status", "method", "source", "exact"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "name": {"type": "string", "description": "e.g. count.openings.door, sum.rooms.area_m2"},
+        "value": {"$ref": "#/$defs/num_or_null"},
+        "unit": {"enum": ["m", "m2", "m3", "count", null]},
+        "status": {"$ref": "#/$defs/status_value"},
+        "method": {"type": "string"},
+        "source": {"type": "string"},
+        "exact": {"type": "boolean", "description": "true when every input is explicit (or a count of entities) and nothing was skipped"},
+        "scope": {
+          "type": "object", "additionalProperties": false,
+          "properties": {"level_id": {"$ref": "#/$defs/id_or_null"}, "collection": {"type": "string"}, "category": {"type": "string"}, "ifc_class": {"type": "string"}}
+        },
+        "inputs": {"type": "integer", "minimum": 0},
+        "missing": {"type": "integer", "minimum": 0, "description": "inputs skipped because their value is null"}
+      }
+    }
+  }
+}

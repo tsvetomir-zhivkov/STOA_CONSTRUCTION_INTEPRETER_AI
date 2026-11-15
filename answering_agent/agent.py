@@ -1,4 +1,4 @@
-"""Gemini answering agent for Stoa drawing-index schema v0.2.
+"""Gemini answering agent for Stoa building schema v0.3.
 
 Install: uv add google-genai python-dotenv shapely
 Set GEMINI_API_KEY in .env and optionally GEMINI_MODEL.
@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from tools import (
+from answering_agent.tools import (
     aggregate,
     connected_rooms,
     check_coverage,
@@ -20,14 +20,18 @@ from tools import (
     geometry_operation,
     get_entity,
     query_entities,
+    building_summary,
 )
 
 load_dotenv()
 
-MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-4-hydrogen")
 SYSTEM_INSTRUCTION = """You are a construction drawing assistant for engineers.
 Use deterministic tools for drawing facts, counts, measurements, and geometry.
-The drawing index uses schema v0.2; ignore superseded entities.
+The building index uses schema v0.3; ignore superseded entities. It contains all levels.
+Filter by level_id for floor-specific questions. Types and schedule rows are specifications,
+not physical instances. Doorways and voids are not doors. Check quantity origin and method;
+unknown measurements are not zero. Pixel coordinates from different drawings cannot be compared.
 - Prefer the smallest number of tool calls needed.
 - Reuse evidence already returned by tools.
 - Do not repeat coverage checks when the returned coverage information is sufficient.
@@ -47,7 +51,10 @@ COVERAGE AND GAP DETECTION:
 - For a verified absence, cite the coverage reference rather than making up
   an entity ID. Do not confuse lack of evidence with evidence of absence.
 - Do not infer room access from touching polygons.
-
+ASSUMED VALUES:
+- If a tool marks an entity as assumed_prior, disclose that its information is assumed, not verified from the drawing.
+- For counts and measurements, disclose if any contributing entities are assumed.
+- Never present assumed information as a confirmed fact.
 RESPONSE STYLE:
 - Answer directly, naturally, and concisely; 1-3 sentences for simple questions.
 - Do not expose JSON keys, coordinates, raw provenance, or tool implementation.
@@ -68,17 +75,22 @@ LANGUAGE:
 
 def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
     """Answer one question using deterministic drawing tools and Gemini planning."""
-    if drawing_data.get("schema_version") != "0.2":
-        raise ValueError("This agent expects Stoa drawing-index schema v0.2")
+    if drawing_data.get("schema_version") not in ("0.2", "0.3"):
+        raise ValueError("This agent expects Stoa drawing-index schema v0.2 or v0.3")
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("Set GEMINI_API_KEY in your .env file")
 
     # Wrappers bind the drawing data privately; the model never supplies it.
+    def building_summary_tool() -> dict:
+        """Get project/building metadata, source files, levels and calculated building statistics."""
+        return building_summary(drawing_data)
+
     def query_entities_tool(collection: str, field: str = "", value: str = "", limit: int = 50) -> dict:
         """Search active drawing entities. Collections: levels, units, rooms, walls,
-        openings, objects, texts, edges. Optional exact-match field/value filter.
+        openings, objects, texts, edges, types, systems, schedules. Optional exact-match field/value filter.
+        Results include ALL flags, assumption flags, and coverage notes.
         Use room 'type' (e.g. bedroom, living, wc, entry), opening 'kind'
         (door, window, doorway), or object 'category'.
         """
@@ -95,6 +107,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         Operations: count, sum, min, max, average. For numeric operations,
         choose a measurement such as area_m2, width_m, height_m or length_m.
         Missing numeric values are excluded and reported separately.
+        Results list flagged contributors; assumed entities are NOT verified facts.
         """
         return aggregate(drawing_data, collection, operation, measure, field, value)
 
@@ -117,6 +130,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         fireplace, stairs, text. Region is an optional pixel bounding box
         [left, top, right, bottom]; omit for the whole page. Only
         absence_verified=true allows a negative claim about that scope.
+        Read coverage_notes and partial_coverage_notes before answering.
         """
         return check_coverage(drawing_data, category, region)
 
@@ -126,6 +140,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         region. Supply supporting entity IDs if available. Returns
         supported_entities, verified_absence, or gap. A gap means further
         extraction is needed; no image fallback is currently available.
+        Returned entity evidence can itself be flagged as assumed.
         """
         return detect_gap(drawing_data, category, entity_ids, region)
 
@@ -136,6 +151,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM_INSTRUCTION,
             tools=[
+                building_summary_tool,
                 query_entities_tool,
                 get_entity_tool,
                 aggregate_tool,
@@ -147,7 +163,7 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> str:
             automatic_function_calling=types.AutomaticFunctionCallingConfig(
                 maximum_remote_calls=12,
             ),
-            thinking_config=types.ThinkingConfig(thinking_level="MEDIUM"),
+            thinking_config=types.ThinkingConfig(thinking_level="LOW"),
             temperature=0,
         ),
     )

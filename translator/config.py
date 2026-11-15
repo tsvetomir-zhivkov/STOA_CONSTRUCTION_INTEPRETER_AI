@@ -10,7 +10,11 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INDEX_DIR = REPO_ROOT / "index"
-SCHEMA_PATH = Path(__file__).resolve().parent / "schema" / "drawing.schema.json"
+LEGACY_SCHEMA_PATH = Path(__file__).resolve().parent / "schema" / "drawing.schema.json"
+# the contract (k, 2026-11-15): building.schema.v0.3.json (blueprint-ingest/schema/, synced here)
+SCHEMA_PATH = Path(__file__).resolve().parent / "schema" / "building.schema.v0.3.json"
+# the building-model schema (translator.building), not the contract
+BUILDING_MODEL_SCHEMA_PATH = Path(__file__).resolve().parent / "schema" / "building.v0.3.schema.json"
 
 
 def data_root(explicit: str | os.PathLike | None = None) -> Path:

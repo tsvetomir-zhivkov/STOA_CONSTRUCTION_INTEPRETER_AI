@@ -22,6 +22,7 @@ import pandas as pd  # noqa: E402
 import probe  # noqa: E402
 import split  # noqa: E402
 
+from translator.building import page_views  # noqa: E402
 from translator.config import INDEX_DIR, data_root, questions_path  # noqa: E402
 from translator.store import read_drawing  # noqa: E402
 
@@ -47,7 +48,8 @@ def load_index(index_dir: Path) -> dict[str, list[dict]]:
         if "_raw" in p.relative_to(index_dir).parts:
             continue
         doc = read_drawing(p)
-        docs[doc["drawing"]["file"]].append(doc)
+        for view in page_views(doc):
+            docs[view["drawing"]["file"]].append(view)
     return docs
 
 
