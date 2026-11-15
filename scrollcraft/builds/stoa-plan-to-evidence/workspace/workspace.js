@@ -394,38 +394,24 @@ async function showDrawing(file, my) {
   if (fmt === 'pdf') {
     const { renderPdfPages } = await loadSheetHelpers();
     const pages = await renderPdfPages(new Uint8Array(await file.arrayBuffer()));
-<<<<<<< HEAD
     if (my !== token || chat.overlay) return;
-    $('blueprint').replaceChildren(...pages.map((p) => figure(p.canvas, pages.length > 1 ? `Page ${p.n} of ${pages.length}` : '')));
-  } else if (fmt === 'dxf') {
-    const canvas = drawDxf(await file.text());
-    if (my !== token || chat.overlay) return;
-    $('blueprint').replaceChildren(figure(canvas, ''));
-=======
-    if (my !== token) return;
     $('blueprint').replaceChildren(...pages.map((p) => figure(p.canvas, pages.length > 1 ? `Page ${p.n} of ${pages.length}` : '', { pageIndex: p.n-1, pdf: p.pdf })));
   } else if (fmt === 'dxf') {
     const canvas = await drawDxf(await file.text());
-    if (my !== token) return;
+    if (my !== token || chat.overlay) return;
     $('blueprint').replaceChildren(figure(canvas, '', { project: canvas.sourceProjection }));
->>>>>>> origin/main
   } else {
     const url = URL.createObjectURL(file);
     urls.push(url);
     const img = Object.assign(document.createElement('img'), { src: url, alt: `Blueprint of ${file.name}` });
     await img.decode().catch(() => { throw new Error('the image could not be read'); });
-<<<<<<< HEAD
-    if (my !== token || chat.overlay) return;
-    $('blueprint').replaceChildren(figure(img, ''));
-=======
     if (my !== token) return;
     const svgRoot = fmt === 'svg' ? new DOMParser().parseFromString(await file.text(), 'image/svg+xml').documentElement : null;
-    if (my !== token) return;
+    if (my !== token || chat.overlay) return;
     $('blueprint').replaceChildren(figure(img, '', {
       svgAspect: svgRoot ? svgRoot.getAttribute('preserveAspectRatio') || 'xMidYMid meet' : null,
       svgHasViewBox: svgRoot ? svgRoot.hasAttribute('viewBox') : null,
     }));
->>>>>>> origin/main
   }
 }
 

@@ -83,13 +83,6 @@ body.dragging::after { content: "Drop an .ifc, .dxf, .svg, .png, .jpg or .pdf fi
   .viewbar { flex-wrap: wrap; }
 }
 
-<<<<<<< HEAD
-/* pipe answers: the ids an answer cites (highlighted on the drawing), and its reliability / cost */
-.messages .cites { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
-.messages .cites li { padding: 1px 7px; border-radius: 999px; background: #e6f4ec; color: #14532d;
-  font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-.messages .meta { display: block; margin-top: 6px; color: #6b7280; font-size: 12px; }
-=======
 /* Source overlays share the sheet's size and its zoom/pan transform. */
 .blueprint figure { text-align: center; }
 .drawing-sheet { position: relative; display: inline-block; max-width: 100%; vertical-align: top; transform-origin: center; }
@@ -97,4 +90,9 @@ body.dragging::after { content: "Drop an .ifc, .dxf, .svg, .png, .jpg or .pdf fi
 .source-overlay { position: absolute; inset: 1px; width: calc(100% - 2px); height: calc(100% - 2px); pointer-events: none; overflow: hidden; }
 .source-area { fill: #ffbd2945; stroke: #e87900; stroke-width: 3px; }
 .source-line { fill: none; stroke: #e87900; stroke-width: 6px; stroke-linecap: round; stroke-linejoin: round; }
->>>>>>> origin/main
+
+/* pipe answers: the ids an answer cites (highlighted on the drawing), and its reliability / cost */
+.messages .cites { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
+.messages .cites li { padding: 1px 7px; border-radius: 999px; background: #e6f4ec; color: #14532d;
+  font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.messages .meta { display: block; margin-top: 6px; color: #6b7280; font-size: 12px; }
