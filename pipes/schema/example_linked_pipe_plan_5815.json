@@ -1,0 +1,2437 @@
+{
+ "schema_version": "piping-0.1",
+ "building_schema_version": null,
+ "project": {
+  "name": null,
+  "global_id": null,
+  "schema_identifier": null,
+  "application": null,
+  "units": {
+   "length": {
+    "unit": "px",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "area": {
+    "unit": "px^2",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "volume": {
+    "unit": "px^3",
+    "to_si": null,
+    "status": "not_available",
+    "source": null
+   },
+   "angle": {
+    "unit": "DEGREE",
+    "to_si": 1.0,
+    "status": "inferred",
+    "source": "convention"
+   }
+  }
+ },
+ "site": null,
+ "building": null,
+ "drawing": {
+  "file": "hypothetical/VVS-5815.png",
+  "source": "src_1",
+  "page_index": 0,
+  "image": {
+   "width_px": 1076,
+   "height_px": 1448,
+   "dpi": null
+  },
+  "route": "raster",
+  "read_from": "hypothetical/VVS-5815.png",
+  "transforms": [],
+  "scale": {
+   "m_per_px": 0.01,
+   "source": "none",
+   "confidence": 0.4,
+   "note": "linked_drawing; evidence=link_1"
+  }
+ },
+ "sources": [
+  {
+   "id": "src_1",
+   "file": "hypothetical/VVS-5815.png",
+   "role": "primary",
+   "format": "raster"
+  }
+ ],
+ "levels": [],
+ "pipe_systems": [
+  {
+   "id": "sys_domestic_cold_water",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "derive",
+    "source_ref": "sys_domestic_cold_water"
+   },
+   "name": "domestic_cold_water",
+   "service": "domestic_cold_water",
+   "segment_ids": [
+    "pipe_1",
+    "pipe_2",
+    "pipe_3",
+    "pipe_4",
+    "pipe_5",
+    "pipe_6",
+    "pipe_7",
+    "pipe_8",
+    "pipe_9",
+    "pipe_10"
+   ],
+   "segment_count": 10,
+   "total_pipe_length_m": 5.06
+  }
+ ],
+ "pipe_types": [
+  {
+   "id": "type_1",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "derive",
+    "source_ref": "type_1"
+   },
+   "name": "domestic_cold_water Ø15",
+   "service": "domestic_cold_water",
+   "nominal_diameter": "Ø15",
+   "nominal_diameter_m": 0.012,
+   "segment_ids": [
+    "pipe_4",
+    "pipe_6",
+    "pipe_8",
+    "pipe_9",
+    "pipe_10"
+   ],
+   "segment_count": 5,
+   "total_length_m": 1.82
+  },
+  {
+   "id": "type_2",
+   "confidence": 0.5,
+   "provenance": {
+    "extractor": "derive",
+    "source_ref": "type_2"
+   },
+   "name": "domestic_cold_water Ø22",
+   "service": "domestic_cold_water",
+   "nominal_diameter": "Ø22",
+   "nominal_diameter_m": 0.02,
+   "segment_ids": [
+    "pipe_1",
+    "pipe_2",
+    "pipe_3",
+    "pipe_5",
+    "pipe_7"
+   ],
+   "segment_count": 5,
+   "total_length_m": 3.24
+  }
+ ],
+ "pipe_segments": [
+  {
+   "id": "pipe_1",
+   "confidence": 0.85,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "system": "cold_water",
+     "system_raw": "KV",
+     "line_tag_text_id": "text_1",
+     "diameter": {
+      "source": "label",
+      "text_id": "text_2",
+      "confidence": 0.85,
+      "value": {
+       "raw_text": "Ø22",
+       "dn_mm": 20,
+       "outer_mm": null,
+       "wall_mm": null
+      }
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "start_to_end",
+      "evidence_ids": [
+       "marker_1",
+       "node_1"
+      ],
+      "confidence": 0.8
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      }
+     ]
+    }
+   },
+   "service": "domestic_cold_water",
+   "tag": "KV-1",
+   "material": null,
+   "nominal_diameter": "Ø22",
+   "nominal_diameter_m": 0.02,
+   "centerline_px": [
+    [
+     872,
+     960
+    ],
+    [
+     872,
+     910
+    ]
+   ],
+   "bbox_px": [
+    872,
+    910,
+    872,
+    960
+   ],
+   "flow_direction": "start_to_end",
+   "start_connection_id": "conn_1",
+   "end_connection_id": "conn_2",
+   "quantities": {
+    "length_m": {
+     "value": 0.5,
+     "unit": "m",
+     "status": "calculated",
+     "method": "centerline_px length x drawing.scale.m_per_px",
+     "source": "centerline_px"
+    }
+   },
+   "centerline_m": [
+    [
+     8.72,
+     9.6
+    ],
+    [
+     8.72,
+     9.1
+    ]
+   ],
+   "length_m": 0.5,
+   "type_id": "type_2",
+   "system_id": "sys_domestic_cold_water"
+  },
+  {
+   "id": "pipe_2",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_2"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "system": "cold_water",
+     "system_raw": "KV",
+     "diameter": {
+      "source": "propagated",
+      "text_id": null,
+      "confidence": 0.75,
+      "value": {
+       "raw_text": "Ø22",
+       "dn_mm": 20,
+       "outer_mm": null,
+       "wall_mm": null
+      }
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "start_to_end",
+      "evidence_ids": [
+       "marker_1",
+       "node_1"
+      ],
+      "confidence": 0.6
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      }
+     ]
+    }
+   },
+   "service": "domestic_cold_water",
+   "tag": "KV-1",
+   "material": null,
+   "nominal_diameter": "Ø22",
+   "nominal_diameter_m": 0.02,
+   "centerline_px": [
+    [
+     872,
+     910
+    ],
+    [
+     872,
+     860
+    ]
+   ],
+   "bbox_px": [
+    872,
+    860,
+    872,
+    910
+   ],
+   "flow_direction": "start_to_end",
+   "start_connection_id": "conn_3",
+   "end_connection_id": "conn_4",
+   "quantities": {
+    "length_m": {
+     "value": 0.5,
+     "unit": "m",
+     "status": "calculated",
+     "method": "centerline_px length x drawing.scale.m_per_px",
+     "source": "centerline_px"
+    }
+   },
+   "centerline_m": [
+    [
+     8.72,
+     9.1
+    ],
+    [
+     8.72,
+     8.6
+    ]
+   ],
+   "length_m": 0.5,
+   "type_id": "type_2",
+   "system_id": "sys_domestic_cold_water"
+  },
+  {
+   "id": "pipe_3",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_3"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "system": "cold_water",
+     "system_raw": "KV",
+     "diameter": {
+      "source": "propagated",
+      "text_id": null,
+      "confidence": 0.7,
+      "value": {
+       "raw_text": "Ø22",
+       "dn_mm": 20,
+       "outer_mm": null,
+       "wall_mm": null
+      }
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "start_to_end",
+      "evidence_ids": [
+       "marker_1",
+       "node_1"
+      ],
+      "confidence": 0.6
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      }
+     ]
+    }
+   },
+   "service": "domestic_cold_water",
+   "tag": "KV-1",
+   "material": null,
+   "nominal_diameter": "Ø22",
+   "nominal_diameter_m": 0.02,
+   "centerline_px": [
+    [
+     872,
+     860
+    ],
+    [
+     872,
+     770
+    ]
+   ],
+   "bbox_px": [
+    872,
+    770,
+    872,
+    860
+   ],
+   "flow_direction": "start_to_end",
+   "start_connection_id": "conn_5",
+   "end_connection_id": "conn_6",
+   "quantities": {
+    "length_m": {
+     "value": 0.9,
+     "unit": "m",
+     "status": "calculated",
+     "method": "centerline_px length x drawing.scale.m_per_px",
+     "source": "centerline_px"
+    }
+   },
+   "centerline_m": [
+    [
+     8.72,
+     8.6
+    ],
+    [
+     8.72,
+     7.7
+    ]
+   ],
+   "length_m": 0.9,
+   "type_id": "type_2",
+   "system_id": "sys_domestic_cold_water"
+  },
+  {
+   "id": "pipe_4",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_4"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "system": "cold_water",
+     "system_raw": "KV",
+     "diameter": {
+      "source": "label",
+      "text_id": "text_3",
+      "confidence": 0.8,
+      "value": {
+       "raw_text": "Ø15",
+       "dn_mm": 12,
+       "outer_mm": null,
+       "wall_mm": null
+      }
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "start_to_end",
+      "evidence_ids": [
+       "marker_1",
+       "node_1"
+      ],
+      "confidence": 0.6
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      }
+     ]
+    }
+   },
+   "service": "domestic_cold_water",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": "Ø15",
+   "nominal_diameter_m": 0.012,
+   "centerline_px": [
+    [
+     872,
+     770
+    ],
+    [
+     886,
+     770
+    ]
+   ],
+   "bbox_px": [
+    872,
+    770,
+    886,
+    770
+   ],
+   "flow_direction": "start_to_end",
+   "start_connection_id": "conn_7",
+   "end_connection_id": "conn_8",
+   "quantities": {
+    "length_m": {
+     "value": 0.14,
+     "unit": "m",
+     "status": "calculated",
+     "method": "centerline_px length x drawing.scale.m_per_px",
+     "source": "centerline_px"
+    }
+   },
+   "centerline_m": [
+    [
+     8.72,
+     7.7
+    ],
+    [
+     8.86,
+     7.7
+    ]
+   ],
+   "length_m": 0.14,
+   "type_id": "type_1",
+   "system_id": "sys_domestic_cold_water"
+  },
+  {
+   "id": "pipe_5",
+   "confidence": 0.75,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_5"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "system": "cold_water",
+     "system_raw": "KV",
+     "diameter": {
+      "source": "propagated",
+      "text_id": null,
+      "confidence": 0.55,
+      "value": {
+       "raw_text": "Ø22",
+       "dn_mm": 20,
+       "outer_mm": null,
+       "wall_mm": null
+      }
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "start_to_end",
+      "evidence_ids": [
+       "marker_1",
+       "node_1"
+      ],
+      "confidence": 0.6
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      }
+     ]
+    }
+   },
+   "service": "domestic_cold_water",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": "Ø22",
+   "nominal_diameter_m": 0.02,
+   "centerline_px": [
+    [
+     872,
+     770
+    ],
+    [
+     872,
+     690
+    ]
+   ],
+   "bbox_px": [
+    872,
+    690,
+    872,
+    770
+   ],
+   "flow_direction": "start_to_end",
+   "start_connection_id": "conn_9",
+   "end_connection_id": "conn_10",
+   "quantities": {
+    "length_m": {
+     "value": 0.8,
+     "unit": "m",
+     "status": "calculated",
+     "method": "centerline_px length x drawing.scale.m_per_px",
+     "source": "centerline_px"
+    }
+   },
+   "centerline_m": [
+    [
+     8.72,
+     7.7
+    ],
+    [
+     8.72,
+     6.9
+    ]
+   ],
+   "length_m": 0.8,
+   "type_id": "type_2",
+   "system_id": "sys_domestic_cold_water"
+  },
+  {
+   "id": "pipe_6",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_6"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "system": "cold_water",
+     "system_raw": "KV",
+     "diameter": {
+      "source": "propagated",
+      "text_id": null,
+      "confidence": 0.5,
+      "value": {
+       "raw_text": "Ø15",
+       "dn_mm": 12,
+       "outer_mm": null,
+       "wall_mm": null
+      }
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "start_to_end",
+      "evidence_ids": [
+       "marker_1",
+       "node_1"
+      ],
+      "confidence": 0.6
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      }
+     ]
+    }
+   },
+   "service": "domestic_cold_water",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": "Ø15",
+   "nominal_diameter_m": 0.012,
+   "centerline_px": [
+    [
+     872,
+     690
+    ],
+    [
+     910,
+     690
+    ]
+   ],
+   "bbox_px": [
+    872,
+    690,
+    910,
+    690
+   ],
+   "flow_direction": "start_to_end",
+   "start_connection_id": "conn_11",
+   "end_connection_id": "conn_12",
+   "quantities": {
+    "length_m": {
+     "value": 0.38,
+     "unit": "m",
+     "status": "calculated",
+     "method": "centerline_px length x drawing.scale.m_per_px",
+     "source": "centerline_px"
+    }
+   },
+   "centerline_m": [
+    [
+     8.72,
+     6.9
+    ],
+    [
+     9.1,
+     6.9
+    ]
+   ],
+   "length_m": 0.38,
+   "type_id": "type_1",
+   "system_id": "sys_domestic_cold_water"
+  },
+  {
+   "id": "pipe_7",
+   "confidence": 0.75,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_7"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "system": "cold_water",
+     "system_raw": "KV",
+     "diameter": {
+      "source": "propagated",
+      "text_id": null,
+      "confidence": 0.5,
+      "value": {
+       "raw_text": "Ø22",
+       "dn_mm": 20,
+       "outer_mm": null,
+       "wall_mm": null
+      }
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "start_to_end",
+      "evidence_ids": [
+       "marker_1",
+       "node_1"
+      ],
+      "confidence": 0.6
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      }
+     ]
+    }
+   },
+   "service": "domestic_cold_water",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": "Ø22",
+   "nominal_diameter_m": 0.02,
+   "centerline_px": [
+    [
+     872,
+     690
+    ],
+    [
+     872,
+     636
+    ]
+   ],
+   "bbox_px": [
+    872,
+    636,
+    872,
+    690
+   ],
+   "flow_direction": "start_to_end",
+   "start_connection_id": "conn_13",
+   "end_connection_id": "conn_14",
+   "quantities": {
+    "length_m": {
+     "value": 0.54,
+     "unit": "m",
+     "status": "calculated",
+     "method": "centerline_px length x drawing.scale.m_per_px",
+     "source": "centerline_px"
+    }
+   },
+   "centerline_m": [
+    [
+     8.72,
+     6.9
+    ],
+    [
+     8.72,
+     6.36
+    ]
+   ],
+   "length_m": 0.54,
+   "type_id": "type_2",
+   "system_id": "sys_domestic_cold_water"
+  },
+  {
+   "id": "pipe_8",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_8"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "system": "cold_water",
+     "system_raw": "KV",
+     "diameter": {
+      "source": "propagated",
+      "text_id": null,
+      "confidence": 0.5,
+      "value": {
+       "raw_text": "Ø15",
+       "dn_mm": 12,
+       "outer_mm": null,
+       "wall_mm": null
+      }
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "start_to_end",
+      "evidence_ids": [
+       "marker_1",
+       "node_1"
+      ],
+      "confidence": 0.6
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      }
+     ]
+    }
+   },
+   "service": "domestic_cold_water",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": "Ø15",
+   "nominal_diameter_m": 0.012,
+   "centerline_px": [
+    [
+     872,
+     636
+    ],
+    [
+     890,
+     636
+    ]
+   ],
+   "bbox_px": [
+    872,
+    636,
+    890,
+    636
+   ],
+   "flow_direction": "start_to_end",
+   "start_connection_id": "conn_15",
+   "end_connection_id": "conn_16",
+   "quantities": {
+    "length_m": {
+     "value": 0.18,
+     "unit": "m",
+     "status": "calculated",
+     "method": "centerline_px length x drawing.scale.m_per_px",
+     "source": "centerline_px"
+    }
+   },
+   "centerline_m": [
+    [
+     8.72,
+     6.36
+    ],
+    [
+     8.9,
+     6.36
+    ]
+   ],
+   "length_m": 0.18,
+   "type_id": "type_1",
+   "system_id": "sys_domestic_cold_water"
+  },
+  {
+   "id": "pipe_9",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_9"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "system": "cold_water",
+     "system_raw": "KV",
+     "diameter": {
+      "source": "label",
+      "text_id": "text_4",
+      "confidence": 0.8,
+      "value": {
+       "raw_text": "Ø15",
+       "dn_mm": 12,
+       "outer_mm": null,
+       "wall_mm": null
+      }
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "start_to_end",
+      "evidence_ids": [
+       "marker_1",
+       "node_1"
+      ],
+      "confidence": 0.6
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      },
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      }
+     ]
+    }
+   },
+   "service": "domestic_cold_water",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": "Ø15",
+   "nominal_diameter_m": 0.012,
+   "centerline_px": [
+    [
+     872,
+     636
+    ],
+    [
+     872,
+     592
+    ],
+    [
+     872,
+     540
+    ]
+   ],
+   "bbox_px": [
+    872,
+    540,
+    872,
+    636
+   ],
+   "flow_direction": "start_to_end",
+   "start_connection_id": "conn_17",
+   "end_connection_id": "conn_18",
+   "quantities": {
+    "length_m": {
+     "value": 0.96,
+     "unit": "m",
+     "status": "calculated",
+     "method": "centerline_px length x drawing.scale.m_per_px",
+     "source": "centerline_px"
+    }
+   },
+   "centerline_m": [
+    [
+     8.72,
+     6.36
+    ],
+    [
+     8.72,
+     5.92
+    ],
+    [
+     8.72,
+     5.4
+    ]
+   ],
+   "length_m": 0.96,
+   "type_id": "type_1",
+   "system_id": "sys_domestic_cold_water"
+  },
+  {
+   "id": "pipe_10",
+   "confidence": 0.55,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_10"
+   },
+   "flags": [
+    "cov:connectivity",
+    "end1_unsnapped"
+   ],
+   "properties": {
+    "graph": {
+     "system": "cold_water",
+     "system_raw": "KV",
+     "diameter": {
+      "source": "propagated",
+      "text_id": null,
+      "confidence": 0.6,
+      "value": {
+       "raw_text": "Ø15",
+       "dn_mm": 12,
+       "outer_mm": null,
+       "wall_mm": null
+      }
+     },
+     "line_style": "solid",
+     "flow": {
+      "direction": "start_to_end",
+      "evidence_ids": [
+       "marker_1",
+       "node_1"
+      ],
+      "confidence": 0.6
+     },
+     "ends": [
+      {
+       "port_index": 0,
+       "snap": "snapped",
+       "snap_distance_px": 0
+      },
+      {
+       "port_index": null,
+       "snap": "unsnapped",
+       "snap_distance_px": 12
+      }
+     ]
+    }
+   },
+   "service": "domestic_cold_water",
+   "tag": null,
+   "material": null,
+   "nominal_diameter": "Ø15",
+   "nominal_diameter_m": 0.012,
+   "centerline_px": [
+    [
+     872,
+     540
+    ],
+    [
+     888,
+     540
+    ]
+   ],
+   "bbox_px": [
+    872,
+    540,
+    888,
+    540
+   ],
+   "flow_direction": "start_to_end",
+   "start_connection_id": "conn_19",
+   "end_connection_id": null,
+   "quantities": {
+    "length_m": {
+     "value": 0.16,
+     "unit": "m",
+     "status": "calculated",
+     "method": "centerline_px length x drawing.scale.m_per_px",
+     "source": "centerline_px"
+    }
+   },
+   "centerline_m": [
+    [
+     8.72,
+     5.4
+    ],
+    [
+     8.88,
+     5.4
+    ]
+   ],
+   "length_m": 0.16,
+   "type_id": "type_1",
+   "system_id": "sys_domestic_cold_water"
+  }
+ ],
+ "pipe_fittings": [
+  {
+   "id": "node_1",
+   "confidence": 0.82,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "node_1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "riser",
+     "subtype": "cold water riser from below (shaft)",
+     "rotation_deg": 0,
+     "system": "cold_water",
+     "center_px": [
+      872,
+      960
+     ],
+     "in_room_id": "room_7",
+     "in_room_link_id": "link_1",
+     "prov_extra": {
+      "source_region_px": [
+       860,
+       948,
+       884,
+       972
+      ]
+     }
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    860,
+    948,
+    884,
+    972
+   ],
+   "kind": "other",
+   "center_px": [
+    872,
+    960
+   ],
+   "connected_segment_ids": [
+    "pipe_1"
+   ],
+   "connection_ids": [
+    "conn_1"
+   ]
+  },
+  {
+   "id": "node_2",
+   "confidence": 0.88,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "node_2"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "ball_valve",
+     "subtype": "main shut-off",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       872,
+       900
+      ],
+      [
+       872,
+       920
+      ]
+     ],
+     "system": "cold_water",
+     "center_px": [
+      872,
+      910
+     ],
+     "in_room_id": "room_7",
+     "in_room_link_id": "link_1",
+     "prov_extra": {
+      "source_region_px": [
+       862,
+       900,
+       882,
+       920
+      ]
+     }
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    862,
+    900,
+    882,
+    920
+   ],
+   "kind": "valve",
+   "center_px": [
+    872,
+    910
+   ],
+   "connected_segment_ids": [
+    "pipe_1",
+    "pipe_2"
+   ],
+   "connection_ids": [
+    "conn_2",
+    "conn_3"
+   ]
+  },
+  {
+   "id": "node_4",
+   "confidence": 0.9,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "node_4"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "tee",
+     "subtype": "implicit from line crossing",
+     "rotation_deg": 0,
+     "system": "cold_water",
+     "center_px": [
+      872,
+      770
+     ],
+     "in_room_id": "room_6",
+     "in_room_link_id": "link_1",
+     "prov_extra": {
+      "source_region_px": [
+       866,
+       764,
+       878,
+       776
+      ]
+     }
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    866,
+    764,
+    878,
+    776
+   ],
+   "kind": "tee",
+   "center_px": [
+    872,
+    770
+   ],
+   "connected_segment_ids": [
+    "pipe_3",
+    "pipe_4",
+    "pipe_5"
+   ],
+   "connection_ids": [
+    "conn_6",
+    "conn_7",
+    "conn_9"
+   ]
+  },
+  {
+   "id": "node_6",
+   "confidence": 0.9,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "node_6"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "tee",
+     "subtype": "implicit from line crossing",
+     "rotation_deg": 0,
+     "system": "cold_water",
+     "center_px": [
+      872,
+      690
+     ],
+     "in_room_id": "room_6",
+     "in_room_link_id": "link_1",
+     "prov_extra": {
+      "source_region_px": [
+       866,
+       684,
+       878,
+       696
+      ]
+     }
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    866,
+    684,
+    878,
+    696
+   ],
+   "kind": "tee",
+   "center_px": [
+    872,
+    690
+   ],
+   "connected_segment_ids": [
+    "pipe_5",
+    "pipe_6",
+    "pipe_7"
+   ],
+   "connection_ids": [
+    "conn_10",
+    "conn_11",
+    "conn_13"
+   ]
+  },
+  {
+   "id": "node_8",
+   "confidence": 0.9,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "node_8"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "tee",
+     "subtype": "implicit from line crossing",
+     "rotation_deg": 0,
+     "system": "cold_water",
+     "center_px": [
+      872,
+      636
+     ],
+     "in_room_id": "room_6",
+     "in_room_link_id": "link_1",
+     "prov_extra": {
+      "source_region_px": [
+       866,
+       630,
+       878,
+       642
+      ]
+     }
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    866,
+    630,
+    878,
+    642
+   ],
+   "kind": "tee",
+   "center_px": [
+    872,
+    636
+   ],
+   "connected_segment_ids": [
+    "pipe_7",
+    "pipe_8",
+    "pipe_9"
+   ],
+   "connection_ids": [
+    "conn_14",
+    "conn_15",
+    "conn_17"
+   ]
+  },
+  {
+   "id": "node_10",
+   "confidence": 0.85,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "node_10"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "elbow",
+     "rotation_deg": 0,
+     "system": "cold_water",
+     "center_px": [
+      872,
+      540
+     ],
+     "in_room_id": "room_5",
+     "in_room_link_id": "link_1",
+     "prov_extra": {
+      "source_region_px": [
+       866,
+       534,
+       878,
+       546
+      ]
+     }
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    866,
+    534,
+    878,
+    546
+   ],
+   "kind": "elbow",
+   "center_px": [
+    872,
+    540
+   ],
+   "connected_segment_ids": [
+    "pipe_10",
+    "pipe_9"
+   ],
+   "connection_ids": [
+    "conn_18",
+    "conn_19"
+   ]
+  }
+ ],
+ "pipe_equipment": [
+  {
+   "id": "node_3",
+   "confidence": 0.79,
+   "provenance": {
+    "extractor": "ext_det",
+    "source_ref": "node_3"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "meter",
+     "subtype": "water meter",
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       872,
+       848
+      ],
+      [
+       872,
+       872
+      ]
+     ],
+     "system": "cold_water",
+     "center_px": [
+      872,
+      860
+     ],
+     "in_room_id": "room_7",
+     "in_room_link_id": "link_1",
+     "prov_extra": {
+      "source_region_px": [
+       860,
+       848,
+       884,
+       872
+      ]
+     }
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    860,
+    848,
+    884,
+    872
+   ],
+   "kind": "meter",
+   "connected_segment_ids": [
+    "pipe_2",
+    "pipe_3"
+   ],
+   "connection_ids": [
+    "conn_4",
+    "conn_5"
+   ]
+  },
+  {
+   "id": "node_5",
+   "confidence": 0.9,
+   "provenance": {
+    "extractor": "ext_link",
+    "source_ref": "node_5"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "fixture",
+     "subtype": "bathtub",
+     "label": {
+      "raw_text": null,
+      "expanded": null,
+      "language": null,
+      "normalized": "bathtub",
+      "glossary_term_id": null
+     },
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       886,
+       770
+      ]
+     ],
+     "system": "cold_water",
+     "center_px": [
+      921.0,
+      763.0
+     ],
+     "in_room_id": "room_6",
+     "in_room_link_id": "link_1",
+     "prov_extra": {
+      "source_region_px": [
+       886,
+       716,
+       956,
+       810
+      ]
+     }
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    886,
+    716,
+    956,
+    810
+   ],
+   "kind": "fixture",
+   "connected_segment_ids": [
+    "pipe_4"
+   ],
+   "connection_ids": [
+    "conn_8"
+   ]
+  },
+  {
+   "id": "node_7",
+   "confidence": 0.9,
+   "provenance": {
+    "extractor": "ext_link",
+    "source_ref": "node_7"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "fixture",
+     "subtype": "washbasin",
+     "label": {
+      "raw_text": null,
+      "expanded": null,
+      "language": null,
+      "normalized": "washbasin",
+      "glossary_term_id": null
+     },
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       910,
+       690
+      ]
+     ],
+     "system": "cold_water",
+     "center_px": [
+      932,
+      689.0
+     ],
+     "in_room_id": "room_6",
+     "in_room_link_id": "link_1",
+     "prov_extra": {
+      "source_region_px": [
+       910,
+       666,
+       954,
+       712
+      ]
+     }
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    910,
+    666,
+    954,
+    712
+   ],
+   "kind": "fixture",
+   "connected_segment_ids": [
+    "pipe_6"
+   ],
+   "connection_ids": [
+    "conn_12"
+   ]
+  },
+  {
+   "id": "node_9",
+   "confidence": 0.9,
+   "provenance": {
+    "extractor": "ext_link",
+    "source_ref": "node_9"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "fixture",
+     "subtype": "wc",
+     "label": {
+      "raw_text": null,
+      "expanded": null,
+      "language": null,
+      "normalized": "toilet",
+      "glossary_term_id": null
+     },
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       890,
+       636
+      ]
+     ],
+     "system": "cold_water",
+     "center_px": [
+      920,
+      639.0
+     ],
+     "in_room_id": "room_6",
+     "in_room_link_id": "link_1",
+     "prov_extra": {
+      "source_region_px": [
+       890,
+       614,
+       950,
+       664
+      ]
+     }
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    890,
+    614,
+    950,
+    664
+   ],
+   "kind": "fixture",
+   "connected_segment_ids": [
+    "pipe_8"
+   ],
+   "connection_ids": [
+    "conn_16"
+   ]
+  },
+  {
+   "id": "node_11",
+   "confidence": 0.9,
+   "provenance": {
+    "extractor": "ext_link",
+    "source_ref": "node_11"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "type": "fixture",
+     "subtype": "kitchen sink",
+     "label": {
+      "raw_text": null,
+      "expanded": null,
+      "language": null,
+      "normalized": "kitchen sink",
+      "glossary_term_id": null
+     },
+     "rotation_deg": 0,
+     "ports_px": [
+      [
+       900,
+       540
+      ]
+     ],
+     "system": "cold_water",
+     "center_px": [
+      924,
+      538
+     ],
+     "in_room_id": "room_5",
+     "in_room_link_id": "link_1",
+     "prov_extra": {
+      "source_region_px": [
+       900,
+       516,
+       948,
+       560
+      ]
+     }
+    }
+   },
+   "tag": null,
+   "bbox_px": [
+    900,
+    516,
+    948,
+    560
+   ],
+   "kind": "fixture",
+   "connected_segment_ids": [],
+   "connection_ids": []
+  }
+ ],
+ "pipe_connections": [
+  {
+   "id": "conn_1",
+   "confidence": 0.85,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_1"
+   },
+   "from_entity_id": "node_1",
+   "to_entity_id": "pipe_1",
+   "kind": "connected",
+   "point_px": [
+    872,
+    960
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    9.6
+   ]
+  },
+  {
+   "id": "conn_2",
+   "confidence": 0.85,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_1"
+   },
+   "from_entity_id": "node_2",
+   "to_entity_id": "pipe_1",
+   "kind": "connected",
+   "point_px": [
+    872,
+    910
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    9.1
+   ]
+  },
+  {
+   "id": "conn_3",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_2"
+   },
+   "from_entity_id": "node_2",
+   "to_entity_id": "pipe_2",
+   "kind": "connected",
+   "point_px": [
+    872,
+    910
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    9.1
+   ]
+  },
+  {
+   "id": "conn_4",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_2"
+   },
+   "from_entity_id": "node_3",
+   "to_entity_id": "pipe_2",
+   "kind": "connected",
+   "point_px": [
+    872,
+    860
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    8.6
+   ]
+  },
+  {
+   "id": "conn_5",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_3"
+   },
+   "from_entity_id": "node_3",
+   "to_entity_id": "pipe_3",
+   "kind": "connected",
+   "point_px": [
+    872,
+    860
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    8.6
+   ]
+  },
+  {
+   "id": "conn_6",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_3"
+   },
+   "from_entity_id": "node_4",
+   "to_entity_id": "pipe_3",
+   "kind": "connected",
+   "point_px": [
+    872,
+    770
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    7.7
+   ]
+  },
+  {
+   "id": "conn_7",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_4"
+   },
+   "from_entity_id": "node_4",
+   "to_entity_id": "pipe_4",
+   "kind": "connected",
+   "point_px": [
+    872,
+    770
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    7.7
+   ]
+  },
+  {
+   "id": "conn_8",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_4"
+   },
+   "from_entity_id": "node_5",
+   "to_entity_id": "pipe_4",
+   "kind": "connected",
+   "point_px": [
+    886,
+    770
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.86,
+    7.7
+   ]
+  },
+  {
+   "id": "conn_9",
+   "confidence": 0.75,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_5"
+   },
+   "from_entity_id": "node_4",
+   "to_entity_id": "pipe_5",
+   "kind": "connected",
+   "point_px": [
+    872,
+    770
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    7.7
+   ]
+  },
+  {
+   "id": "conn_10",
+   "confidence": 0.75,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_5"
+   },
+   "from_entity_id": "node_6",
+   "to_entity_id": "pipe_5",
+   "kind": "connected",
+   "point_px": [
+    872,
+    690
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    6.9
+   ]
+  },
+  {
+   "id": "conn_11",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_6"
+   },
+   "from_entity_id": "node_6",
+   "to_entity_id": "pipe_6",
+   "kind": "connected",
+   "point_px": [
+    872,
+    690
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    6.9
+   ]
+  },
+  {
+   "id": "conn_12",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_6"
+   },
+   "from_entity_id": "node_7",
+   "to_entity_id": "pipe_6",
+   "kind": "connected",
+   "point_px": [
+    910,
+    690
+   ],
+   "is_verified": false,
+   "point_m": [
+    9.1,
+    6.9
+   ]
+  },
+  {
+   "id": "conn_13",
+   "confidence": 0.75,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_7"
+   },
+   "from_entity_id": "node_6",
+   "to_entity_id": "pipe_7",
+   "kind": "connected",
+   "point_px": [
+    872,
+    690
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    6.9
+   ]
+  },
+  {
+   "id": "conn_14",
+   "confidence": 0.75,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_7"
+   },
+   "from_entity_id": "node_8",
+   "to_entity_id": "pipe_7",
+   "kind": "connected",
+   "point_px": [
+    872,
+    636
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    6.36
+   ]
+  },
+  {
+   "id": "conn_15",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_8"
+   },
+   "from_entity_id": "node_8",
+   "to_entity_id": "pipe_8",
+   "kind": "connected",
+   "point_px": [
+    872,
+    636
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    6.36
+   ]
+  },
+  {
+   "id": "conn_16",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_8"
+   },
+   "from_entity_id": "node_9",
+   "to_entity_id": "pipe_8",
+   "kind": "connected",
+   "point_px": [
+    890,
+    636
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.9,
+    6.36
+   ]
+  },
+  {
+   "id": "conn_17",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_9"
+   },
+   "from_entity_id": "node_8",
+   "to_entity_id": "pipe_9",
+   "kind": "connected",
+   "point_px": [
+    872,
+    636
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    6.36
+   ]
+  },
+  {
+   "id": "conn_18",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_9"
+   },
+   "from_entity_id": "node_10",
+   "to_entity_id": "pipe_9",
+   "kind": "connected",
+   "point_px": [
+    872,
+    540
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    5.4
+   ]
+  },
+  {
+   "id": "conn_19",
+   "confidence": 0.55,
+   "provenance": {
+    "extractor": "ext_graph",
+    "source_ref": "pipe_10"
+   },
+   "from_entity_id": "node_10",
+   "to_entity_id": "pipe_10",
+   "kind": "connected",
+   "point_px": [
+    872,
+    540
+   ],
+   "is_verified": false,
+   "point_m": [
+    8.72,
+    5.4
+   ]
+  }
+ ],
+ "texts": [
+  {
+   "id": "text_1",
+   "confidence": 0.83,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_1"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "line_tag",
+     "rotation_deg": 0,
+     "language": "fi"
+    }
+   },
+   "text": "KV-1",
+   "role": "pipe_label",
+   "bbox_px": [
+    880,
+    940,
+    912,
+    956
+   ],
+   "linked_entity_ids": [
+    "pipe_1"
+   ]
+  },
+  {
+   "id": "text_2",
+   "confidence": 0.8,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_2"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "diameter",
+     "value": {
+      "number": 22,
+      "unit": "mm"
+     },
+     "rotation_deg": 0
+    }
+   },
+   "text": "Ø22",
+   "role": "diameter",
+   "bbox_px": [
+    880,
+    924,
+    908,
+    938
+   ],
+   "linked_entity_ids": [
+    "pipe_1"
+   ]
+  },
+  {
+   "id": "text_3",
+   "confidence": 0.74,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_3"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "diameter",
+     "value": {
+      "number": 15,
+      "unit": "mm"
+     },
+     "rotation_deg": 0
+    }
+   },
+   "text": "Ø15",
+   "role": "diameter",
+   "bbox_px": [
+    874,
+    778,
+    902,
+    792
+   ],
+   "linked_entity_ids": [
+    "pipe_4"
+   ]
+  },
+  {
+   "id": "text_4",
+   "confidence": 0.77,
+   "provenance": {
+    "extractor": "ext_ocr",
+    "source_ref": "text_4"
+   },
+   "flags": [],
+   "properties": {
+    "graph": {
+     "role": "diameter",
+     "value": {
+      "number": 15,
+      "unit": "mm"
+     },
+     "rotation_deg": 0
+    }
+   },
+   "text": "Ø15",
+   "role": "diameter",
+   "bbox_px": [
+    840,
+    576,
+    868,
+    590
+   ],
+   "linked_entity_ids": [
+    "pipe_9"
+   ]
+  }
+ ],
+ "coverage": [
+  {
+   "category": "symbols",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.8,
+   "extractor": "ext_det",
+   "note": "Detector classes: valves, pumps, meters, risers, flow arrows. Fixtures come from the linked floor plan."
+  },
+  {
+   "category": "pipes",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.75,
+   "extractor": "ext_trace"
+  },
+  {
+   "category": "connectivity",
+   "region": [
+    860,
+    520,
+    912,
+    560
+   ],
+   "status": "partial",
+   "confidence": 0.3,
+   "extractor": "ext_graph",
+   "note": "pipe_10 ends 12 px from the kitchen sink (snap radius 10 px). Probably connects to node_11; not assumed."
+  },
+  {
+   "category": "text",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.85,
+   "extractor": "ext_ocr"
+  },
+  {
+   "category": "diameters",
+   "region": "page",
+   "status": "partial",
+   "confidence": 0.6,
+   "extractor": "ext_graph",
+   "note": "3 labels; other sizes propagated along runs."
+  },
+  {
+   "category": "flow_direction",
+   "region": "page",
+   "status": "partial",
+   "confidence": 0.6,
+   "extractor": "ext_graph",
+   "note": "One flow arrow; rest inferred from the riser as the only source."
+  },
+  {
+   "category": "lengths",
+   "region": "page",
+   "status": "partial",
+   "confidence": 0.4,
+   "extractor": "ext_code",
+   "note": "No written lengths; geometry lengths use the floor plan's door-width scale estimate (confidence 0.4)."
+  },
+  {
+   "category": "legend",
+   "region": "page",
+   "status": "not_analysed",
+   "confidence": 0.9,
+   "extractor": "ext_global",
+   "note": "No legend on this sheet."
+  },
+  {
+   "category": "link",
+   "region": "page",
+   "status": "analysed",
+   "confidence": 0.8,
+   "extractor": "ext_link"
+  }
+ ],
+ "history": [
+  {
+   "extractor": "ext_global",
+   "action": "extractor",
+   "cost_usd": 0.001,
+   "note": "{\"kind\": \"global_pass\", \"name\": \"small vision LLM on downscaled page\", \"version\": null, \"run_at\": \"2026-11-14T12:00:00Z\"}"
+  },
+  {
+   "extractor": "ext_det",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"symbol_detector\", \"name\": \"YOLOv8 fine-tuned on pipe symbols (Jamieson et al. 2024 style classes)\", \"version\": null, \"run_at\": \"2026-11-14T12:00:02Z\"}"
+  },
+  {
+   "extractor": "ext_ocr",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"ocr\", \"name\": \"PaddleOCR\", \"version\": null, \"run_at\": \"2026-11-14T12:00:03Z\"}"
+  },
+  {
+   "extractor": "ext_erase",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"symbol_text_eraser\", \"name\": \"OpenCV: fill detected symbol and text boxes with white\", \"version\": null, \"run_at\": \"2026-11-14T12:00:03Z\"}"
+  },
+  {
+   "extractor": "ext_trace",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"line_tracer\", \"name\": \"OpenCV skeletonize + Hough + polyline merge\", \"version\": null, \"run_at\": \"2026-11-14T12:00:04Z\"}"
+  },
+  {
+   "extractor": "ext_graph",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"graph_builder\", \"name\": \"snap ends to nearest node (radius 10 px), split at crossings, propagate sizes\", \"version\": null, \"run_at\": \"2026-11-14T12:00:04Z\"}"
+  },
+  {
+   "extractor": "ext_link",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"linker\", \"name\": \"register pipe sheet to floor plan by wall lines; match fixtures\", \"version\": null, \"run_at\": \"2026-11-14T12:00:05Z\"}"
+  },
+  {
+   "extractor": "ext_code",
+   "action": "extractor",
+   "cost_usd": 0.0,
+   "note": "{\"kind\": \"geometry_code\", \"name\": \"derive.py\", \"version\": \"0.1\", \"run_at\": \"2026-11-14T12:00:05Z\"}"
+  },
+  {
+   "extractor": "ext_global",
+   "action": "sheet_facts",
+   "note": "{\"sheet_id\": \"hypothetical/VVS-5815#0\", \"diagram_type\": \"pipe_plan\", \"is_to_scale\": true, \"file_format\": \"png\", \"title\": \"Vesijohdot (water supply)\", \"systems_shown\": [\"cold_water\"], \"languages\": [\"fi\"], \"regions\": [{\"kind\": \"diagram_area\", \"bbox_px\": [90, 120, 1010, 1380], \"provenance\": {\"extractor_id\": \"ext_global\", \"confidence\": 0.9}}], \"sheet_ref\": \"VVS-1\", \"source_units\": \"px\", \"scale_provenance\": {\"extractor_id\": \"ext_link\", \"confidence\": 0.4, \"evidence_ids\": [\"link_1\"]}}"
+  }
+ ],
+ "statistics": [
+  {
+   "name": "segment_count",
+   "value": 10,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "pipe_1",
+    "pipe_2",
+    "pipe_3",
+    "pipe_4",
+    "pipe_5",
+    "pipe_6",
+    "pipe_7",
+    "pipe_8",
+    "pipe_9",
+    "pipe_10"
+   ]
+  },
+  {
+   "name": "fitting_count",
+   "value": 6,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "node_1",
+    "node_2",
+    "node_4",
+    "node_6",
+    "node_8",
+    "node_10"
+   ]
+  },
+  {
+   "name": "equipment_count",
+   "value": 5,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "node_3",
+    "node_5",
+    "node_7",
+    "node_9",
+    "node_11"
+   ]
+  },
+  {
+   "name": "connection_count",
+   "value": 19,
+   "unit": "count",
+   "status": "calculated",
+   "method": "count of active entities",
+   "source_entity_ids": [
+    "conn_1",
+    "conn_2",
+    "conn_3",
+    "conn_4",
+    "conn_5",
+    "conn_6",
+    "conn_7",
+    "conn_8",
+    "conn_9",
+    "conn_10",
+    "conn_11",
+    "conn_12",
+    "conn_13",
+    "conn_14",
+    "conn_15",
+    "conn_16",
+    "conn_17",
+    "conn_18",
+    "conn_19"
+   ]
+  },
+  {
+   "name": "total_pipe_length_m",
+   "value": 5.06,
+   "unit": "m",
+   "status": "calculated",
+   "method": "sum of active segment length_m (scale known)",
+   "source_entity_ids": [
+    "pipe_1",
+    "pipe_2",
+    "pipe_3",
+    "pipe_4",
+    "pipe_5",
+    "pipe_6",
+    "pipe_7",
+    "pipe_8",
+    "pipe_9",
+    "pipe_10"
+   ]
+  },
+  {
+   "name": "total_pipe_length_m:domestic_cold_water",
+   "value": 5.06,
+   "unit": "m",
+   "status": "calculated",
+   "method": "sum of active segment length_m",
+   "source_entity_ids": [
+    "pipe_1",
+    "pipe_2",
+    "pipe_3",
+    "pipe_4",
+    "pipe_5",
+    "pipe_6",
+    "pipe_7",
+    "pipe_8",
+    "pipe_9",
+    "pipe_10"
+   ],
+   "service": "domestic_cold_water"
+  }
+ ]
+}

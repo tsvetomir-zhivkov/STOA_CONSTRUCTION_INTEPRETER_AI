@@ -23,3 +23,14 @@ blueprint-ingest/big/
 
 # /workspace uploads converted to JSON (scrollcraft/builds/stoa-plan-to-evidence: npm start)
 /out/
+
+# pipes: generated outputs and downloaded/derived data (hand-labelled data_pipes/real stays tracked)
+pipes/index_pipes/*
+!pipes/index_pipes/.gitkeep
+pipes/data_pipes/raw/
+pipes/data_pipes/ds/
+pipes/data_pipes/yolo/
+
+# pipes: generated YOLO tiles and weights
+pipes/data_pipes/dev/yolo/
+*.pt

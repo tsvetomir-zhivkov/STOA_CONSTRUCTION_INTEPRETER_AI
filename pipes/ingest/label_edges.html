@@ -1,0 +1,32 @@
+<!doctype html><meta charset=utf-8><title>label edges __ID__</title>
+<style>body{font:14px sans-serif;margin:8px}#bar{position:sticky;top:0;background:#fff;padding:4px;z-index:2}
+canvas{border:1px solid #888;cursor:crosshair}</style>
+<div id=bar><b>__ID__</b> <span id=msg>click a symbol to start a connection</span>
+<button onclick=undo()>Undo</button> <button onclick=cancel()>Cancel (Esc)</button>
+<button onclick=download()>Download connections.json</button> <span id=n></span></div>
+<canvas id=c></canvas>
+<script>
+const BOXES=__BOXES__, KEY="edges___ID__";
+const img=new Image(); img.src="sheet.jpg"; const c=document.getElementById("c"), g=c.getContext("2d");
+let edges=JSON.parse(localStorage.getItem(KEY)||"[]"), cur=null;
+function hit(x,y){let b=-1,a=1e18;BOXES.forEach((q,i)=>{if(x>=q[0]&&x<=q[2]&&y>=q[1]&&y<=q[3]){const s=(q[2]-q[0])*(q[3]-q[1]);if(s<a){a=s;b=i}}});return b}
+function ctr(i){const q=BOXES[i];return [(q[0]+q[2])/2,(q[1]+q[3])/2]}
+function draw(){g.drawImage(img,0,0);g.lineWidth=2;
+ BOXES.forEach((q,i)=>{g.strokeStyle=(cur&&cur.from==i)?"#0a0":"#e00";g.strokeRect(q[0],q[1],q[2]-q[0],q[3]-q[1]);g.fillStyle="#e00";g.font="14px sans-serif";g.fillText(i+1,q[0]+2,q[1]-3)});
+ g.strokeStyle="#06f";g.lineWidth=3;
+ const path=(e)=>{const p=[ctr(e.from),...e.waypoints,ctr(e.to)];g.beginPath();p.forEach((v,k)=>k?g.lineTo(v[0],v[1]):g.moveTo(v[0],v[1]));g.stroke()};
+ edges.forEach(path); if(cur){const p=[ctr(cur.from),...cur.waypoints];g.strokeStyle="#0a0";g.beginPath();p.forEach((v,k)=>k?g.lineTo(v[0],v[1]):g.moveTo(v[0],v[1]));g.stroke()}
+ document.getElementById("n").textContent=edges.length+" connections"}
+img.onload=()=>{c.width=img.width;c.height=img.height;draw()};
+c.onclick=ev=>{const r=c.getBoundingClientRect(),x=(ev.clientX-r.left)*c.width/r.width,y=(ev.clientY-r.top)*c.height/r.height,b=hit(x,y);
+ if(!cur){if(b>=0){cur={from:b,to:null,waypoints:[]};msg("from "+(b+1)+": click bends, then the target symbol")}}
+ else if(b>=0&&b!=cur.from){cur.to=b;edges.push(cur);cur=null;save();msg("saved")}
+ else if(b<0){cur.waypoints.push([Math.round(x),Math.round(y)])}
+ draw()};
+function msg(t){document.getElementById("msg").textContent=t}
+function save(){localStorage.setItem(KEY,JSON.stringify(edges))}
+function undo(){if(cur&&cur.waypoints.length)cur.waypoints.pop();else if(cur)cur=null;else edges.pop();save();draw()}
+function cancel(){cur=null;draw()}
+document.onkeydown=e=>{if(e.key=="Escape")cancel()};
+function download(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(edges.map(e=>({from:e.from+1,to:e.to+1,waypoints:e.waypoints})),null,1)],{type:"application/json"}));a.download="connections.json";a.click()}
+</script>

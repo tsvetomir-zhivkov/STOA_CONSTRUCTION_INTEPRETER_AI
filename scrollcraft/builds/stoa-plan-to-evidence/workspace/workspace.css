@@ -82,3 +82,9 @@ body.dragging::after { content: "Drop an .ifc, .dxf, .svg, .png, .jpg or .pdf fi
   .columns { grid-template-columns: 1fr; grid-template-rows: 420px 70vh; }
   .viewbar { flex-wrap: wrap; }
 }
+
+/* pipe answers: the ids an answer cites (highlighted on the drawing), and its reliability / cost */
+.messages .cites { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
+.messages .cites li { padding: 1px 7px; border-radius: 999px; background: #e6f4ec; color: #14532d;
+  font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.messages .meta { display: block; margin-top: 6px; color: #6b7280; font-size: 12px; }

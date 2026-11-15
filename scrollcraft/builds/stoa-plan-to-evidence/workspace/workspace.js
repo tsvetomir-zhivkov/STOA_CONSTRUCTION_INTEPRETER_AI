@@ -2,12 +2,19 @@
 // the AI chat on the left and the blueprint view on the right. Vector files (.ifc, .dxf, .svg) are converted to JSON by
 // blueprint-ingest (npm start: scripts/start.mjs writes <repo>/out/<file>.json) and the parsed JSON is kept as the chat's
 // context; other formats are shown but not converted. Questions go to answering_agent on that JSON (POST /api/chat).
+// Pipes uploads (.png .jpg .dxf .dxr) go to the pipe API (pipes/web_api.py: POST /analyze, POST /ask) when
+// /workspace/config.js sets window.STOA_CONFIG = { apiBase, apiKey }; the answer's cited ids and its overlay are shown.
 // An IFC model is read by the existing blueprint
 // viewer (mounted in the right column): it renders a plan of every level, and is itself the 3D view behind the toggle.
 import { dxfSegments, renderPdfPages, sheetFormatOf } from '/workspace/viewer/sheets.js';
 import { parseDxf } from '/workspace/viewer/vendor/dxfParser.js';
 
 const $ = (id) => document.getElementById(id);
+/** /workspace/config.js: on Modal served by the app (same origin), with npm start written by scripts/write-config.mjs */
+const CFG = window.STOA_CONFIG;
+const API = (CFG?.apiBase ?? '').replace(/\/$/, '');
+const auth = () => (CFG?.apiKey ? { 'x-api-key': CFG.apiKey } : {});
+const PIPE_API = /\.(png|jpe?g|dxf|dxr)$/i; // what the pipe API analyses
 const ACCEPTED = /\.(ifc|dxf|dxr|svg|png|jpe?g|pdf)$/i;
 const VIEWER_URL = '/workspace/viewer/';
 const PLAN_CUT = 1.2; // a floor plan is a horizontal cut 1.2 m above the level
@@ -21,9 +28,10 @@ let levelIndex = 0;
  * Chat state of the current file. `context` is the parsed JSON blueprint-ingest wrote to `outFile` (out/<file>.json):
  * the building/component structure answering_agent answers from. `history` is sent with every question, in the
  * agent's format, so follow-ups keep their context.
- * @type {{ outFile: string|null, context: object|null, history: Array<{ role: 'user'|'assistant', content: string }>, busy: boolean }}
+ * A pipes upload analysed by the pipe API has `sheetId` instead (mode 'pipes'): questions go to POST /ask.
+ * @type {{ outFile: string|null, context: object|null, history: Array<{ role: 'user'|'assistant', content: string }>, busy: boolean, mode: 'building'|'pipes', sheetId: string|null, overlay: boolean }}
  */
-const chat = { outFile: null, context: null, history: [], busy: false };
+const chat = { outFile: null, context: null, history: [], busy: false, mode: 'building', sheetId: null, overlay: false };
 
 // ---- file selection (button, top-bar button, drop anywhere) --------------------------------------------------
 const input = $('fileInput');
@@ -66,6 +74,9 @@ function reset() {
   chat.context = null;
   chat.history = [];
   chat.busy = false;
+  chat.mode = 'building';
+  chat.sheetId = null;
+  chat.overlay = false;
   $('messages').replaceChildren();
   $('question').value = '';
   setChatReady(false);
@@ -96,16 +107,17 @@ async function errorOf(res) {
 }
 /** delete a converted JSON from out/ (the file was replaced, or the page is closed) */
 function removeJson(outFile) {
-  if (outFile) fetch(`/api/convert?${new URLSearchParams({ file: outFile.replace(/^out\//, '') })}`, { method: 'DELETE', keepalive: true }).catch(() => {});
+  if (outFile) fetch(`/api/convert?${new URLSearchParams({ file: outFile.replace(/^out\//, '') })}`, { method: 'DELETE', keepalive: true, headers: auth() }).catch(() => {});
 }
 addEventListener('pagehide', () => { removeJson(chat.outFile); chat.outFile = null; });
 
 /** convert the upload to JSON (the server routes it: vector -> blueprint-ingest, raster -> translator); its JSON becomes the chat context */
 async function startChat(file, type, my) {
+  if (type === 'pipes' && CFG && PIPE_API.test(file.name)) return startPipes(file, my);
   setChatReady(false, 'Converting the file …');
   const status = addMessage('status', `Converting ${file.name} to JSON …`);
   try {
-    const res = await fetch(`/api/convert?${new URLSearchParams({ name: file.name, type })}`, { method: 'POST', body: file });
+    const res = await fetch(`/api/convert?${new URLSearchParams({ name: file.name, type })}`, { method: 'POST', body: file, headers: auth() });
     if (my !== token) return;
     if (res.status === 415) {
       const body = await res.json().catch(() => ({}));
@@ -132,10 +144,84 @@ async function startChat(file, type, my) {
   }
 }
 
+/** a pipes sheet (scan or DXF) analysed by the pipe API: POST /analyze -> sheet id, summary, overlay */
+async function startPipes(file, my) {
+  setChatReady(false, 'Analysing the pipe sheet …');
+  const status = addMessage('status', `Analysing ${file.name}: symbols, pipes and text (a new sheet takes about a minute) …`);
+  try {
+    const form = new FormData();
+    form.append('file', file, file.name.replace(/\.dxr$/i, '.dxf')); // .dxr is DXF content
+    const res = await fetch(`${API}/analyze`, { method: 'POST', headers: auth(), body: form });
+    if (my !== token) return;
+    if (!res.ok) throw new Error(await errorOf(res));
+    const out = await res.json();
+    if (my !== token) return;
+    chat.mode = 'pipes';
+    chat.sheetId = out.sheet_id;
+    status.remove();
+    const s = out.summary || {};
+    const found = [[s.symbols, 'symbol'], [s.edges, 'pipe'], [s.equipment_nodes, 'equipment node']]
+      .filter(([n]) => n).map(([n, w]) => `${n} ${w}${n === 1 ? '' : 's'}`).join(', ');
+    addMessage('assistant', `I analysed ${file.name} as a pipe sheet${found ? ` (${found})` : ''}${out.cached ? ', from the cache' : ''}. Ask me about symbols, connections, routes or pipe lengths.`);
+    for (const w of out.warnings || []) addMessage('status', `Warning: ${w}`);
+    if (s.unsnapped_ends) addMessage('status', `${s.unsnapped_ends} pipe end(s) reach nothing: connections near them may be incomplete.`);
+    setChatReady(true);
+    showOverlay(await imageUrl(`${API}${out.overlay_url}`), `${file.name}: detected symbols (green) and traced pipes (blue)`, my);
+  } catch (err) {
+    if (my !== token) return;
+    status.className = 'error';
+    status.textContent = `${file.name} could not be analysed: ${err.message}`;
+    setChatReady(false);
+  }
+}
+
+/** an image the API serves (it needs the key header, so not a plain <img src>): fetched as a blob */
+async function imageUrl(url) {
+  const res = await fetch(url, { headers: auth() });
+  if (!res.ok) throw new Error(`overlay: ${await errorOf(res)}`);
+  const u = URL.createObjectURL(await res.blob());
+  urls.push(u);
+  return u;
+}
+
+function showOverlay(src, caption, my) {
+  if (my !== token) return;
+  chat.overlay = true; // the plain drawing must not replace it when it finishes later
+  const img = Object.assign(document.createElement('img'), { src, alt: caption });
+  $('blueprint').replaceChildren(figure(img, caption));
+}
+
+/** the agent writes **bold**: rendered as text nodes and <strong>, never as HTML */
+const answerNodes = (answer) => String(answer).split(/\*\*(.+?)\*\*/g)
+  .map((part, k) => (k % 2 ? Object.assign(document.createElement('strong'), { textContent: part }) : document.createTextNode(part)));
+
+/** POST /ask: answer, the ids it cites (chips), reliability and cost; the overlay goes to the right column */
+async function askPipes(question, pending, my) {
+  const res = await fetch(`${API}/ask`, { method: 'POST', headers: { 'content-type': 'application/json', ...auth() }, body: JSON.stringify({ sheet_id: chat.sheetId, question }) });
+  if (my !== token) return null;
+  if (!res.ok) throw new Error(await errorOf(res));
+  const out = await res.json();
+  if (my !== token) return null;
+  pending.className = 'assistant';
+  const nodes = answerNodes(out.answer);
+  if (out.cited_ids?.length) {
+    const ul = Object.assign(document.createElement('ul'), { className: 'cites', title: 'Evidence: highlighted on the drawing' });
+    ul.append(...out.cited_ids.map((id) => Object.assign(document.createElement('li'), { textContent: id })));
+    nodes.push(ul);
+  }
+  const meta = [out.reliable === false ? 'not exhaustive: see the warning in the answer' : null,
+    out.ungrounded_ids?.length ? `ids not from a tool: ${out.ungrounded_ids.join(', ')}` : null,
+    out.cost_usd != null ? `cost $${out.cost_usd.toFixed(4)}` : null].filter(Boolean).join(' · ');
+  if (meta) nodes.push(Object.assign(document.createElement('small'), { className: 'meta', textContent: meta }));
+  pending.replaceChildren(...nodes);
+  if (out.overlay_png_base64) showOverlay(`data:image/png;base64,${out.overlay_png_base64}`, `Evidence for: ${question}`, my);
+  return out.answer;
+}
+
 $('chatForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const question = $('question').value.trim();
-  if (!question || !chat.outFile || chat.busy) return;
+  if (!question || !(chat.outFile || chat.sheetId) || chat.busy) return;
   const my = token;
   $('question').value = '';
   addMessage('user', question);
@@ -143,21 +229,26 @@ $('chatForm').addEventListener('submit', async (e) => {
   chat.busy = true;
   setChatReady(false, 'Waiting for the answer …');
   try {
-    const res = await fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ file: chat.outFile, question, history: chat.history }) });
+    if (chat.mode === 'pipes') {
+      const answer = await askPipes(question, pending, my);
+      if (answer != null) chat.history.push({ role: 'user', content: question }, { role: 'assistant', content: answer });
+      return;
+    }
+    const res = await fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json', ...auth() }, body: JSON.stringify({ file: chat.outFile, question, history: chat.history }) });
     if (my !== token) return;
     if (!res.ok) throw new Error(res.status === 405 ? 'the site was not started with npm start (in scrollcraft/builds/stoa-plan-to-evidence)' : await errorOf(res));
     const { answer } = await res.json();
     if (my !== token) return;
     pending.className = 'assistant';
     // the agent writes **bold**: rendered as text nodes and <strong>, never as HTML
-    pending.replaceChildren(...String(answer).split(/\*\*(.+?)\*\*/g).map((part, k) => (k % 2 ? Object.assign(document.createElement('strong'), { textContent: part }) : document.createTextNode(part))));
+    pending.replaceChildren(...answerNodes(answer));
     chat.history.push({ role: 'user', content: question }, { role: 'assistant', content: answer });
   } catch (err) {
     if (my !== token) return;
     pending.className = 'error';
     pending.textContent = `The assistant could not answer: ${err.message}`;
   } finally {
-    if (my === token) { chat.busy = false; setChatReady(!!chat.outFile); $('question').focus(); }
+    if (my === token) { chat.busy = false; setChatReady(!!(chat.outFile || chat.sheetId)); $('question').focus(); }
   }
 });
 
@@ -169,18 +260,18 @@ async function showDrawing(file, my) {
   note(`Reading ${file.name} …`);
   if (fmt === 'pdf') {
     const pages = await renderPdfPages(new Uint8Array(await file.arrayBuffer()));
-    if (my !== token) return;
+    if (my !== token || chat.overlay) return;
     $('blueprint').replaceChildren(...pages.map((p) => figure(p.canvas, pages.length > 1 ? `Page ${p.n} of ${pages.length}` : '')));
   } else if (fmt === 'dxf') {
     const canvas = drawDxf(await file.text());
-    if (my !== token) return;
+    if (my !== token || chat.overlay) return;
     $('blueprint').replaceChildren(figure(canvas, ''));
   } else {
     const url = URL.createObjectURL(file);
     urls.push(url);
     const img = Object.assign(document.createElement('img'), { src: url, alt: `Blueprint of ${file.name}` });
     await img.decode().catch(() => { throw new Error('the image could not be read'); });
-    if (my !== token) return;
+    if (my !== token || chat.overlay) return;
     $('blueprint').replaceChildren(figure(img, ''));
   }
 }

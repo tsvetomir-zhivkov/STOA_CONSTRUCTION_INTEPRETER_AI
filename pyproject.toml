@@ -16,20 +16,29 @@ dependencies = [
     "pillow>=10",
     "scipy>=1.14",
     "pandas>=2.2",
+    # pipes (pipe schematic analysis)
+    "networkx",
+    "scikit-image",
+    "sknw",
 ]
 
 [project.optional-dependencies]
 test = ["pytest>=8", "ruff>=0.9"]
+# pipes: detector training/inference runs on Modal (pipes/modal_pipes.py); not needed locally
+pipes-gpu = ["ultralytics", "sahi"]
 
 [tool.ruff]
 line-length = 110
-extend-exclude = ["eval/fixtures"]
+extend-exclude = ["eval/fixtures", "pipes/schema"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+"pipes/**" = ["E501"]
+
 [tool.ruff.lint.isort]
-known-first-party = ["translator"]
+known-first-party = ["translator", "pipes"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
