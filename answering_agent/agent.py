@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
+from answering_agent import pipe_tools
 from answering_agent.tools import (
     aggregate,
     connected_rooms,
@@ -75,10 +76,25 @@ LANGUAGE:
 """
 
 
-def answer_question(question: str, drawing_data: dict[str, Any]) -> dict[str, Any]:
+PIPING_SYSTEM_INSTRUCTION = """You are a construction piping drawing assistant.
+Use only deterministic piping tools to answer questions. Do not guess physical
+pipe lengths, materials, diameters, equipment types, or system membership.
+Pixel centerlines are not metric measurements; never convert without verified scale.
+Unidentified graph nodes in pipe_fittings are NOT confirmed physical fittings.
+An empty query is not proof of absence: check extraction coverage first.
+Partial or missing coverage cannot verify absence, regardless of confidence.
+Use few tool calls and cite real active entity IDs on a separate Source: line.
+Never invent IDs. Answer concisely in the user's language. Distinguish
+indexed counts from complete real-world totals. No image inspection is available.
+"""
+
+
+def answer_question(question: str, drawing_data: dict[str, Any], history: list[dict[str, str]] | None = None) -> dict[str, Any]:
     """Answer a question and return text plus validated source entity IDs."""
-    if drawing_data.get("schema_version") not in ("0.2", "0.3"):
-        raise ValueError("Unsupported building schema version (expected 0.2 or 0.3)")
+    schema_version = drawing_data.get("schema_version")
+    if schema_version not in ("0.2", "0.3", "piping-0.1"):
+        raise ValueError(f"Unsupported drawing schema version: {schema_version}")
+    is_piping = schema_version == "piping-0.1"
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -94,7 +110,10 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> dict[str, An
         openings, objects, texts, edges, types, systems, schedules. Optional exact-match field/value filter.
         Results include ALL flags, assumption flags, and coverage notes.
         Use room 'type' (e.g. bedroom, living, wc, entry), opening 'kind'
-        (door, window, doorway), or object 'category'.
+        (door, window, doorway), or object 'category'. For converted pipe drawings,
+        pipes use objects.subtype='pipe'; other pipe nodes retain their subtype.
+        Pipe-specific fields and original geometry are in properties.pipe_index,
+        accessible through get_entity_tool. Do not infer metric lengths from pixel paths.
         """
         return query_entities(drawing_data, collection, field, value, limit)
 
@@ -146,22 +165,52 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> dict[str, An
         """
         return detect_gap(drawing_data, category, entity_ids, region)
 
+    if is_piping:
+        def pipe_summary_tool() -> dict:
+            """Return piping drawing metadata and indexed collection counts."""
+            return pipe_tools.pipe_summary(drawing_data)
+
+        def query_pipes_tool(collection: str, field: str = "", value: str = "", limit: int = 30) -> dict:
+            """Search active pipe_systems, pipe_types, pipe_segments, pipe_fittings, pipe_equipment, pipe_connections, texts. Exact field/value filter. Compact results."""
+            return pipe_tools.query_pipes(drawing_data, collection, field, value, limit)
+
+        def get_pipe_entity_tool(entity_id: str) -> dict:
+            """Retrieve one piping entity by its exact ID, including source geometry and measurements."""
+            return pipe_tools.get_pipe_entity(drawing_data, entity_id)
+
+        def aggregate_pipes_tool(collection: str, operation: str, measure: str = "length_m", field: str = "", value: str = "") -> dict:
+            """Count or sum/min/max/average a measured field for active piping entities. Never infer metres from pixels. Operations count, sum, min, max, average."""
+            return pipe_tools.aggregate_pipes(drawing_data, collection, operation, measure, field, value)
+
+        def pipe_connections_tool(entity_id: str, verified_only: bool = False) -> dict:
+            """List indexed graph connections touching the given pipe or node ID. Can filter is_verified."""
+            return pipe_tools.pipe_connections(drawing_data, entity_id, verified_only)
+
+        def check_pipe_coverage_tool(category: str) -> dict:
+            """Check page-wide extraction coverage for piping category; only absence_verified allows an absence claim."""
+            return pipe_tools.check_pipe_coverage(drawing_data, category)
+
+        selected_tools = [pipe_summary_tool, query_pipes_tool, get_pipe_entity_tool,
+                          aggregate_pipes_tool, pipe_connections_tool, check_pipe_coverage_tool]
+        instruction = PIPING_SYSTEM_INSTRUCTION
+    else:
+        selected_tools = [building_summary_tool, query_entities_tool, get_entity_tool,
+                          aggregate_tool, geometry_operation_tool, connected_rooms_tool,
+                          check_coverage_tool, detect_gap_tool]
+        instruction = SYSTEM_INSTRUCTION
+
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model=MODEL,
-        contents=question,
+        contents=[
+            types.Content(role="user" if turn["role"] == "user" else "model",
+                          parts=[types.Part(text=turn["content"])])
+            for turn in (history or [])[-20:]
+            if turn.get("role") in ("user", "assistant") and turn.get("content")
+        ] + [types.Content(role="user", parts=[types.Part(text=question)])],
         config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_INSTRUCTION,
-            tools=[
-                building_summary_tool,
-                query_entities_tool,
-                get_entity_tool,
-                aggregate_tool,
-                geometry_operation_tool,
-                connected_rooms_tool,
-                check_coverage_tool,
-                detect_gap_tool,
-            ],
+            system_instruction=instruction,
+            tools=selected_tools,
             automatic_function_calling=types.AutomaticFunctionCallingConfig(
                 maximum_remote_calls=12,
             ),
@@ -180,7 +229,8 @@ def answer_question(question: str, drawing_data: dict[str, Any]) -> dict[str, An
         )
     answer = response.text or "No text answer was returned."
     source_ids = extract_source_ids(answer, drawing_data)
-    return {"answer": answer, "source_ids": source_ids}
+    display_answer = re.sub(r"(?im)^\s*sources?\s*:\s*.*(?:\n|$)", "", answer).strip()
+    return {"answer": display_answer, "source_ids": source_ids}
 
 
 
@@ -192,8 +242,9 @@ def extract_source_ids(answer: str, drawing_data: dict[str, Any]) -> list[str]:
     """
     collections = (
         "levels", "units", "rooms", "walls", "openings", "objects",
-        "texts", "edges", "element_types", "materials",
-        "material_layer_sets", "systems",
+        "texts", "edges", "element_types", "types", "materials",
+        "material_layer_sets", "systems", "pipe_systems", "pipe_types",
+        "pipe_segments", "pipe_fittings", "pipe_equipment",
     )
     active_ids = {
         entity["id"]

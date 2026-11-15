@@ -24,9 +24,9 @@ def _active(item: dict) -> bool:
 def building_summary(data: dict) -> dict:
     """Return normalized metadata without sending the entire raw IFC graph to the language model."""
     return {
-        'building_id': data['building_id'],
+        'building_id': data.get('building_id'),
         'project': {k: v for k, v in data['project'].items() if k != 'properties'},
-        'source_documents': [{k: v for k, v in s.items() if k != 'properties'} for s in data['source_documents']],
+        'source_documents': [{k: v for k, v in s.items() if k != 'properties'} for s in data.get('source_documents', data.get('sources', []))],
         'levels': [_brief(level, 'levels') for level in data['levels'] if _active(level)],
         'statistics': data.get('statistics'),
     }
@@ -71,7 +71,7 @@ def query_entities(data: dict, collection: str, field: str = "", value: str = ""
     if collection not in COLLECTIONS:
         return {"error": f"Unknown collection: {collection}", "allowed": COLLECTIONS}
     if field and field not in ("id", "name", "label", "number", "type", "kind", "category", "unit_id", "level_id", "room_id", "text", "role", "is_entrance",
-                               "ifc_class", "discipline", "type_id", "global_id", "mark", "predefined_type"):
+                               "ifc_class", "discipline", "type_id", "global_id", "mark", "predefined_type", "subtype"):
         return {"error": "Unsupported filter field"}
     items = [x for x in data.get(collection, []) if _active(x)]
     if field:

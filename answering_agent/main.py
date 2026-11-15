@@ -1,29 +1,36 @@
-"""Run with python -m answering_agent.main <building.json>."""
-
+"""Run: python -m answering_agent.main path/to/drawing.json"""
 import argparse
+import json
 from pathlib import Path
+from answering_agent.agent import answer_question
 
-from translator.store import read_drawing
+
+def load_document(path: Path) -> dict:
+    with path.open(encoding='utf-8') as file:
+        data = json.load(file)
+    if not isinstance(data, dict) or data.get('schema_version') not in ('0.2', '0.3', 'piping-0.1'):
+        raise ValueError('Unsupported drawing schema_version')
+    return data
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("document", type=Path, help="Validated v0.3 building or legacy v0.2 JSON")
+    parser.add_argument('document', type=Path)
     args = parser.parse_args()
-    data = read_drawing(args.document)
-    from answering_agent.agent import answer_question
-
+    data = load_document(args.document)
+    history = []
     while True:
         try:
-            question = input("\nAsk about the building: ")
-        except EOFError:
+            question = input('\nAsk about the drawing: ').strip()
+        except (EOFError, KeyboardInterrupt):
             break
-        if question.lower() in {"quit", "exit"}:
+        if question.lower() in ('quit', 'exit'):
             break
-        result = answer_question(question, data)
+        if not question:
+            continue
+        result = answer_question(question, data, history=history)
+        print('\nAnswer:', result['answer'])
+        history.extend([{'role':'user','content':question}, {'role':'assistant','content':result['answer']}])
 
-        print("\nAnswer:", result["answer"])
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
