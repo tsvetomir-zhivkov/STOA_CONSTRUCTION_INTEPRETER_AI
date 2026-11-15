@@ -88,7 +88,16 @@ export function mergeBuildings(documents, buildingId) {
   return out;
 }
 
+/**
+ * Two v0.3 document models currently share schema_version "0.3":
+ *  - the building model (this file, translator/schema/building.v0.3.schema.json): building_id, source_documents[], drawings[], types[];
+ *  - the per-drawing model (schema/building.schema.v0.3.json, src/schema/v03.js): drawing, sources[], element_types[].
+ * Their top levels are disjoint (both schemas forbid additional properties), so the shape identifies the model.
+ */
+export const isBuildingModel = doc => !!doc && typeof doc === 'object' && 'building_id' in doc && Array.isArray(doc.source_documents);
+
 export function referenceErrors(doc) {
+  if (!isBuildingModel(doc)) throw new TypeError('referenceErrors checks the building model (building_id, source_documents[]); use validateRelationships for a per-drawing v0.3 document');
   const errors = [], groups = Object.fromEntries(COLLECTIONS.map(c => [c, new Set(doc[c].map(e => e.id))]));
   const all = new Set([doc.building_id]);
   for (const c of [...COLLECTIONS, 'source_documents', 'drawings', 'relationships']) for (const e of doc[c]) {

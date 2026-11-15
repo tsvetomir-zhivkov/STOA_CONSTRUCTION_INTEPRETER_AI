@@ -22,6 +22,7 @@ import { bboxIou, round } from '../geometry/geom.js';
 import { FrameMismatchError } from '../util/errors.js';
 import { recomputeMetres } from '../storage/metres.js';
 import { syncQuantities, buildSchedules, buildStatistics } from '../schema/v03.js';
+import { isBuildingModel, mergeCompatible } from '../storage/building.js';
 
 const SCALE_RANK = { vector_units: 5, scale_note: 4, dimension_lines: 3, door_width: 2, none: 0 };
 const COV_RANK = { analysed: 3, partial: 2, not_analysed: 1 };
@@ -56,7 +57,10 @@ const norm = (s) => String(s ?? '').trim().toLowerCase();
  * @returns {{ document: any, report: MergeReport }}
  */
 export function mergeDocuments(existing, incoming, cfg, opts = {}) {
-  return mergeCompatible(existing, incoming, cfg, opts, mergePageDocuments);
+  // building-model documents (building_id, source_documents[]) merge through storage/building.js; per-drawing v0.2/v0.3
+  // documents merge here (supersede, fill empty fields, remap references)
+  if (isBuildingModel(existing) || isBuildingModel(incoming)) return mergeCompatible(existing, incoming, cfg, opts, mergePageDocuments);
+  return mergePageDocuments(existing, incoming, cfg, opts);
 }
 
 function mergePageDocuments(existing, incoming, cfg, opts = {}) {

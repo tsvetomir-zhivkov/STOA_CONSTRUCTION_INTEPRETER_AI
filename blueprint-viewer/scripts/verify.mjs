@@ -7,6 +7,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import * as THREE from 'three';
 import { BlueprintScene, buildModel, GROUP_NAMES, cleanRing, captureWebIfcLog } from '../blueprintViewer.js';
+import { syntheticRasterV03 } from './syntheticRaster.mjs';
 
 const require = createRequire(import.meta.url);
 const W = require(path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', 'node_modules', 'web-ifc', 'web-ifc-api-node.js'));
@@ -126,7 +127,7 @@ const clinicIfc = D('ifc_models', 'bsc-clinic_clinic-plumbing.ifc');
   ok('pipes are real cylinders following their runs', pipes.length && round.length / horiz.length > 0.9 && q(tris, 0.5) >= 24,
     `${pipes.length} IfcFlowSegment solids; ${horiz.length} horizontal, ${round.length} of them round in section (height ≈ width); median ${q(tris, 0.5)} triangles each; vertical extent p50 ${q(horiz.map((e) => e.dims.y), 0.5).toFixed(3)} m (a 2D extrusion would be the assumed 0.78 m)`);
   const m = src.match, jsonEls = scene.sources.filter((s) => s.kind === 'json').reduce((a, s) => [a[0] + s.match.withMesh, a[1] + s.match.elements], [0, 0]);
-  ok('mesh <-> JSON match rate reported both ways (matched on provenance.source_ref = raw GlobalId)', jsonEls[0] === jsonEls[1],
+  ok('mesh <-> JSON match rate reported both ways (matched on global_id = raw GlobalId)', jsonEls[0] === jsonEls[1],
     `meshes with a JSON element ${m.withJson}/${m.meshes} (${(100 * m.withJson / m.meshes).toFixed(1)} %): the rest are types the pipeline does not emit (${m.unmatchedTypes.join(', ')}); JSON elements with a mesh ${jsonEls[0]}/${jsonEls[1]} (100 %)`);
   ok('load cost', ms < 30000, `${src.model.stats.elements} elements, ${(src.model.stats.triangles / 1e6).toFixed(2)} M triangles in ${src.model.stats.batches} batched meshes (= draw calls), ${ms} ms in Node incl. BVH; ${src.model.stats.unsupported} representation(s) web-ifc could not mesh`);
   // click a pipe: JSON confidence/flags/provenance + IFC type
@@ -220,25 +221,30 @@ const swiss = S('swiss_dwellings', 'site1000_bldg2082_floor9385.json');
 // =====================================================================================================================
 console.log('\n## 4. Raster (CubiCasa-style) JSON');
 {
-  // NOTE: there is no raster route in this repository (translator/extract/raster is a stub), so this is a SYNTHETIC file in
-  // the shape the raster route is specified to emit: route raster, no scale, CubiCasa class names.
-  const doc = {
-    schema_version: '0.2', drawing: { file: 'synthetic/high_quality-0001.png', route: 'raster', scale: { m_per_px: null, source: 'none', confidence: 0 }, transforms: [] },
-    levels: [], units: [], texts: [], edges: [], history: [],
-    coverage: [{ category: 'rooms', status: 'analysed', confidence: 0.7 }, { category: 'fixtures', status: 'partial', confidence: 0.5 }, { category: 'stairs', status: 'not_analysed', confidence: 0.3 }],
-    rooms: [
-      { id: 'r1', status: 'active', type: 'living_room', confidence: 0.7, polygon_px: [[0, 0], [400, 0], [400, 300], [0, 300]], polygon_m: null, provenance: { extractor: 'cubicasa', source_ref: 'seg1' } },
-      { id: 'r2', status: 'active', type: 'outdoor', confidence: 0.7, polygon_px: [[400, 0], [600, 0], [600, 300], [400, 300]], polygon_m: null, provenance: { extractor: 'cubicasa', source_ref: 'seg2' } },
-      { id: 'r3', status: 'active', type: 'hall', confidence: 0.7, polygon_px: [[0, 300], [300, 300], [300, 450], [0, 450]], polygon_m: null, provenance: { extractor: 'cubicasa', source_ref: 'seg3' } },
-    ],
-    walls: [], openings: [],
-    objects: [{ id: 'o1', status: 'active', category: 'fixture', subtype: 'toilet', confidence: 0.6, polygon_px: [[20, 320], [60, 320], [60, 380], [20, 380]], polygon_m: null, provenance: { extractor: 'cubicasa', source_ref: 'icon1' } }],
-  };
+  // a schema v0.3 document in the raster route's shape (scripts/syntheticRaster.mjs), with raw CubiCasa class names
+  const doc = syntheticRasterV03({ living: 'living_room', entry: 'hall', category: 'fixture', subtype: 'toilet' });
   const scene = newScene();
   scene.addJson(doc, 'high_quality-0001.json');
   const s = scene.sources[0];
   ok('loads in unscaled mode with the no-scale banner', s.frame.kind === 'unscaled' && scene.pickables.length === 4, `frame "${s.frame.kind}": ${s.frame.note}; ${scene.pickables.length} pieces drawn`);
   ok('room types and fixture classes mapped to the shared enum', doc.rooms.map((r) => r.type).join() === 'living,outdoor,entry' && doc.objects[0].category === 'toilet', `rooms: living_room->${doc.rooms[0].type}, outdoor->${doc.rooms[1].type}, hall->${doc.rooms[2].type}; object fixture/toilet->${doc.objects[0].category}; ${s.vocabulary.changed.length} mapped, ${s.vocabulary.unmapped.length} unmapped`);
+}
+
+// =====================================================================================================================
+console.log('\n## 5. Schema v0.3 only');
+{
+  const refused = (doc) => { try { newScene().addJson(doc, 'x.json'); return null; } catch (e) { return e.message; } };
+  const v02 = refused({ ...syntheticRasterV03(), schema_version: '0.2' });
+  ok('a schema v0.2 file is refused with a clear error (no fallback)', /schema_version "0\.2" is not supported.*v0\.3 only/.test(v02 ?? ''), v02);
+  const none = refused((({ schema_version, ...d }) => d)(syntheticRasterV03()));
+  ok('a file without schema_version is refused', /schema_version is missing/.test(none ?? ''), none);
+  const building = refused({ schema_version: '0.3', building_id: 'b', source_documents: [], drawings: [] });
+  ok('a v0.3 file without a drawing object (building model) is refused', /no "drawing" object.*building model/.test(building ?? ''), building);
+  const partial = refused((({ element_types, ...d }) => d)(syntheticRasterV03()));
+  ok('a v0.3 document missing a required array is refused', /missing array element_types/.test(partial ?? ''), partial);
+  let direct = null; try { buildModel({ ...syntheticRasterV03(), schema_version: '0.2' }, pal); } catch (e) { direct = e.message; }
+  ok('buildModel() refuses v0.2 too', /v0\.3 only/.test(direct ?? ''), direct);
+  ok('a valid v0.3 document loads', refused(syntheticRasterV03()) === null);
 }
 
 // =====================================================================================================================

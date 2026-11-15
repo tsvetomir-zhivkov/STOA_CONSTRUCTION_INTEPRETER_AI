@@ -1,6 +1,9 @@
 /**
  * blueprintViewer.js — owns the three.js scene for one blueprint-ingest drawing JSON.
  *
+ * Input: schema v0.3 drawing documents ONLY (blueprint-ingest output, schema/building.schema.v0.3.json). A schema v0.2
+ * file, or any other version, is refused with an error that says so (assertV03Document): there is no v0.2 fallback.
+ *
  *   const viewer = new BlueprintViewer(containerElement, { onSelect(info|null) {}, onCorrectionsChange(list) {} });
  *   const stats  = viewer.load(parsedJson);   // throws if the file has no drawable geometry
  *   viewer.resize();                          // after the container becomes visible
@@ -65,9 +68,9 @@ const EXPLODE_PUSH = 1.1; // constant push along the unit direction
 /** Label heights above the floor top (y = 0). Labels never move vertically. */
 const LABEL_Y = Object.freeze({ name: 0.14, area: 0.10 });
 
-/** Schema v0.2 enums offered by the "Correct" control. */
+/** Schema v0.3 enums offered by the "Correct" control (schema/building.schema.v0.3.json: room.type, opening.kind, object.category). */
 export const ROOM_TYPES = Object.freeze(['bedroom', 'living', 'kitchen', 'dining', 'bathroom', 'wc', 'sauna', 'entry', 'corridor', 'closet', 'storage', 'utility', 'technical', 'stair', 'balcony', 'terrace', 'garage', 'office', 'outdoor', 'shaft', 'other', 'unknown']);
-export const OPENING_KINDS = Object.freeze(['door', 'window']);
+export const OPENING_KINDS = Object.freeze(['door', 'window', 'doorway']);
 export const OBJECT_CATEGORIES = Object.freeze(['toilet', 'sink', 'shower', 'bathtub', 'sauna_bench', 'stair', 'stove', 'fridge', 'washing_machine', 'elevator', 'radiator', 'closet', 'other']);
 const OUTDOOR_TYPES = new Set(['balcony', 'terrace', 'outdoor']);
 
@@ -84,15 +87,35 @@ export const FLAG_TEXT = Object.freeze({
   inferred_from_room_name: 'type inferred from the room name',
 });
 
-/** Floor colour per room type (light palette). v0.2 type names share the colour of their older equivalent. */
+/** Floor colour per schema v0.3 room.type (light palette). Other names are mapped by vocabulary.js before rendering. */
 const ROOM_COLORS = {
-  bedroom: '#a8c5e6', living_room: '#f2d39b', kitchen: '#f0a88c', dining: '#e9c08a', bathroom: '#8fd3d1',
-  toilet: '#a6dcc8', sauna: '#d8a878', utility: '#c6c1e6', hall: '#e3dccb', corridor: '#d9d4c7',
-  closet: '#cbb9a8', storage: '#b9b2a6', balcony: '#b5d99c', terrace: '#9fcf8f', office: '#c9b3df',
-  stair: '#b0b6c2', technical: '#a9adb3', garage: '#9ea4ab', other: '#d0ccc4', unknown: '#c8c8c8',
-  // schema v0.2 names
-  living: '#f2d39b', wc: '#a6dcc8', entry: '#e3dccb', outdoor: '#b9dfa9', shaft: '#9a9ea6',
+  bedroom: '#a8c5e6', living: '#f2d39b', kitchen: '#f0a88c', dining: '#e9c08a', bathroom: '#8fd3d1',
+  wc: '#a6dcc8', sauna: '#d8a878', entry: '#e3dccb', corridor: '#d9d4c7', closet: '#cbb9a8',
+  storage: '#b9b2a6', utility: '#c6c1e6', technical: '#a9adb3', stair: '#b0b6c2', balcony: '#b5d99c',
+  terrace: '#9fcf8f', garage: '#9ea4ab', office: '#c9b3df', outdoor: '#b9dfa9', shaft: '#9a9ea6',
+  other: '#d0ccc4', unknown: '#c8c8c8',
 };
+
+/** top-level arrays every schema v0.3 drawing document has (required by schema/building.schema.v0.3.json) */
+const V03_ARRAYS = Object.freeze(['sources', 'levels', 'units', 'rooms', 'walls', 'openings', 'objects', 'element_types', 'materials',
+  'material_layer_sets', 'systems', 'schedules', 'relationships', 'texts', 'edges', 'coverage', 'history']);
+
+/**
+ * The only accepted input: a schema v0.3 drawing document. Throws an Error naming the problem otherwise; v0.2 is rejected,
+ * never read through a fallback. Returns the document.
+ */
+export function assertV03Document(doc) {
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) throw new Error('not a drawing JSON object');
+  const v = doc.schema_version;
+  if (v === '0.2') throw new Error('schema_version "0.2" is not supported: the viewer reads schema v0.3 only. Re-run blueprint-ingest on the source file (it writes v0.3) and open that output.');
+  if (v !== '0.3') throw new Error(`schema_version ${v === undefined ? 'is missing' : `${JSON.stringify(v)} is not supported`}: the viewer reads schema v0.3 only`);
+  if (!doc.drawing || typeof doc.drawing !== 'object' || Array.isArray(doc.drawing)) {
+    throw new Error(`not a schema v0.3 drawing document: it has no "drawing" object${'building_id' in doc ? ' (building_id / drawings[] is the translator building model, which this viewer does not read)' : ''}`);
+  }
+  const missing = V03_ARRAYS.filter((k) => !Array.isArray(doc[k]));
+  if (missing.length) throw new Error(`not a valid schema v0.3 drawing document: missing array${missing.length > 1 ? 's' : ''} ${missing.join(', ')}`);
+  return doc;
+}
 
 const PALETTES = {
   light: { background: '#eef0f3', ground: '#e2e5ea', grid: '#c4c9d1', gridCenter: '#a9b0ba', wall: '#f4f2ee', frame: '#d6d2ca', threshold: '#8c8272', doorLeaf: '#b06a2c', glass: '#7fb8e6', fixture: '#ffffff', stair: '#cfc6b8', outline: '#d97706', hover: '#3b82f6', select: '#f59e0b', floorFactor: 1 },
@@ -381,6 +404,7 @@ export function doorLeafRing(ring, { deg = HEIGHTS.doorSwingDeg, leaf = HEIGHTS.
  * userData.explode = { cx, cz, dir, base, lift } once. `rebuild(element)` replaces one element's pieces (corrections).
  */
 export function buildModel(doc, palette = currentPalette(), opts = {}) {
+  if (!opts.sceneFrame) assertV03Document(doc); // scene-frame documents are derived from one addJson() already checked
   // opts.sceneFrame: polygon_m already holds scene-plan coordinates (X, Z): geometry is not re-centred, pieces explode
   // around this document's own centre. opts.pid: shared pickId allocator (several documents in one scene).
   const bounds = planCentre(doc);
@@ -797,8 +821,7 @@ export class BlueprintScene {
 
   /** add a drawing JSON (vocabulary mapped, inventory computed); returns the source record */
   addJson(doc, name = doc?.drawing?.file ?? 'drawing.json') {
-    if (!doc || typeof doc !== 'object' || Array.isArray(doc)) throw new Error('not a drawing JSON object');
-    if (!doc.drawing && !['rooms', 'walls', 'openings', 'objects'].some((k) => Array.isArray(doc[k]))) throw new Error('not a blueprint-ingest drawing JSON (no drawing, rooms, walls, openings or objects)');
+    assertV03Document(doc);
     const vocabulary = normalizeVocabulary(doc);
     const frame = docFrame(doc);
     const report = fileReport(doc);
@@ -871,7 +894,7 @@ export class BlueprintScene {
       return lv;
     };
 
-    // IFC elements by GlobalId (match on provenance.source_ref = the RAW GUID, never on the sanitised element id)
+    // IFC elements by GlobalId (match on the element's global_id = the RAW GUID, never on the sanitised element id)
     const byGuid = new Map();
     for (const s of this.sources) if (s.kind === 'ifc') for (const el of s.model.elements) { el.json = null; el.jsonSource = null; if (el.globalId) byGuid.set(el.globalId, el); }
 
@@ -883,7 +906,7 @@ export class BlueprintScene {
       const keep = (list, kindKey) => list.filter((e) => {
         if (!isActive(e)) return true;
         s.match.elements++;
-        const gid = e.global_id ?? e.provenance?.source_ref; // v0.3 has global_id; v0.2 keeps the raw GUID in source_ref
+        const gid = e.global_id;
         const el = gid ? byGuid.get(gid) : null;
         if (el) { el.json = e; el.jsonSource = s; el.jsonKind = kindKey; s.match.withMesh++; return false; } // web-ifc draws it
         s.match.withoutMesh++;
@@ -1508,7 +1531,7 @@ function v03ById(doc) {
 
 /** schema v0.3 rows: class, type, mark, materials and layers, systems, finishes, the file's declared units. Only what the file holds. */
 function v03Rows(el, doc) {
-  if (!doc || doc.schema_version !== '0.3') return [];
+  if (!doc) return [];
   const rows = [];
   const push = (k, v, t = null) => { if (v !== null && v !== undefined && v !== '') rows.push([k, String(v), t]); };
   const by = v03ById(doc);
@@ -1570,7 +1593,7 @@ function describe(u, kindKey, file, twins = [], unitCheck = [], doc = null) {
   const flags = (el.flags ?? []).map((f) => FLAG_TEXT[f] ?? f.replace(/_/g, ' '));
   // a row whose label says "(assumed)" is a convention, not file data: the page shows it in the assumption colour
   const push = (k, v) => { if (v !== null && v !== undefined && v !== '') rows.push([k, String(v), /\(assumed\)/.test(k) ? 'assumed' : null]); };
-  const layer = () => push('layer', el.provenance?.layer ?? (el.properties?.ifc_type ? `${el.properties.ifc_type} (IFC)` : null));
+  const layer = () => push('layer', el.provenance?.layer ?? (el.ifc_class ? `${el.ifc_class} (IFC)` : null));
 
   if (u.kind === 'wallBand') {
     // wall material above/below an opening: a WALL piece; the opening is a separate, clickable "part of" row
@@ -1605,7 +1628,6 @@ function describe(u, kindKey, file, twins = [], unitCheck = [], doc = null) {
   }
   rows.push(...numericRows(el));
   layer();
-  if (el.properties?.ifc_type && !el.ifc_class) { push('ifc_type', el.properties.ifc_type); push('GlobalId', el.provenance?.source_ref); }
   rows.push(...v03Rows(el, doc));
   rows.push(...provenanceRows(el));
   if (el.properties?.psets) rows.push(...psetRows(el.properties.psets, unitCheck));
@@ -1636,7 +1658,7 @@ function describe(u, kindKey, file, twins = [], unitCheck = [], doc = null) {
     const options = { rooms: ROOM_TYPES, openings: OPENING_KINDS, objects: OBJECT_CATEGORIES }[kindKey];
     correct = { field, options: options.includes(el[field]) ? options : [el[field], ...options], current: el[field], scopes: correctionScopes(kindKey, el, file), pending: el._pendingCorrection ?? null };
   }
-  if (el.properties?.ifc_type) notes.push('geometry extruded from the 2D footprint (load the .ifc for the real solid): heights are conventions');
+  if (el.ifc_class) notes.push('geometry extruded from the 2D footprint (load the .ifc for the real solid): heights are conventions');
   return { title, rows, confidence, flags, notes, partOf, correct };
 }
 

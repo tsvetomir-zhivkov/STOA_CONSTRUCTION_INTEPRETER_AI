@@ -1,7 +1,7 @@
 /**
  * Built-in multilingual room glossary. Resolves common room labels (and abbreviations such as the
  * Finnish "MH") deterministically. Names that are not in here stay type "unknown".
- * `type` values must stay within the schema's room.type enum (schema v0.2).
+ * `type` values must stay within the schema's room.type enum (schema v0.3).
  */
 
 /** @typedef {'bedroom'|'living'|'kitchen'|'dining'|'bathroom'|'wc'|'sauna'|'entry'|'corridor'|'closet'|'storage'|'utility'|'technical'|'stair'|'balcony'|'terrace'|'garage'|'office'|'outdoor'|'shaft'|'other'|'unknown'} RoomType */
@@ -49,6 +49,8 @@ const ENTRIES = [
   // Estonian
   ['et', 'elutuba', 'living', 'living room'], ['et', 'köök', 'kitchen', 'kitchen'], ['et', 'magamistuba', 'bedroom', 'bedroom'], ['et', 'vannituba', 'bathroom', 'bathroom'],
   ['et', 'esik', 'entry', 'entrance hall'], ['et', 'koridor', 'corridor', 'corridor'], ['et', 'panipaik', 'storage', 'storage'], ['et', 'rõdu', 'balcony', 'balcony'], ['et', 'saun', 'sauna', 'sauna'],
+  ['et', 'tualettruum', 'wc', 'toilet'], ['et', 'tualett', 'wc', 'toilet'], ['et', 'wc', 'wc', 'toilet'], ['et', 'dušširuum', 'bathroom', 'shower room'],
+  ['et', 'elutuba+köök', 'living', 'living room with kitchen'], ['et', 'trepikoda', 'stair', 'staircase'], ['et', 'abiruum', 'utility', 'utility room'],
   // Swedish
   ['sv', 'sovrum', 'bedroom', 'bedroom'], ['sv', 'vardagsrum', 'living', 'living room'], ['sv', 'kök', 'kitchen', 'kitchen'], ['sv', 'badrum', 'bathroom', 'bathroom'],
   ['sv', 'tvättstuga', 'utility', 'laundry room'], ['sv', 'förråd', 'storage', 'storage'], ['sv', 'balkong', 'balcony', 'balcony'], ['sv', 'kontor', 'office', 'office'], ['sv', 'trappa', 'stair', 'staircase'], ['sv', 'hall', 'entry', 'hall'],
@@ -82,6 +84,13 @@ const ENTRIES = [
   ['it', 'ripostiglio', 'storage', 'storage'], ['it', 'ascensore', 'technical', 'lift'], ['it', 'stanza', 'other', 'room'], ['it', 'locale', 'other', 'room'],
   // English
   ['en', 'lift', 'technical', 'lift'], ['en', 'elevator', 'technical', 'lift'],
+  // Danish (Molio IFC models and their rendered plans)
+  ['da', 'bad', 'bathroom', 'bathroom'], ['da', 'badeværelse', 'bathroom', 'bathroom'], ['da', 'brusebad', 'bathroom', 'shower room'],
+  ['da', 'toilet', 'wc', 'toilet'], ['da', 'køkken', 'kitchen', 'kitchen'], ['da', 'soveværelse', 'bedroom', 'bedroom'], ['da', 'stue', 'living', 'living room'],
+  ['da', 'gang', 'corridor', 'corridor'], ['da', 'entré', 'entry', 'entrance'], ['da', 'depot', 'storage', 'storage'], ['da', 'opbevaring', 'storage', 'storage'],
+  ['da', 'teknikrum', 'technical', 'technical room'], ['da', 'køle og varmecentral', 'technical', 'cooling and heating plant'], ['da', 'skakt', 'shaft', 'shaft'],
+  ['da', 'trappe', 'stair', 'staircase'], ['da', 'trapperum', 'stair', 'staircase'], ['da', 'kontor', 'office', 'office'], ['da', 'altan', 'balcony', 'balcony'],
+  ['da', 'bryggers', 'utility', 'utility room'], ['da', 'vaskerum', 'utility', 'laundry room'],
 ];
 
 /** @type {Map<string, {language:string, term:string, type:RoomType, normalized:string, expanded:string|null}>} */
@@ -113,7 +122,8 @@ export function normalizeKey(raw) {
 export function lookupRoomName(raw) {
   if (!raw) return null;
   const key = normalizeKey(raw);
-  const hit = INDEX.get(key);
+  // "Bad - Dame", "WC - Herren": a room name followed by a " - " qualifier resolves through the name
+  const hit = INDEX.get(key) ?? (key.includes(' - ') ? INDEX.get(normalizeKey(key.split(' - ')[0])) : undefined);
   if (!hit) return null;
   return {
     type: hit.type,
