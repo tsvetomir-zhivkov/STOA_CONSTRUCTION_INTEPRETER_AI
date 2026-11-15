@@ -10,7 +10,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INDEX_DIR = REPO_ROOT / "index"
-SCHEMA_PATH = Path(__file__).resolve().parent / "schema" / "drawing.schema.json"
+LEGACY_SCHEMA_PATH = Path(__file__).resolve().parent / "schema" / "drawing.schema.json"
+SCHEMA_PATH = Path(__file__).resolve().parent / "schema" / "building.v0.3.schema.json"
 
 
 def data_root(explicit: str | os.PathLike | None = None) -> Path:

@@ -1,0 +1,1131 @@
+{
+  "doc": {
+    "height": 7613,
+    "vh": 900,
+    "acts": [
+      "pin",
+      "flow",
+      "pin",
+      "pan",
+      "pin",
+      "flow"
+    ],
+    "world": null
+  },
+  "report": [
+    {
+      "i": 0,
+      "y": 5,
+      "pct": 0,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 11.3,
+          "mean": 12.29
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "none"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1506
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 1,
+      "y": 57,
+      "pct": 1,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 11.3,
+          "mean": 12.29
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1454
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 2,
+      "y": 109,
+      "pct": 2,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 11.3,
+          "mean": 12.29
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1402
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 3,
+      "y": 161,
+      "pct": 2,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 11.3,
+          "mean": 12.29
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1350
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 4,
+      "y": 213,
+      "pct": 3,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 10.77,
+          "mean": 12.29
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1298
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 5,
+      "y": 265,
+      "pct": 4,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 11.3,
+          "mean": 12.29
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1246
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 6,
+      "y": 295,
+      "pct": 4,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 11.28,
+          "mean": 12.29
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -25,
+        1216
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 7,
+      "y": 533,
+      "pct": 8,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 11.3,
+          "mean": 12.29
+        },
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha sour",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        },
+        {
+          "t": "Rooms, walls, and openings become struct",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        },
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha source.",
+          "o": 1
+        },
+        {
+          "t": "Rooms, walls, and openings become structured d",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 30.49%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -263,
+        978
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 8,
+      "y": 771,
+      "pct": 11,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 11.28,
+          "mean": 12.29
+        },
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha sour",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        },
+        {
+          "t": "Rooms, walls, and openings become struct",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        },
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha source.",
+          "o": 1
+        },
+        {
+          "t": "Rooms, walls, and openings become structured d",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "flow",
+      "stages": [
+        -501,
+        740
+      ],
+      "segs": [],
+      "custom": [
+        "1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 9,
+      "y": 1010,
+      "pct": 15,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha sour",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        },
+        {
+          "t": "Rooms, walls, and openings become struct",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        }
+      ],
+      "cues": [
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha source.",
+          "o": 1
+        },
+        {
+          "t": "Rooms, walls, and openings become structured d",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "flow",
+      "stages": [
+        -740,
+        501
+      ],
+      "segs": [],
+      "custom": [
+        "1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 10,
+      "y": 1248,
+      "pct": 19,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha sour",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        },
+        {
+          "t": "Rooms, walls, and openings become struct",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        }
+      ],
+      "cues": [
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha source.",
+          "o": 1
+        },
+        {
+          "t": "Rooms, walls, and openings become structured d",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -978,
+        263
+      ],
+      "segs": [],
+      "custom": [
+        "1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 11,
+      "y": 1486,
+      "pct": 22,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1216,
+        25
+      ],
+      "segs": [],
+      "custom": [
+        "1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 12,
+      "y": 1538,
+      "pct": 23,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1268,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "1079.1,-0.6,-0.3,0.0,-0.0,-0.0,1.00,0.00|1079.1,-0.0,-0.3,0.0,-0.0,-0.0,1.00,0.00|1079.1,0.5,-0.3,0.0,-0.0,0.0,1.00,0.00|1079.1,-0.3,0.3,0.0,-0.0,0.0,1.00,0.00|1079.1,0.3,0.3,0.0,-0.0,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 13,
+      "y": 1797,
+      "pct": 27,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1527,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "992.6,-56.7,-24.3,1.0,-1.4,-0.2,1.00,0.00|992.6,-2.2,-24.3,1.2,-1.2,-0.1,1.00,0.00|992.6,52.3,-24.3,1.0,-1.0,0.0,1.00,0.00|992.6,-32.4,25.4,1.2,-0.7,0.1,1.00,0.00|992.6,28.1,25.4,1.0,-0.5,0.2,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 14,
+      "y": 2056,
+      "pct": 31,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1786,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "811.2,-174.3,-74.8,3.0,-4.4,-0.6,1.00,0.00|811.2,-6.7,-74.8,3.7,-3.7,-0.3,1.00,0.00|811.2,161.0,-74.8,3.0,-3.0,0.0,1.00,0.00|811.2,-99.8,78.2,3.7,-2.2,0.3,1.00,0.00|811.2,86.5,78.2,3.0,-1.5,0.6,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 15,
+      "y": 2315,
+      "pct": 34,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -2045,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "600.6,-310.9,-133.5,5.3,-7.9,-1.1,1.00,0.00|600.6,-11.9,-133.5,6.6,-6.6,-0.5,1.00,0.00|600.6,287.2,-133.5,5.3,-5.3,0.0,1.00,0.00|600.6,-178.0,139.4,6.6,-4.0,0.5,1.00,0.00|600.6,154.3,139.4,5.3,-2.6,1.1,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 16,
+      "y": 2575,
+      "pct": 38,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2305,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "425.4,-424.5,-182.3,7.2,-10.8,-1.4,1.00,0.26|425.4,-16.2,-182.3,9.0,-9.0,-0.7,1.00,0.26|425.4,392.1,-182.3,7.2,-7.2,0.0,1.00,0.26|425.4,-243.0,190.4,9.0,-5.4,0.7,1.00,0.26|425.4,210.6,190.4,7.2,-3.6,1.4,1.00,0.26;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 17,
+      "y": 2834,
+      "pct": 42,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2564,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "352.8,-471.6,-202.5,8.0,-12.0,-1.6,1.00,1.00|352.8,-18.0,-202.5,10.0,-10.0,-0.8,1.00,1.00|352.8,435.6,-202.5,8.0,-8.0,0.0,1.00,1.00|352.8,-270.0,211.5,10.0,-6.0,0.8,1.00,1.00|352.8,234.0,211.5,8.0,-4.0,1.6,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 18,
+      "y": 2879,
+      "pct": 43,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2609,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "352.8,-470.9,-202.5,8.0,-11.7,-1.6,1.00,1.00|352.8,-17.3,-202.3,10.0,-9.7,-0.8,1.00,1.00|352.8,436.3,-202.5,8.0,-7.7,0.0,1.00,1.00|352.8,-269.3,211.3,10.0,-5.7,0.8,1.00,1.00|352.8,234.7,211.6,8.0,-3.7,1.6,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 19,
+      "y": 3052,
+      "pct": 45,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2782,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "352.8,-464.0,-202.5,8.0,-8.6,-1.6,1.00,1.00|352.8,-10.3,-200.8,10.0,-6.6,-0.8,1.00,1.00|352.8,443.3,-202.9,8.0,-4.6,0.0,1.00,1.00|352.8,-262.3,209.9,10.0,-2.6,0.8,1.00,1.00|352.8,241.6,212.3,8.0,-0.6,1.6,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 20,
+      "y": 3224,
+      "pct": 48,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2954,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "352.8,-457.1,-202.5,8.0,-5.5,-1.6,1.00,1.00|352.8,-3.5,-199.3,10.0,-3.5,-0.8,1.00,1.00|352.8,450.1,-203.3,8.0,-1.5,0.0,1.00,1.00|352.8,-255.5,208.5,10.0,0.5,0.8,1.00,1.00|352.8,248.5,213.1,8.0,2.5,1.6,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 21,
+      "y": 3397,
+      "pct": 51,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -3127,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "352.8,-450.2,-202.5,8.0,-2.5,-1.6,1.00,1.00|352.8,3.4,-197.8,10.0,-0.5,-0.8,1.00,1.00|352.8,457.0,-203.7,8.0,1.5,0.0,1.00,1.00|352.8,-248.6,207.1,10.0,3.5,0.8,1.00,1.00|352.8,255.4,213.9,8.0,5.5,1.6,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 22,
+      "y": 3570,
+      "pct": 53,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -3300,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "352.8,-443.2,-202.5,8.0,0.6,-1.6,1.00,1.00|352.8,10.4,-196.2,10.0,2.6,-0.8,1.00,1.00|352.8,464.0,-204.1,8.0,4.6,0.0,1.00,1.00|352.8,-241.6,205.7,10.0,6.6,0.8,1.00,1.00|352.8,262.4,214.6,8.0,8.6,1.6,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 23,
+      "y": 3743,
+      "pct": 56,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -3473,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "352.8,-436.3,-202.5,8.0,3.7,-1.6,1.00,1.00|352.8,17.3,-194.7,10.0,5.7,-0.8,1.00,1.00|352.8,470.9,-204.5,8.0,7.7,0.0,1.00,1.00|352.8,-234.7,204.2,10.0,9.7,0.8,1.00,1.00|352.8,269.3,215.4,8.0,11.7,1.6,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 24,
+      "y": 3806,
+      "pct": 57,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -3536,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "352.8,-435.6,-202.5,8.0,4.0,-1.6,1.00,1.00|352.8,18.0,-194.6,10.0,6.0,-0.8,1.00,1.00|352.8,471.6,-204.5,8.0,8.0,0.0,1.00,1.00|352.8,-234.0,204.1,10.0,10.0,0.8,1.00,1.00|352.8,270.0,215.5,8.0,12.0,1.6,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 25,
+      "y": 4238,
+      "pct": 63,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -3968,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "445.4,-380.1,-176.7,7.0,3.5,-1.4,1.00,0.14|445.4,15.7,-169.8,8.7,5.2,-0.7,1.00,0.14|445.4,411.5,-178.5,7.0,7.0,0.0,1.00,0.14|445.4,-204.2,178.1,8.7,8.7,0.7,1.00,0.14|445.4,235.6,188.0,7.0,10.5,1.4,1.00,0.14;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 26,
+      "y": 4670,
+      "pct": 70,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -4400,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "658.4,-252.5,-117.4,4.6,2.3,-0.9,1.00,0.00|658.4,10.4,-112.8,5.8,3.5,-0.5,1.00,0.00|658.4,273.4,-118.6,4.6,4.6,0.0,1.00,0.00|658.4,-135.7,118.3,5.8,5.8,0.5,1.00,0.00|658.4,156.5,124.9,4.6,7.0,0.9,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 27,
+      "y": 5102,
+      "pct": 76,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -4832,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "894.6,-111.1,-51.6,2.0,1.0,-0.4,1.00,0.00|894.6,4.6,-49.6,2.5,1.5,-0.2,1.00,0.00|894.6,120.2,-52.2,2.0,2.0,0.0,1.00,0.00|894.6,-59.7,52.0,2.5,2.5,0.2,1.00,0.00|894.6,68.8,54.9,2.0,3.1,0.4,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 28,
+      "y": 5534,
+      "pct": 82,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -5264,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "1056.9,-13.9,-6.4,0.3,0.1,-0.1,0.00,0.00|1056.9,0.6,-6.2,0.3,0.2,-0.0,1.00,0.00|1056.9,15.0,-6.5,0.3,0.3,0.0,0.00,0.00|1056.9,-7.4,6.5,0.3,0.3,0.0,0.00,0.00|1056.9,8.6,6.9,0.3,0.4,0.1,0.00,0.00;plan:1.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 29,
+      "y": 5966,
+      "pct": 89,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -5696,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00;plan:1.000"
+      ],
+      "customHold": true,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 30,
+      "y": 6043,
+      "pct": 90,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -5773,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00;plan:1.000"
+      ],
+      "customHold": true,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 31,
+      "y": 6350,
+      "pct": 95,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Keep the source.Trust the trace. Give ev",
+          "dir": "light-on-dark",
+          "worst": 13.87,
+          "mean": 13.87
+        }
+      ],
+      "cues": [
+        {
+          "t": "Keep the source.Trust the trace. Give every an",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -6080,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00;plan:1.000"
+      ],
+      "customHold": true,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 32,
+      "y": 6658,
+      "pct": 99,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Keep the source.Trust the trace. Give ev",
+          "dir": "light-on-dark",
+          "worst": 13.87,
+          "mean": 13.87
+        }
+      ],
+      "cues": [
+        {
+          "t": "Keep the source.Trust the trace. Give every an",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "flow",
+      "stages": [
+        -6388,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00;plan:1.000"
+      ],
+      "customHold": true,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 33,
+      "y": 6713,
+      "pct": 100,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Keep the source.Trust the trace. Give ev",
+          "dir": "light-on-dark",
+          "worst": 13.87,
+          "mean": 13.87
+        }
+      ],
+      "cues": [
+        {
+          "t": "Keep the source.Trust the trace. Give every an",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "flow",
+      "stages": [
+        -6443,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|1080.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00;plan:1.000"
+      ],
+      "customHold": true,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    }
+  ],
+  "consoleErrors": [],
+  "failed": []
+}

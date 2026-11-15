@@ -1,0 +1,1111 @@
+{
+  "doc": {
+    "height": 7250,
+    "vh": 844,
+    "acts": [
+      "pin",
+      "flow",
+      "pin",
+      "pan",
+      "pin",
+      "flow"
+    ],
+    "world": null
+  },
+  "report": [
+    {
+      "i": 0,
+      "y": 5,
+      "pct": 0,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 12.31,
+          "mean": 12.31
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "none"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1573
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 1,
+      "y": 54,
+      "pct": 1,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 12.31,
+          "mean": 12.31
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1524
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 2,
+      "y": 102,
+      "pct": 2,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 12.31,
+          "mean": 12.31
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1476
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 3,
+      "y": 151,
+      "pct": 2,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 12.31,
+          "mean": 12.31
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1427
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 4,
+      "y": 199,
+      "pct": 3,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 12.31,
+          "mean": 12.31
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1379
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 5,
+      "y": 248,
+      "pct": 4,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 12.31,
+          "mean": 12.31
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        0,
+        1330
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 6,
+      "y": 280,
+      "pct": 4,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 12.31,
+          "mean": 12.31
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 100%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -27,
+        1298
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 7,
+      "y": 534,
+      "pct": 8,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Tr",
+          "dir": "dark-on-light",
+          "worst": 12.31,
+          "mean": 12.31
+        },
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha sour",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        },
+        {
+          "t": "Rooms, walls, and openings become struct",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        }
+      ],
+      "cues": [
+        {
+          "t": "Drawings, madeanswerable. Stoa Vision Translat",
+          "o": 1
+        },
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha source.",
+          "o": 1
+        },
+        {
+          "t": "Rooms, walls, and openings become structured d",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 30.48%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -281,
+        1044
+      ],
+      "segs": [],
+      "custom": [
+        "static-drawings"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 8,
+      "y": 788,
+      "pct": 12,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha sour",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        },
+        {
+          "t": "Rooms, walls, and openings become struct",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        }
+      ],
+      "cues": [
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha source.",
+          "o": 1
+        },
+        {
+          "t": "Rooms, walls, and openings become structured d",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "flow",
+      "stages": [
+        -535,
+        790
+      ],
+      "segs": [],
+      "custom": [
+        "362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 9,
+      "y": 1043,
+      "pct": 16,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha sour",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        },
+        {
+          "t": "Rooms, walls, and openings become struct",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        }
+      ],
+      "cues": [
+        {
+          "t": "FROM DRAWING TO DATA Geometry witha source.",
+          "o": 1
+        },
+        {
+          "t": "Rooms, walls, and openings become structured d",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "flow",
+      "stages": [
+        -790,
+        535
+      ],
+      "segs": [],
+      "custom": [
+        "362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 10,
+      "y": 1297,
+      "pct": 20,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Rooms, walls, and openings become struct",
+          "dir": "dark-on-light",
+          "worst": 13.7,
+          "mean": 13.7
+        }
+      ],
+      "cues": [
+        {
+          "t": "Rooms, walls, and openings become structured d",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1044,
+        281
+      ],
+      "segs": [],
+      "custom": [
+        "362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 11,
+      "y": 1552,
+      "pct": 24,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1299,
+        26
+      ],
+      "segs": [],
+      "custom": [
+        "362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 12,
+      "y": 1603,
+      "pct": 25,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1350,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "361.9,-0.0,-0.3,0.1,-0.0,0.0,1.00,0.00|361.9,0.0,-0.2,0.1,-0.0,0.0,1.00,0.00|361.9,-0.0,0.0,0.1,-0.0,0.0,1.00,0.00|361.9,-0.0,0.2,0.1,-0.0,0.0,1.00,0.00|361.9,0.0,0.3,0.1,-0.0,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 13,
+      "y": 1846,
+      "pct": 29,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1593,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "348.1,-2.2,-33.3,7.0,-0.5,0.0,1.00,0.00|348.1,0.4,-16.6,7.0,-0.4,0.0,1.00,0.00|348.1,-0.7,0.0,7.0,-0.4,0.0,1.00,0.00|348.1,-1.8,16.6,7.0,-0.3,0.0,1.00,0.00|348.1,0.7,33.3,7.0,-0.2,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 14,
+      "y": 2089,
+      "pct": 33,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -1836,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "319.1,-6.6,-102.5,21.4,-1.6,0.0,1.00,0.14|319.1,1.1,-51.3,21.4,-1.3,0.0,1.00,0.14|319.1,-2.2,0.0,21.4,-1.1,0.0,1.00,0.14|319.1,-5.5,51.3,21.4,-0.9,0.0,1.00,0.14|319.1,2.2,102.5,21.4,-0.6,0.0,1.00,0.14;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 15,
+      "y": 2332,
+      "pct": 36,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -2079,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "285.3,-11.9,-183.0,38.2,-2.8,0.0,1.00,0.91|285.3,2.0,-91.5,38.2,-2.4,0.0,1.00,0.91|285.3,-4.0,0.0,38.2,-2.0,0.0,1.00,0.91|285.3,-9.9,91.5,38.2,-1.5,0.0,1.00,0.91|285.3,4.0,183.0,38.2,-1.1,0.0,1.00,0.91;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 16,
+      "y": 2575,
+      "pct": 40,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2322,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "257.4,-16.2,-249.7,52.2,-3.9,0.0,1.00,1.00|257.4,2.7,-124.9,52.2,-3.3,0.0,1.00,1.00|257.4,-5.4,0.0,52.2,-2.7,0.0,1.00,1.00|257.4,-13.5,124.9,52.2,-2.1,0.0,1.00,1.00|257.4,5.4,249.7,52.2,-1.5,0.0,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 17,
+      "y": 2819,
+      "pct": 44,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2566,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "245.7,-18.0,-277.6,58.0,-4.3,0.0,1.00,1.00|245.7,3.0,-138.8,58.0,-3.6,0.0,1.00,1.00|245.7,-6.0,0.0,58.0,-3.0,0.0,1.00,1.00|245.7,-15.0,138.8,58.0,-2.4,0.0,1.00,1.00|245.7,6.0,277.6,58.0,-1.7,0.0,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 18,
+      "y": 2861,
+      "pct": 45,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2608,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "245.7,-17.8,-277.6,58.0,-4.2,0.0,1.00,1.00|245.7,3.2,-138.8,58.0,-3.5,0.0,1.00,1.00|245.7,-5.8,0.0,58.0,-2.9,0.0,1.00,1.00|245.7,-14.8,138.8,58.0,-2.2,0.0,1.00,1.00|245.7,6.2,277.6,58.0,-1.6,0.0,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 19,
+      "y": 3023,
+      "pct": 47,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2770,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "245.7,-15.5,-277.6,58.0,-3.0,0.0,1.00,1.00|245.7,5.5,-138.8,58.0,-2.4,0.0,1.00,1.00|245.7,-3.5,0.0,58.0,-1.7,0.0,1.00,1.00|245.7,-12.5,138.8,58.0,-1.1,0.0,1.00,1.00|245.7,8.5,277.6,58.0,-0.4,0.0,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 20,
+      "y": 3185,
+      "pct": 50,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pan",
+      "stages": [
+        -2932,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "245.7,-13.1,-277.6,58.0,-1.9,0.0,1.00,1.00|245.7,7.9,-138.8,58.0,-1.2,0.0,1.00,1.00|245.7,-1.1,0.0,58.0,-0.6,0.0,1.00,1.00|245.7,-10.1,138.8,58.0,0.1,0.0,1.00,1.00|245.7,10.9,277.6,58.0,0.7,0.0,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 21,
+      "y": 3347,
+      "pct": 52,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -3094,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "245.7,-10.8,-277.6,58.0,-0.7,0.0,1.00,1.00|245.7,10.2,-138.8,58.0,-0.1,0.0,1.00,1.00|245.7,1.2,0.0,58.0,0.6,0.0,1.00,1.00|245.7,-7.8,138.8,58.0,1.2,0.0,1.00,1.00|245.7,13.2,277.6,58.0,1.9,0.0,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 22,
+      "y": 3509,
+      "pct": 55,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -3256,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "245.7,-8.5,-277.6,58.0,0.4,0.0,1.00,1.00|245.7,12.5,-138.8,58.0,1.1,0.0,1.00,1.00|245.7,3.5,0.0,58.0,1.7,0.0,1.00,1.00|245.7,-5.5,138.8,58.0,2.4,0.0,1.00,1.00|245.7,15.5,277.6,58.0,3.0,0.0,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 23,
+      "y": 3671,
+      "pct": 57,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -3418,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "245.7,-6.2,-277.6,58.0,1.6,0.0,1.00,1.00|245.7,14.8,-138.8,58.0,2.2,0.0,1.00,1.00|245.7,5.8,0.0,58.0,2.9,0.0,1.00,1.00|245.7,-3.2,138.8,58.0,3.5,0.0,1.00,1.00|245.7,17.8,277.6,58.0,4.2,0.0,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 24,
+      "y": 3730,
+      "pct": 58,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -3477,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "245.7,-6.0,-277.6,58.0,1.7,0.0,1.00,1.00|245.7,15.0,-138.8,58.0,2.4,0.0,1.00,1.00|245.7,6.0,0.0,58.0,3.0,0.0,1.00,1.00|245.7,-3.0,138.8,58.0,3.6,0.0,1.00,1.00|245.7,18.0,277.6,58.0,4.3,0.0,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 25,
+      "y": 4135,
+      "pct": 65,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -3882,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "260.5,-5.2,-242.3,50.6,1.5,0.0,1.00,1.00|260.5,13.1,-121.2,50.6,2.1,0.0,1.00,1.00|260.5,5.2,0.0,50.6,2.6,0.0,1.00,1.00|260.5,-2.6,121.2,50.6,3.2,0.0,1.00,1.00|260.5,15.7,242.3,50.6,3.8,0.0,1.00,1.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 26,
+      "y": 4540,
+      "pct": 71,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -4287,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "294.5,-3.5,-161.0,33.6,1.0,0.0,1.00,0.45|294.5,8.7,-80.5,33.6,1.4,0.0,1.00,0.45|294.5,3.5,0.0,33.6,1.7,0.0,1.00,0.45|294.5,-1.7,80.5,33.6,2.1,0.0,1.00,0.45|294.5,10.4,161.0,33.6,2.5,0.0,1.00,0.45;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 27,
+      "y": 4945,
+      "pct": 77,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -4692,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "332.3,-1.5,-70.9,14.8,0.4,0.0,1.00,0.00|332.3,3.8,-35.5,14.8,0.6,0.0,1.00,0.00|332.3,1.5,0.0,14.8,0.8,0.0,1.00,0.00|332.3,-0.8,35.5,14.8,0.9,0.0,1.00,0.00|332.3,4.6,70.9,14.8,1.1,0.0,1.00,0.00;plan:0.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 28,
+      "y": 5351,
+      "pct": 84,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -5098,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "358.3,-0.2,-8.8,1.8,0.1,0.0,0.00,0.00|358.3,0.5,-4.4,1.8,0.1,0.0,1.00,0.00|358.3,0.2,0.0,1.8,0.1,0.0,0.00,0.00|358.3,-0.1,4.4,1.8,0.1,0.0,0.00,0.00|358.3,0.6,8.8,1.8,0.1,0.0,0.00,0.00;plan:1.000"
+      ],
+      "customHold": false,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 29,
+      "y": 5756,
+      "pct": 90,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -5503,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00;plan:1.000"
+      ],
+      "customHold": true,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 30,
+      "y": 5827,
+      "pct": 91,
+      "settled": true,
+      "contrast": [],
+      "cues": [],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -5574,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00;plan:1.000"
+      ],
+      "customHold": true,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 31,
+      "y": 6106,
+      "pct": 95,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Keep the source.Trust the trace. Give ev",
+          "dir": "light-on-dark",
+          "worst": 13.87,
+          "mean": 13.87
+        }
+      ],
+      "cues": [
+        {
+          "t": "Keep the source.Trust the trace. Give every an",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "pin",
+      "stages": [
+        -5853,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00;plan:1.000"
+      ],
+      "customHold": true,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 32,
+      "y": 6384,
+      "pct": 100,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Keep the source.Trust the trace. Give ev",
+          "dir": "light-on-dark",
+          "worst": 13.87,
+          "mean": 13.87
+        }
+      ],
+      "cues": [
+        {
+          "t": "Keep the source.Trust the trace. Give every an",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "flow",
+      "stages": [
+        -6131,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00;plan:1.000"
+      ],
+      "customHold": true,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    },
+    {
+      "i": 33,
+      "y": 6406,
+      "pct": 100,
+      "settled": true,
+      "contrast": [
+        {
+          "t": "Keep the source.Trust the trace. Give ev",
+          "dir": "light-on-dark",
+          "worst": 13.87,
+          "mean": 13.87
+        }
+      ],
+      "cues": [
+        {
+          "t": "Keep the source.Trust the trace. Give every an",
+          "o": 1
+        }
+      ],
+      "clips": [],
+      "rails": [],
+      "wipes": [
+        "inset(0px 0px 0%)"
+      ],
+      "act": "flow",
+      "stages": [
+        -6153,
+        0
+      ],
+      "segs": [],
+      "custom": [
+        "362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,1.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00|362.0,0.0,0.0,0.0,0.0,0.0,0.00,0.00;plan:1.000"
+      ],
+      "customHold": true,
+      "seg": null,
+      "segp": null,
+      "bg": "#E9ECE8"
+    }
+  ],
+  "consoleErrors": [],
+  "failed": []
+}

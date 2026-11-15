@@ -1,4 +1,4 @@
-"""Stoa vision translator: any drawing file -> one schema v0.2 JSON per page.
+"""Stoa vision translator: supported sources -> one v0.3 JSON per building.
 
 Hand-off contract: translate(path) -> dict, and `python -m translator <path>`.
 Outputs go to index/<source>/<file>.json (see translator.store.index_path).
@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 COVERAGE_CATEGORIES = ("rooms", "doors", "windows", "fixtures", "walls", "text")
 
@@ -51,27 +51,26 @@ def _page_image(r: dict, file_path: Path) -> tuple[dict | None, int | None, int 
 
 
 def translate(path: str, data: str | None = None, part: str | None = None) -> dict:
-    """Translate one drawing file into one schema v0.2 document (validated, not written).
+    """Return one validated building. Multi-building IFC inputs require translate_all().
 
-    Most files give one document. A file that gives several (an IFC model: one per storey) needs
-    part=<drawing.part>, or use translate_all(path).
+    The deprecated part argument returns an explicit, non-persistable source-frame view.
     """
     docs = translate_all(path, data)
     if part is not None:
-        hits = [d for d in docs if d["drawing"].get("part") == part]
+        from translator.building import page_views
+
+        hits = [d for doc in docs for d in page_views(doc) if d["drawing"].get("part") == part]
         if not hits:
-            raise KeyError(f"{path}: no part {part!r}; parts are {[d['drawing'].get('part') for d in docs]}")
+            raise KeyError(f"{path}: no part {part!r}")
         return hits[0]
     if len(docs) > 1:
-        parts = [d["drawing"].get("part") for d in docs]
-        raise ValueError(
-            f"{path} gives {len(docs)} documents (parts {parts}); pass part= or use translate_all()"
-        )
+        parts = [d["building_id"] for d in docs]
+        raise ValueError(f"{path} contains {len(docs)} buildings ({parts}); use translate_all()")
     return docs[0]
 
 
 def translate_all(path: str, data: str | None = None) -> list[dict]:
-    """Every document for one file: one per page, or one per storey for an IFC model. Validated."""
+    """Validated buildings for one input, including all IFC storeys and uncontained elements."""
     from translator import router
     from translator.config import data_root
     from translator.store import validate
@@ -118,10 +117,62 @@ def translate_all(path: str, data: str | None = None) -> list[dict]:
         ],
         "history": [{"extractor": "router", "action": "route", "note": note}],
     }
-    docs = _run_extractor(doc, r, root, file_path)
+    from translator.building import merge_buildings
+
+    if r["route"] == "ifc":
+        docs = _ifc_buildings(doc, r, root, file_path)
+    else:
+        docs = [merge_buildings(_run_extractor(doc, r, root, file_path))]
     for d in docs:
-        validate(d, where=f"{r['file']} {d['drawing'].get('part') or ''}".strip())
+        validate(d, where=r["file"])
     return docs
+
+
+def _ifc_buildings(base, route, root, file_path):
+    import copy
+
+    from translator.building import merge_buildings, stable_id
+    from translator.extract import ifc
+    from translator.extract.ifc_metadata import enrich_building
+
+    data = ifc.extract_records(_abs(root, route["read_from"]))
+    buildings = data["metadata"]["buildings"]
+    groups = [b["global_id"] for b in buildings] or [None]
+    if len(groups) > 1 and any(r.get("building") is None for r in data["records"]):
+        groups.append(None)
+    result = []
+    for gid in groups:
+        subset = {
+            **data,
+            "storeys": [s for s in data["storeys"] if s.get("building") == gid or len(groups) == 1],
+            "records": [r for r in data["records"] if r.get("building") == gid or len(groups) == 1],
+        }
+        fragments = []
+        for parts in ifc.documents(subset, route["read_from"]):
+            fragment = copy.deepcopy(base)
+            fragment["drawing"]["part"] = parts.pop("part")
+            fragment["drawing"]["scale"] = {
+                "m_per_px": None,
+                "source": "vector_units",
+                "confidence": 1.0,
+                "note": f"IFC {data['schema']}; normalized SI geometry",
+            }
+            fragment["history"].extend(parts.pop("history"))
+            fragment.update(parts)
+            # Only the requested level belongs to this rendered sheet's coordinate frame.
+            if route.get("level") and any(level["name"] == route["level"] for level in fragment["levels"]):
+                _map_ifc_to_page(fragment, file_path)
+            elif file_path.suffix.lower() != ".ifc":
+                fragment["drawing"].update(
+                    file=route["read_from"], image=None, page_index=None, page_count=None
+                )
+            fragments.append(fragment)
+        building = merge_buildings(
+            fragments or [base],
+            building_id=f"ifc:{gid}" if gid else stable_id("building", route["read_from"]),
+        )
+        result.append(enrich_building(building, data, gid))
+    return result
 
 
 def _abs(root: Path, p: str) -> Path:
@@ -143,37 +194,7 @@ def _run_extractor(doc: dict, r: dict, root: Path, file_path: Path) -> list[dict
             doc[key] = value
         _map_to_page(doc, file_path)
         return [doc]
-    if r["route"] == "ifc":
-        import copy
 
-        from translator.extract import ifc
-
-        data = ifc.extract_records(_abs(root, r["read_from"]))
-        # a rendered plan of one storey gets that storey; the model itself gets every storey
-        level = r.get("level") if file_path.suffix.lower() != ".ifc" else None
-        out = []
-        for parts in ifc.documents(data, r["read_from"], level_name=level):
-            d = copy.deepcopy(doc)
-            part = parts.pop("part")
-            d["drawing"]["part"] = part if level is None else None
-            d["drawing"]["scale"] = {
-                "m_per_px": None,
-                "source": "vector_units",
-                "confidence": 1.0,
-                "note": f"IFC model units converted to metres ({data['schema']})",
-            }
-            d["history"].extend(parts.pop("history"))
-            for key, value in parts.items():
-                d[key] = value
-            if level is not None:
-                _map_ifc_to_page(d, file_path)
-            out.append(d)
-        if not out:
-            doc["history"].append(
-                {"extractor": "ifc", "action": "skip", "note": f"no storey named {level!r}"}
-            )
-            return [doc]
-        return out
     return [doc]
 
 

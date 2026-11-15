@@ -1,0 +1,2206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stoa.local/building.v0.3.schema.json",
+  "title": "Stoa building model v0.3",
+  "description": "One building; source frames and observations retain their original coordinates. Metric core is SI.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "levels",
+    "units",
+    "rooms",
+    "walls",
+    "openings",
+    "objects",
+    "texts",
+    "edges",
+    "coverage",
+    "history",
+    "building_id",
+    "project",
+    "source_documents",
+    "drawings",
+    "systems",
+    "types",
+    "schedules",
+    "relationships"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.3"
+    },
+    "levels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/level"
+      }
+    },
+    "units": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/unit"
+      }
+    },
+    "rooms": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/room"
+      }
+    },
+    "walls": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/wall"
+      }
+    },
+    "openings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/opening"
+      }
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/object"
+      }
+    },
+    "texts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "coverage": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/coverage"
+      }
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/history"
+      }
+    },
+    "building_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "project": {
+      "$ref": "#/$defs/project"
+    },
+    "source_documents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source_document"
+      }
+    },
+    "drawings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/drawing"
+      }
+    },
+    "systems": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/system"
+      }
+    },
+    "types": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/type_definition"
+      }
+    },
+    "schedules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/schedule"
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/relationship"
+      }
+    },
+    "statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "quantities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/quantity"
+          }
+        }
+      },
+      "required": [
+        "quantities"
+      ]
+    }
+  },
+  "$defs": {
+    "num_or_null": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "point": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 3
+    },
+    "polygon": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/$defs/point"
+      }
+    },
+    "polygons": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/point"
+        }
+      }
+    },
+    "bbox": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "number"
+      },
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "[x0, y0, x1, y1] in original page pixels"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "extractor",
+        "source_ref"
+      ],
+      "properties": {
+        "extractor": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Which extractor produced this, e.g. swiss_dxf, ifc, cubicasa_seg, ocr, vlm_check"
+        },
+        "source_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "DXF handle, PDF item index, IFC GlobalId, or extractor-local id (e.g. seg:icon:12)"
+        },
+        "file": {
+          "type": "string",
+          "description": "File actually read, if different from drawing.file"
+        },
+        "layer": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "entity": {
+      "type": "object",
+      "required": [
+        "id",
+        "confidence",
+        "provenance",
+        "source_refs"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "superseded"
+          ],
+          "default": "active"
+        },
+        "superseded_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "level_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "e.g. check_this, low_confidence"
+        },
+        "properties": {
+          "type": "object",
+          "description": "Free-form extra data, e.g. all IFC psets"
+        },
+        "ifc_global_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ifc_class": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "predefined_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type_mark": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parent_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_reference"
+          },
+          "minItems": 1
+        },
+        "source_drawing_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "room_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "system_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "schedule_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "materials": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/material"
+          }
+        },
+        "material_layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/material_layer"
+          }
+        },
+        "quantities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/quantity"
+          }
+        },
+        "geometry": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/geometry"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dimensions": {
+          "$ref": "#/$defs/dimensions"
+        },
+        "classifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/classification"
+          }
+        },
+        "fire_rating": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "acoustic_rating": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "is_load_bearing": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "observations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/observation"
+          }
+        }
+      }
+    },
+    "drawing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "source",
+        "route",
+        "read_from",
+        "id",
+        "source_document_id",
+        "level_ids"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "Dataset-relative path the question asks about, e.g. data/swiss_dwellings/x.pdf"
+        },
+        "source": {
+          "type": "string",
+          "description": "Dataset source folder, e.g. swiss_dwellings"
+        },
+        "page_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "page_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "part": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Page or level slug when one file yields several documents"
+        },
+        "image": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "width_px",
+            "height_px"
+          ],
+          "properties": {
+            "width_px": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height_px": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "dpi": {
+              "$ref": "#/$defs/num_or_null"
+            }
+          }
+        },
+        "route": {
+          "enum": [
+            "ifc",
+            "dxf",
+            "svg",
+            "vector_pdf",
+            "raster",
+            "vlm",
+            "none"
+          ]
+        },
+        "read_from": {
+          "type": "string",
+          "description": "Sibling file actually parsed"
+        },
+        "transforms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "resize",
+                  "deskew",
+                  "affine",
+                  "upscale",
+                  "invert",
+                  "other"
+                ]
+              },
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "scale_x": {
+                "type": "number"
+              },
+              "scale_y": {
+                "type": "number"
+              },
+              "angle_deg": {
+                "type": "number"
+              },
+              "matrix": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "residual_px": {
+                "type": "number"
+              },
+              "note": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "scale": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "confidence"
+          ],
+          "properties": {
+            "m_per_px": {
+              "$ref": "#/$defs/num_or_null"
+            },
+            "source": {
+              "enum": [
+                "vector_units",
+                "scale_note",
+                "dimension_lines",
+                "door_width",
+                "none"
+              ]
+            },
+            "confidence": {
+              "$ref": "#/$defs/confidence"
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "translator_version": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "source_document_id": {
+          "type": "string"
+        },
+        "level_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "level": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "elevation_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "height_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "bbox_px": {
+          "$ref": "#/$defs/bbox"
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "storey_identifier": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "unit": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "required": [
+        "label"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Apartment letter or id as asked, e.g. A"
+        },
+        "label_raw": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Text as drawn, e.g. Whg. A"
+        },
+        "polygon_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "polygon_m": {
+          "$ref": "#/$defs/polygon"
+        },
+        "area_m2": {
+          "$ref": "#/$defs/num_or_null"
+        }
+      }
+    },
+    "room": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "required": [
+        "name",
+        "type",
+        "is_outdoor"
+      ],
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Raw label text exactly as drawn (Zimmer, MH, ELUTUBA+K\u00d6\u00d6K)"
+        },
+        "number": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Room number, e.g. 2.10, K08, 3-1"
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Combined label as questions quote it, e.g. ELUTUBA+K\u00d6\u00d6K (3-1)"
+        },
+        "type": {
+          "enum": [
+            "balcony",
+            "bathroom",
+            "bedroom",
+            "closet",
+            "corridor",
+            "dining",
+            "entry",
+            "garage",
+            "kitchen",
+            "living",
+            "office",
+            "other",
+            "outdoor",
+            "sauna",
+            "shaft",
+            "stair",
+            "staircase",
+            "storage",
+            "technical",
+            "terrace",
+            "unknown",
+            "utility",
+            "wc"
+          ]
+        },
+        "subtype": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unit_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parent_room_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "is_outdoor": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "polygon_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "polygon_m": {
+          "$ref": "#/$defs/polygon"
+        },
+        "holes_px": {
+          "$ref": "#/$defs/polygons"
+        },
+        "holes_m": {
+          "$ref": "#/$defs/polygons"
+        },
+        "area_m2": {
+          "$ref": "#/$defs/num_or_null",
+          "description": "Best area value to answer with"
+        },
+        "area_written_m2": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "area_computed_m2": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "height_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "volume_m3": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "text_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "finishes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finish"
+          }
+        },
+        "boundary_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "wall": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "properties": {
+        "polyline_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "polygon_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "polygon_m": {
+          "$ref": "#/$defs/polygon"
+        },
+        "length_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "thickness_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "height_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "net_side_area_m2": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "net_volume_m3": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "is_external": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "is_load_bearing": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "room_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "gross_area_m2": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "net_area_m2": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gross_volume_m3": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "wall_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "structural_properties": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "opening": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "door",
+            "window",
+            "doorway",
+            "void",
+            "other"
+          ],
+          "description": "doorway = opening without a door leaf; never counted as a door"
+        },
+        "bbox_px": {
+          "$ref": "#/$defs/bbox"
+        },
+        "polygon_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "polygon_m": {
+          "$ref": "#/$defs/polygon"
+        },
+        "width_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "height_m": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "is_entrance": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "wall_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "room_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "area_m2": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "is_physical": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "frame_material": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/material"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "glazing": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "layers": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "u_value_w_m2k": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": []
+        },
+        "operation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hardware_group": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "accessibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "is_accessible": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "clear_width_m": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "threshold_height_m": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": []
+        }
+      }
+    },
+    "object": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "required": [
+        "category"
+      ],
+      "properties": {
+        "category": {
+          "enum": [
+            "bathtub",
+            "beam",
+            "cable",
+            "cable_tray",
+            "closet",
+            "column",
+            "cooling_equipment",
+            "distribution_board",
+            "duct",
+            "electrical_equipment",
+            "elevator",
+            "fire_protection_equipment",
+            "footing",
+            "foundation",
+            "fridge",
+            "furniture",
+            "heating_equipment",
+            "kitchen_equipment",
+            "light_fixture",
+            "other",
+            "pile",
+            "pipe",
+            "pump",
+            "radiator",
+            "railing",
+            "roof",
+            "sauna_bench",
+            "sensor",
+            "shower",
+            "sink",
+            "slab",
+            "stair",
+            "stove",
+            "structural_connection",
+            "structural_member",
+            "toilet",
+            "valve",
+            "ventilation_equipment",
+            "washing_machine"
+          ]
+        },
+        "subtype": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bbox_px": {
+          "$ref": "#/$defs/bbox"
+        },
+        "polygon_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "polygon_m": {
+          "$ref": "#/$defs/polygon"
+        },
+        "room_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "net_volume_m3": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "area_m2": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "width_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "depth_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "height_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "length_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "volume_m3": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "text": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "required": [
+        "text"
+      ],
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "bbox_px": {
+          "$ref": "#/$defs/bbox"
+        },
+        "polygon_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "angle_deg": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "role": {
+          "enum": [
+            "room_label",
+            "room_number",
+            "area",
+            "dimension",
+            "scale_note",
+            "title",
+            "level_title",
+            "unit_label",
+            "legend",
+            "other"
+          ]
+        },
+        "room_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "required": [
+        "kind",
+        "from_id"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "reference",
+            "legend"
+          ]
+        },
+        "from_id": {
+          "type": "string"
+        },
+        "to": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Target sheet/detail reference or entity id"
+        },
+        "meaning": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "category",
+        "region",
+        "status",
+        "extractor",
+        "confidence",
+        "drawing_id"
+      ],
+      "properties": {
+        "category": {
+          "type": "string",
+          "description": "rooms, doors, windows, fixtures, shower, text, walls, ..."
+        },
+        "region": {
+          "oneOf": [
+            {
+              "const": "page"
+            },
+            {
+              "$ref": "#/$defs/bbox"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "analysed",
+            "partial",
+            "not_analysed"
+          ]
+        },
+        "extractor": {
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "note": {
+          "type": "string"
+        },
+        "drawing_id": {
+          "type": "string"
+        }
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extractor",
+        "action"
+      ],
+      "properties": {
+        "at": {
+          "type": "string"
+        },
+        "extractor": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "entity_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cost_usd": {
+          "$ref": "#/$defs/num_or_null"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "source_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_document_id": {
+          "type": "string"
+        },
+        "drawing_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_ref": {
+          "type": "string"
+        },
+        "extractor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "source_document_id",
+        "drawing_id",
+        "source_ref"
+      ]
+    },
+    "quantity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unit": {
+          "enum": [
+            "m",
+            "m2",
+            "m3",
+            "deg",
+            "count",
+            "1"
+          ]
+        },
+        "origin": {
+          "enum": [
+            "source",
+            "calculated",
+            "estimated",
+            "unknown"
+          ]
+        },
+        "quality": {
+          "enum": [
+            "exact",
+            "calculated",
+            "estimated",
+            "unknown"
+          ]
+        },
+        "method": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_reference"
+          }
+        },
+        "entity_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "original_value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "original_unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "value",
+        "unit",
+        "origin",
+        "method",
+        "source_refs"
+      ]
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "depth_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "height_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "length_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "diameter_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": []
+    },
+    "geometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "coordinate_system": {
+          "enum": [
+            "world",
+            "source",
+            "unknown"
+          ]
+        },
+        "unit": {
+          "enum": [
+            "m",
+            "px"
+          ]
+        },
+        "bbox": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "footprints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "exterior": {
+                "$ref": "#/$defs/polygon"
+              },
+              "holes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/polygon"
+                }
+              }
+            },
+            "required": [
+              "exterior",
+              "holes"
+            ]
+          }
+        },
+        "placement": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_reference"
+          }
+        }
+      },
+      "required": [
+        "coordinate_system",
+        "unit"
+      ]
+    },
+    "material": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_reference"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": []
+    },
+    "material_layer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "material": {
+          "$ref": "#/$defs/material"
+        },
+        "thickness_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "function": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "is_structural": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "is_insulation": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "is_ventilated": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_reference"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "material",
+        "thickness_m"
+      ]
+    },
+    "finish": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "surface": {
+          "enum": [
+            "floor",
+            "wall",
+            "ceiling",
+            "other"
+          ]
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "material": {
+          "$ref": "#/$defs/material"
+        },
+        "area_m2": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_reference"
+          }
+        }
+      },
+      "required": [
+        "surface"
+      ]
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "system": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "location": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": []
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "drawing_id": {
+          "type": "string"
+        },
+        "polygon_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "polyline_px": {
+          "$ref": "#/$defs/polygon"
+        },
+        "bbox_px": {
+          "$ref": "#/$defs/bbox"
+        },
+        "holes_px": {
+          "$ref": "#/$defs/polygons"
+        }
+      },
+      "required": [
+        "drawing_id"
+      ]
+    },
+    "system": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "unevaluatedProperties": false,
+      "properties": {
+        "system_type": {
+          "enum": [
+            "heating",
+            "cooling",
+            "ventilation",
+            "plumbing",
+            "drainage",
+            "electrical",
+            "lighting",
+            "fire_protection",
+            "communication",
+            "other",
+            "unknown"
+          ]
+        },
+        "component_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "level_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "system_type",
+        "component_ids"
+      ]
+    },
+    "type_definition": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "unevaluatedProperties": false,
+      "properties": {
+        "entity_kind": {
+          "enum": [
+            "door",
+            "window",
+            "wall",
+            "object",
+            "room",
+            "other"
+          ]
+        },
+        "instance_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "entity_kind",
+        "instance_ids"
+      ]
+    },
+    "schedule_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type_mark": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dimensions": {
+          "$ref": "#/$defs/dimensions"
+        },
+        "materials": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/material"
+          }
+        },
+        "quantity": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "entity_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_reference"
+          }
+        },
+        "cells": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "required": [
+        "id",
+        "cells",
+        "entity_ids",
+        "source_refs"
+      ]
+    },
+    "schedule": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/$defs/entity"
+        }
+      ],
+      "unevaluatedProperties": false,
+      "properties": {
+        "schedule_type": {
+          "enum": [
+            "door",
+            "window",
+            "room_finish",
+            "material",
+            "equipment",
+            "sanitary_fixture",
+            "other"
+          ]
+        },
+        "source_document_id": {
+          "type": "string"
+        },
+        "source_sheet_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "headers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/schedule_row"
+          }
+        }
+      },
+      "required": [
+        "schedule_type",
+        "source_document_id",
+        "headers",
+        "rows"
+      ]
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "contains",
+            "aggregates",
+            "voids",
+            "fills",
+            "bounds",
+            "connects",
+            "typed_by",
+            "assigned_to"
+          ]
+        },
+        "from_id": {
+          "type": "string"
+        },
+        "to_id": {
+          "type": "string"
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_reference"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "from_id",
+        "to_id",
+        "source_refs"
+      ]
+    },
+    "address": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "street": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "postal_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "city": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "region": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "country": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": []
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "building_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "building_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "function": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "site_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "client": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "author": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "architect": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "engineering_company": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "authoring_software": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ifc_schema": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "project_identifier": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ifc_project_global_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ifc_building_global_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ifc_site_global_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "address": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/address"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "location": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "latitude_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "longitude_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "elevation_m": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": []
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_reference"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": []
+    },
+    "source_document": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ifc_schema": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "units": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "id",
+        "file",
+        "format"
+      ]
+    }
+  }
+}

@@ -1,0 +1,5250 @@
+{
+  "schema_version": "0.3",
+  "project": {
+    "name": null,
+    "global_id": null,
+    "schema_identifier": null,
+    "application": null,
+    "units": {
+      "length": {
+        "unit": null,
+        "to_si": null,
+        "status": "not_available",
+        "source": "not recorded in the source document"
+      },
+      "area": {
+        "unit": null,
+        "to_si": null,
+        "status": "not_available",
+        "source": "a SVG source declares no area unit (areas are derived by code in m2)"
+      },
+      "volume": {
+        "unit": null,
+        "to_si": null,
+        "status": "not_available",
+        "source": "a SVG source declares no volume unit (volumes are derived by code in m3)"
+      },
+      "angle": {
+        "unit": null,
+        "to_si": null,
+        "status": "not_available",
+        "source": "a SVG source declares no angle unit"
+      }
+    }
+  },
+  "site": null,
+  "building": null,
+  "drawing": {
+    "file": "data/ifc_models/bsc-molio_molio-with-uris_plan-02-klder.svg",
+    "source": "ifc_models",
+    "page_index": 0,
+    "page_count": 1,
+    "part": null,
+    "image": {
+      "width_px": 479,
+      "height_px": 423,
+      "dpi": null
+    },
+    "route": "svg",
+    "read_from": "bsc-molio_molio-with-uris_plan-02-klder.svg",
+    "transforms": [
+      {
+        "kind": "resize",
+        "from": "svg_user_units",
+        "to": "page_px",
+        "scale_x": 1,
+        "scale_y": 1,
+        "note": "viewBox origin (181.21, 99.36) moved to 0,0"
+      }
+    ],
+    "scale": {
+      "m_per_px": null,
+      "source": "none",
+      "confidence": 0
+    },
+    "translator_version": "blueprint-ingest@0.3.0",
+    "created_at": "2026-11-15T00:25:38.282Z"
+  },
+  "sources": [
+    {
+      "id": "source_1",
+      "file": "bsc-molio_molio-with-uris_plan-02-klder.svg",
+      "role": "primary",
+      "format": "svg",
+      "schema_identifier": null,
+      "size_bytes": 155904,
+      "sha256": "40fccae81497efcc8d4bddf43ff0773a8fd94b959bd42f407c29e6f0d6e5b395",
+      "georeference": null
+    }
+  ],
+  "levels": [],
+  "units": [],
+  "rooms": [],
+  "walls": [
+    {
+      "id": "wall_25",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall25"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          374.77,
+          272.01
+        ],
+        [
+          374.77,
+          272.01
+        ]
+      ],
+      "polygon_px": [
+        [
+          374.77,
+          272.01
+        ],
+        [
+          374.77,
+          272.01
+        ],
+        [
+          374.77,
+          272.01
+        ],
+        [
+          374.77,
+          272.01
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_26",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall26"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          99.85,
+          74.49
+        ],
+        [
+          99.85,
+          74.49
+        ]
+      ],
+      "polygon_px": [
+        [
+          99.85,
+          74.49
+        ],
+        [
+          99.85,
+          74.49
+        ],
+        [
+          99.85,
+          74.49
+        ],
+        [
+          99.85,
+          74.49
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_27",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall27"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          99.85,
+          277.89
+        ],
+        [
+          99.85,
+          277.89
+        ]
+      ],
+      "polygon_px": [
+        [
+          99.85,
+          277.89
+        ],
+        [
+          99.85,
+          277.89
+        ],
+        [
+          99.85,
+          277.89
+        ],
+        [
+          99.85,
+          277.89
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_28",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall28"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          374.77,
+          277.89
+        ],
+        [
+          374.77,
+          277.89
+        ]
+      ],
+      "polygon_px": [
+        [
+          374.77,
+          277.89
+        ],
+        [
+          374.77,
+          277.89
+        ],
+        [
+          374.77,
+          277.89
+        ],
+        [
+          374.77,
+          277.89
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_31",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall31"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          235.05,
+          172.29
+        ],
+        [
+          235.05,
+          172.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          235.05,
+          172.29
+        ],
+        [
+          235.05,
+          172.29
+        ],
+        [
+          235.05,
+          172.29
+        ],
+        [
+          235.05,
+          172.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_32",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall32"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          226.65,
+          227.29
+        ],
+        [
+          226.65,
+          227.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          226.65,
+          227.29
+        ],
+        [
+          226.65,
+          227.29
+        ],
+        [
+          226.65,
+          227.29
+        ],
+        [
+          226.65,
+          227.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_33",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall33"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          139.37,
+          171.29
+        ],
+        [
+          139.37,
+          171.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          139.37,
+          171.29
+        ],
+        [
+          139.37,
+          171.29
+        ],
+        [
+          139.37,
+          171.29
+        ],
+        [
+          139.37,
+          171.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_34",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall34"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          138.37,
+          74.49
+        ],
+        [
+          138.37,
+          74.49
+        ]
+      ],
+      "polygon_px": [
+        [
+          138.37,
+          74.49
+        ],
+        [
+          138.37,
+          74.49
+        ],
+        [
+          138.37,
+          74.49
+        ],
+        [
+          138.37,
+          74.49
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_35",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall35"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          227.65,
+          228.29
+        ],
+        [
+          227.65,
+          228.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          227.65,
+          228.29
+        ],
+        [
+          227.65,
+          228.29
+        ],
+        [
+          227.65,
+          228.29
+        ],
+        [
+          227.65,
+          228.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_36",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall36"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          374.77,
+          228.29
+        ],
+        [
+          374.77,
+          228.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          374.77,
+          230.29
+        ],
+        [
+          374.77,
+          230.29
+        ],
+        [
+          374.77,
+          226.29
+        ],
+        [
+          374.77,
+          226.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_37",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall37"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          276.75,
+          228.29
+        ],
+        [
+          276.75,
+          228.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          276.75,
+          228.29
+        ],
+        [
+          276.75,
+          228.29
+        ],
+        [
+          276.75,
+          228.29
+        ],
+        [
+          276.75,
+          228.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_38",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall38"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          320.65,
+          272.01
+        ],
+        [
+          320.65,
+          272.01
+        ]
+      ],
+      "polygon_px": [
+        [
+          320.65,
+          272.01
+        ],
+        [
+          320.65,
+          272.01
+        ],
+        [
+          320.65,
+          272.01
+        ],
+        [
+          320.65,
+          272.01
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_39",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall39"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          319.65,
+          228.29
+        ],
+        [
+          319.65,
+          228.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          319.65,
+          228.29
+        ],
+        [
+          319.65,
+          228.29
+        ],
+        [
+          319.65,
+          228.29
+        ],
+        [
+          319.65,
+          228.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_40",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall40"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          298.65,
+          272.01
+        ],
+        [
+          298.65,
+          272.01
+        ]
+      ],
+      "polygon_px": [
+        [
+          298.65,
+          272.01
+        ],
+        [
+          298.65,
+          272.01
+        ],
+        [
+          298.65,
+          272.01
+        ],
+        [
+          298.65,
+          272.01
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_41",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall41"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          278.65,
+          272.01
+        ],
+        [
+          278.65,
+          272.01
+        ]
+      ],
+      "polygon_px": [
+        [
+          278.65,
+          272.01
+        ],
+        [
+          278.65,
+          272.01
+        ],
+        [
+          278.65,
+          272.01
+        ],
+        [
+          278.65,
+          272.01
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_42",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall42"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          277.65,
+          228.29
+        ],
+        [
+          277.65,
+          228.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          277.65,
+          228.29
+        ],
+        [
+          277.65,
+          228.29
+        ],
+        [
+          277.65,
+          228.29
+        ],
+        [
+          277.65,
+          228.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_43",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall43"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          232.05,
+          171.29
+        ],
+        [
+          232.05,
+          171.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          232.05,
+          171.29
+        ],
+        [
+          232.05,
+          171.29
+        ],
+        [
+          232.05,
+          171.29
+        ],
+        [
+          232.05,
+          171.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_44",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall44"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          232.05,
+          74.49
+        ],
+        [
+          232.05,
+          74.49
+        ]
+      ],
+      "polygon_px": [
+        [
+          232.05,
+          74.49
+        ],
+        [
+          232.05,
+          74.49
+        ],
+        [
+          232.05,
+          74.49
+        ],
+        [
+          232.05,
+          74.49
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_45",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall45"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          233.05,
+          144.19
+        ],
+        [
+          233.05,
+          144.19
+        ]
+      ],
+      "polygon_px": [
+        [
+          233.05,
+          144.19
+        ],
+        [
+          233.05,
+          144.19
+        ],
+        [
+          233.05,
+          144.19
+        ],
+        [
+          233.05,
+          144.19
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_46",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall46"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          212.05,
+          106.29
+        ],
+        [
+          212.05,
+          106.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          212.05,
+          106.29
+        ],
+        [
+          212.05,
+          106.29
+        ],
+        [
+          212.05,
+          106.29
+        ],
+        [
+          212.05,
+          106.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_47",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall47"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          159.37,
+          144.79
+        ],
+        [
+          159.37,
+          144.79
+        ]
+      ],
+      "polygon_px": [
+        [
+          159.37,
+          144.79
+        ],
+        [
+          159.37,
+          144.79
+        ],
+        [
+          159.37,
+          144.79
+        ],
+        [
+          159.37,
+          144.79
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_48",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall48"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          160.37,
+          106.29
+        ],
+        [
+          160.37,
+          106.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          160.37,
+          106.29
+        ],
+        [
+          160.37,
+          106.29
+        ],
+        [
+          160.37,
+          106.29
+        ],
+        [
+          160.37,
+          106.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_49",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall49"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          211.05,
+          107.29
+        ],
+        [
+          211.05,
+          107.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          213.05,
+          107.29
+        ],
+        [
+          213.05,
+          107.29
+        ],
+        [
+          209.05,
+          107.29
+        ],
+        [
+          209.05,
+          107.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_50",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall50"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          212.05,
+          172.29
+        ],
+        [
+          212.05,
+          172.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          212.05,
+          172.29
+        ],
+        [
+          212.05,
+          172.29
+        ],
+        [
+          212.05,
+          172.29
+        ],
+        [
+          212.05,
+          172.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_51",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall51"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          211.05,
+          161.19
+        ],
+        [
+          211.05,
+          161.19
+        ]
+      ],
+      "polygon_px": [
+        [
+          211.05,
+          161.19
+        ],
+        [
+          211.05,
+          161.19
+        ],
+        [
+          211.05,
+          161.19
+        ],
+        [
+          211.05,
+          161.19
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_52",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall52"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          212.05,
+          127.79
+        ],
+        [
+          212.05,
+          127.79
+        ]
+      ],
+      "polygon_px": [
+        [
+          212.05,
+          127.79
+        ],
+        [
+          212.05,
+          127.79
+        ],
+        [
+          212.05,
+          127.79
+        ],
+        [
+          212.05,
+          127.79
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_53",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall53"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          187.55,
+          146.29
+        ],
+        [
+          187.55,
+          146.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          187.55,
+          146.29
+        ],
+        [
+          187.55,
+          146.29
+        ],
+        [
+          187.55,
+          146.29
+        ],
+        [
+          187.55,
+          146.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_54",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall54"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          211.05,
+          126.79
+        ],
+        [
+          211.05,
+          126.79
+        ]
+      ],
+      "polygon_px": [
+        [
+          211.05,
+          126.79
+        ],
+        [
+          211.05,
+          126.79
+        ],
+        [
+          211.05,
+          126.79
+        ],
+        [
+          211.05,
+          126.79
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_55",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall55"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          159.37,
+          144.79
+        ],
+        [
+          159.37,
+          144.79
+        ]
+      ],
+      "polygon_px": [
+        [
+          159.37,
+          144.79
+        ],
+        [
+          159.37,
+          144.79
+        ],
+        [
+          159.37,
+          144.79
+        ],
+        [
+          159.37,
+          144.79
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_56",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall56"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          138.37,
+          115.29
+        ],
+        [
+          138.37,
+          115.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          138.37,
+          115.29
+        ],
+        [
+          138.37,
+          115.29
+        ],
+        [
+          138.37,
+          115.29
+        ],
+        [
+          138.37,
+          115.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_57",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall57"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          138.37,
+          174.29
+        ],
+        [
+          138.37,
+          174.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          138.37,
+          174.29
+        ],
+        [
+          138.37,
+          174.29
+        ],
+        [
+          138.37,
+          174.29
+        ],
+        [
+          138.37,
+          174.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_58",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall58"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          138.37,
+          272.01
+        ],
+        [
+          138.37,
+          272.01
+        ]
+      ],
+      "polygon_px": [
+        [
+          138.37,
+          272.01
+        ],
+        [
+          138.37,
+          272.01
+        ],
+        [
+          138.37,
+          272.01
+        ],
+        [
+          138.37,
+          272.01
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_59",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall59"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          139.37,
+          240.81
+        ],
+        [
+          139.37,
+          240.81
+        ]
+      ],
+      "polygon_px": [
+        [
+          139.37,
+          240.81
+        ],
+        [
+          139.37,
+          240.81
+        ],
+        [
+          139.37,
+          240.81
+        ],
+        [
+          139.37,
+          240.81
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_60",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall60"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          212.05,
+          172.29
+        ],
+        [
+          212.05,
+          172.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          212.05,
+          172.29
+        ],
+        [
+          212.05,
+          172.29
+        ],
+        [
+          212.05,
+          172.29
+        ],
+        [
+          212.05,
+          172.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_61",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall61"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          188.05,
+          144.79
+        ],
+        [
+          188.05,
+          144.79
+        ]
+      ],
+      "polygon_px": [
+        [
+          188.05,
+          144.79
+        ],
+        [
+          188.05,
+          144.79
+        ],
+        [
+          188.05,
+          144.79
+        ],
+        [
+          188.05,
+          144.79
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_62",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall62"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          189.05,
+          125.79
+        ],
+        [
+          189.05,
+          125.79
+        ]
+      ],
+      "polygon_px": [
+        [
+          189.05,
+          125.79
+        ],
+        [
+          189.05,
+          125.79
+        ],
+        [
+          189.05,
+          125.79
+        ],
+        [
+          189.05,
+          125.79
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_63",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall63"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          189.05,
+          144.79
+        ],
+        [
+          189.05,
+          144.79
+        ]
+      ],
+      "polygon_px": [
+        [
+          189.05,
+          144.79
+        ],
+        [
+          189.05,
+          144.79
+        ],
+        [
+          189.05,
+          144.79
+        ],
+        [
+          189.05,
+          144.79
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_64",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall64"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          138.37,
+          226.29
+        ],
+        [
+          138.37,
+          226.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          138.37,
+          226.29
+        ],
+        [
+          138.37,
+          226.29
+        ],
+        [
+          138.37,
+          226.29
+        ],
+        [
+          138.37,
+          226.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_65",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall65"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          160.87,
+          146.29
+        ],
+        [
+          160.87,
+          146.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          160.87,
+          146.29
+        ],
+        [
+          160.87,
+          146.29
+        ],
+        [
+          160.87,
+          146.29
+        ],
+        [
+          160.87,
+          146.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_66",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall66"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          159.37,
+          172.29
+        ],
+        [
+          159.37,
+          172.29
+        ]
+      ],
+      "polygon_px": [
+        [
+          159.37,
+          172.29
+        ],
+        [
+          159.37,
+          172.29
+        ],
+        [
+          159.37,
+          172.29
+        ],
+        [
+          159.37,
+          172.29
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_67",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall67"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          298.65,
+          264.26
+        ],
+        [
+          298.65,
+          264.26
+        ]
+      ],
+      "polygon_px": [
+        [
+          298.65,
+          264.26
+        ],
+        [
+          298.65,
+          264.26
+        ],
+        [
+          298.65,
+          264.26
+        ],
+        [
+          298.65,
+          264.26
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_68",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall68"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          298.65,
+          255.26
+        ],
+        [
+          298.65,
+          255.26
+        ]
+      ],
+      "polygon_px": [
+        [
+          298.65,
+          255.26
+        ],
+        [
+          298.65,
+          255.26
+        ],
+        [
+          298.65,
+          255.26
+        ],
+        [
+          298.65,
+          255.26
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_69",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall69"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          298.65,
+          246.26
+        ],
+        [
+          298.65,
+          246.26
+        ]
+      ],
+      "polygon_px": [
+        [
+          298.65,
+          246.26
+        ],
+        [
+          298.65,
+          246.26
+        ],
+        [
+          298.65,
+          246.26
+        ],
+        [
+          298.65,
+          246.26
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_70",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall70"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          298.65,
+          237.26
+        ],
+        [
+          298.65,
+          237.26
+        ]
+      ],
+      "polygon_px": [
+        [
+          298.65,
+          237.26
+        ],
+        [
+          298.65,
+          237.26
+        ],
+        [
+          298.65,
+          237.26
+        ],
+        [
+          298.65,
+          237.26
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_71",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall71"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          306.65,
+          264.26
+        ],
+        [
+          306.65,
+          264.26
+        ]
+      ],
+      "polygon_px": [
+        [
+          306.65,
+          264.26
+        ],
+        [
+          306.65,
+          264.26
+        ],
+        [
+          306.65,
+          264.26
+        ],
+        [
+          306.65,
+          264.26
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_72",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall72"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          306.65,
+          255.26
+        ],
+        [
+          306.65,
+          255.26
+        ]
+      ],
+      "polygon_px": [
+        [
+          306.65,
+          255.26
+        ],
+        [
+          306.65,
+          255.26
+        ],
+        [
+          306.65,
+          255.26
+        ],
+        [
+          306.65,
+          255.26
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_73",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall73"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          306.65,
+          246.26
+        ],
+        [
+          306.65,
+          246.26
+        ]
+      ],
+      "polygon_px": [
+        [
+          306.65,
+          246.26
+        ],
+        [
+          306.65,
+          246.26
+        ],
+        [
+          306.65,
+          246.26
+        ],
+        [
+          306.65,
+          246.26
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    },
+    {
+      "id": "wall_74",
+      "confidence": 0.4,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "wall74"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "polyline_px": [
+        [
+          306.65,
+          237.26
+        ],
+        [
+          306.65,
+          237.26
+        ]
+      ],
+      "polygon_px": [
+        [
+          306.65,
+          237.26
+        ],
+        [
+          306.65,
+          237.26
+        ],
+        [
+          306.65,
+          237.26
+        ],
+        [
+          306.65,
+          237.26
+        ]
+      ],
+      "polygon_m": null,
+      "length_m": null,
+      "thickness_m": null,
+      "height_m": null,
+      "net_side_area_m2": null,
+      "net_volume_m3": null,
+      "is_external": null,
+      "is_load_bearing": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "material_layer_set_id": null,
+      "material_ids": []
+    }
+  ],
+  "openings": [
+    {
+      "id": "door_11",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door11"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 9.9
+      },
+      "kind": "door",
+      "bbox_px": [
+        129.47,
+        98.99,
+        139.37,
+        108.09
+      ],
+      "polygon_px": [
+        [
+          139.37,
+          98.99
+        ],
+        [
+          139.37,
+          108.09
+        ],
+        [
+          129.47,
+          108.09
+        ],
+        [
+          129.47,
+          98.99
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_12",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door12"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 10.9
+      },
+      "kind": "door",
+      "bbox_px": [
+        266.65,
+        227.29,
+        276.75,
+        238.19
+      ],
+      "polygon_px": [
+        [
+          266.65,
+          227.29
+        ],
+        [
+          276.75,
+          227.29
+        ],
+        [
+          276.75,
+          238.19
+        ],
+        [
+          266.65,
+          238.19
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_13",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door13"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 10.9
+      },
+      "kind": "door",
+      "bbox_px": [
+        309.75,
+        246.61,
+        320.65,
+        256.71
+      ],
+      "polygon_px": [
+        [
+          320.65,
+          246.61
+        ],
+        [
+          320.65,
+          256.71
+        ],
+        [
+          309.75,
+          256.71
+        ],
+        [
+          309.75,
+          246.61
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_14",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door14"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 10.9
+      },
+      "kind": "door",
+      "bbox_px": [
+        277.65,
+        246.61,
+        288.55,
+        256.71
+      ],
+      "polygon_px": [
+        [
+          288.55,
+          256.71
+        ],
+        [
+          277.65,
+          256.71
+        ],
+        [
+          277.65,
+          246.61
+        ],
+        [
+          288.55,
+          246.61
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_15",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door15"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 10.9
+      },
+      "kind": "door",
+      "bbox_px": [
+        321.65,
+        227.29,
+        331.75,
+        238.19
+      ],
+      "polygon_px": [
+        [
+          321.65,
+          227.29
+        ],
+        [
+          331.75,
+          227.29
+        ],
+        [
+          331.75,
+          238.19
+        ],
+        [
+          321.65,
+          238.19
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_16",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door16"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 18.1
+      },
+      "kind": "door",
+      "bbox_px": [
+        232.05,
+        144.19,
+        233.05,
+        162.29
+      ],
+      "polygon_px": [
+        [
+          233.05,
+          144.19
+        ],
+        [
+          233.05,
+          162.29
+        ],
+        [
+          232.05,
+          162.29
+        ],
+        [
+          232.05,
+          144.19
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_17",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door17"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 9.9
+      },
+      "kind": "door",
+      "bbox_px": [
+        232.05,
+        75.49,
+        241.95,
+        84.59
+      ],
+      "polygon_px": [
+        [
+          232.05,
+          75.49
+        ],
+        [
+          241.95,
+          75.49
+        ],
+        [
+          241.95,
+          84.59
+        ],
+        [
+          232.05,
+          84.59
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_18",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door18"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 9.9
+      },
+      "kind": "door",
+      "bbox_px": [
+        159.37,
+        123.09,
+        169.27,
+        132.19
+      ],
+      "polygon_px": [
+        [
+          159.37,
+          123.09
+        ],
+        [
+          169.27,
+          123.09
+        ],
+        [
+          169.27,
+          132.19
+        ],
+        [
+          159.37,
+          132.19
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_19",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door19"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 10.9
+      },
+      "kind": "door",
+      "bbox_px": [
+        201.15,
+        161.19,
+        212.05,
+        171.29
+      ],
+      "polygon_px": [
+        [
+          212.05,
+          161.19
+        ],
+        [
+          212.05,
+          171.29
+        ],
+        [
+          201.15,
+          171.29
+        ],
+        [
+          201.15,
+          161.19
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_20",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door20"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 9.9
+      },
+      "kind": "door",
+      "bbox_px": [
+        202.15,
+        127.79,
+        212.05,
+        136.89
+      ],
+      "polygon_px": [
+        [
+          202.15,
+          127.79
+        ],
+        [
+          212.05,
+          127.79
+        ],
+        [
+          212.05,
+          136.89
+        ],
+        [
+          202.15,
+          136.89
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_21",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door21"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 9.9
+      },
+      "kind": "door",
+      "bbox_px": [
+        202.15,
+        115.79,
+        212.05,
+        124.89
+      ],
+      "polygon_px": [
+        [
+          212.05,
+          115.79
+        ],
+        [
+          212.05,
+          124.89
+        ],
+        [
+          202.15,
+          124.89
+        ],
+        [
+          202.15,
+          115.79
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_22",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door22"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 10.1
+      },
+      "kind": "door",
+      "bbox_px": [
+        160.92,
+        154.24,
+        161.32,
+        164.34
+      ],
+      "polygon_px": [
+        [
+          161.32,
+          154.24
+        ],
+        [
+          161.32,
+          164.34
+        ],
+        [
+          160.92,
+          164.34
+        ],
+        [
+          160.92,
+          154.24
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_23",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door23"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 18.1
+      },
+      "kind": "door",
+      "bbox_px": [
+        138.37,
+        240.81,
+        139.37,
+        258.91
+      ],
+      "polygon_px": [
+        [
+          138.37,
+          240.81
+        ],
+        [
+          139.37,
+          240.81
+        ],
+        [
+          139.37,
+          258.91
+        ],
+        [
+          138.37,
+          258.91
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    },
+    {
+      "id": "door_24",
+      "confidence": 0.7,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "door24"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "width_px": 18.1
+      },
+      "kind": "door",
+      "bbox_px": [
+        138.37,
+        175.29,
+        139.37,
+        193.39
+      ],
+      "polygon_px": [
+        [
+          138.37,
+          175.29
+        ],
+        [
+          139.37,
+          175.29
+        ],
+        [
+          139.37,
+          193.39
+        ],
+        [
+          138.37,
+          193.39
+        ]
+      ],
+      "polygon_m": null,
+      "width_m": null,
+      "height_m": null,
+      "is_entrance": null,
+      "wall_id": null,
+      "room_ids": [],
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "type_id": null,
+      "mark": null,
+      "operation": null,
+      "material_ids": []
+    }
+  ],
+  "objects": [
+    {
+      "id": "obj_1",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj1"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "other",
+      "subtype": "ifc furnishing element storey a0e371d2 1",
+      "bbox_px": [
+        235.9,
+        167.79,
+        253.9,
+        172.3
+      ],
+      "polygon_px": [
+        [
+          235.9,
+          167.8
+        ],
+        [
+          253.9,
+          167.79
+        ],
+        [
+          253.9,
+          172.3
+        ],
+        [
+          235.9,
+          172.3
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "other",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    },
+    {
+      "id": "obj_2",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj2"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "other",
+      "subtype": "ifc furnishing element storey a0e371d2 1",
+      "bbox_px": [
+        253.9,
+        167.8,
+        277.9,
+        172.3
+      ],
+      "polygon_px": [
+        [
+          253.9,
+          167.8
+        ],
+        [
+          277.9,
+          167.8
+        ],
+        [
+          277.9,
+          172.3
+        ],
+        [
+          253.9,
+          172.3
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "other",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    },
+    {
+      "id": "obj_3",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj3"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "other",
+      "subtype": "ifc furnishing element storey a0e371d2 1",
+      "bbox_px": [
+        277.9,
+        167.8,
+        301.9,
+        172.3
+      ],
+      "polygon_px": [
+        [
+          277.9,
+          167.8
+        ],
+        [
+          301.9,
+          167.8
+        ],
+        [
+          301.9,
+          172.3
+        ],
+        [
+          277.9,
+          172.3
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "other",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    },
+    {
+      "id": "obj_4",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj4"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "other",
+      "subtype": "ifc furnishing element storey a0e371d2 1",
+      "bbox_px": [
+        349.82,
+        167.8,
+        373.82,
+        172.3
+      ],
+      "polygon_px": [
+        [
+          349.82,
+          167.8
+        ],
+        [
+          373.82,
+          167.8
+        ],
+        [
+          373.82,
+          172.3
+        ],
+        [
+          349.82,
+          172.3
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "other",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    },
+    {
+      "id": "obj_5",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj5"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "other",
+      "subtype": "ifc furnishing element storey a0e371d2 1",
+      "bbox_px": [
+        325.82,
+        167.8,
+        349.82,
+        172.3
+      ],
+      "polygon_px": [
+        [
+          325.82,
+          167.8
+        ],
+        [
+          349.82,
+          167.8
+        ],
+        [
+          349.82,
+          172.3
+        ],
+        [
+          325.82,
+          172.3
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "other",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    },
+    {
+      "id": "obj_6",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj6"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "other",
+      "subtype": "ifc furnishing element storey a0e371d2 1",
+      "bbox_px": [
+        301.82,
+        167.8,
+        325.82,
+        172.3
+      ],
+      "polygon_px": [
+        [
+          301.82,
+          167.8
+        ],
+        [
+          325.82,
+          167.8
+        ],
+        [
+          325.82,
+          172.3
+        ],
+        [
+          301.82,
+          172.3
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "other",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    },
+    {
+      "id": "obj_7",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj7"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "stair",
+      "subtype": null,
+      "bbox_px": [
+        304.19,
+        194.29,
+        304.29,
+        207.29
+      ],
+      "polygon_px": [
+        [
+          304.19,
+          194.29
+        ],
+        [
+          304.29,
+          194.29
+        ],
+        [
+          304.29,
+          207.29
+        ],
+        [
+          304.19,
+          207.29
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "architectural",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    },
+    {
+      "id": "obj_8",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj8"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "stair",
+      "subtype": null,
+      "bbox_px": [
+        304.29,
+        194.29,
+        310.83,
+        207.29
+      ],
+      "polygon_px": [
+        [
+          310.83,
+          194.29
+        ],
+        [
+          310.83,
+          207.29
+        ],
+        [
+          304.29,
+          207.29
+        ],
+        [
+          304.29,
+          194.29
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "architectural",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    },
+    {
+      "id": "obj_9",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj9"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "stair",
+      "subtype": null,
+      "bbox_px": [
+        176.09,
+        93.29,
+        176.19,
+        106.29
+      ],
+      "polygon_px": [
+        [
+          176.19,
+          93.29
+        ],
+        [
+          176.19,
+          106.29
+        ],
+        [
+          176.09,
+          106.29
+        ],
+        [
+          176.09,
+          93.29
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "architectural",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    },
+    {
+      "id": "obj_10",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj10"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "stair",
+      "subtype": null,
+      "bbox_px": [
+        176.19,
+        93.29,
+        182.73,
+        106.29
+      ],
+      "polygon_px": [
+        [
+          176.19,
+          93.29
+        ],
+        [
+          182.73,
+          93.29
+        ],
+        [
+          182.73,
+          106.29
+        ],
+        [
+          176.19,
+          106.29
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "architectural",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    },
+    {
+      "id": "obj_29",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj29"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "other",
+      "subtype": "ifc column storey a0e371d2 16a4 b54d 8ad",
+      "bbox_px": [
+        136.37,
+        171.29,
+        139.37,
+        174.29
+      ],
+      "polygon_px": [
+        [
+          136.37,
+          171.29
+        ],
+        [
+          139.37,
+          171.29
+        ],
+        [
+          139.37,
+          174.29
+        ],
+        [
+          136.37,
+          174.29
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "other",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    },
+    {
+      "id": "obj_30",
+      "confidence": 0.55,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "obj30"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "category": "other",
+      "subtype": "ifc column storey a0e371d2 16a4 b54d 8ad",
+      "bbox_px": [
+        232.05,
+        171.29,
+        235.05,
+        174.29
+      ],
+      "polygon_px": [
+        [
+          232.05,
+          171.29
+        ],
+        [
+          235.05,
+          171.29
+        ],
+        [
+          235.05,
+          174.29
+        ],
+        [
+          232.05,
+          174.29
+        ]
+      ],
+      "polygon_m": null,
+      "room_id": null,
+      "net_volume_m3": null,
+      "area_m2": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": [],
+      "discipline": "other",
+      "type_id": null,
+      "system_ids": [],
+      "material_ids": [],
+      "material_layer_set_id": null,
+      "host_id": null
+    }
+  ],
+  "element_types": [],
+  "materials": [],
+  "material_layer_sets": [],
+  "systems": [],
+  "schedules": [],
+  "relationships": [],
+  "texts": [
+    {
+      "id": "text_75",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text75"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Depot",
+      "bbox_px": [
+        303.91,
+        121.09,
+        309.41,
+        123.49
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_76",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text76"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K08",
+      "bbox_px": [
+        303.91,
+        123.09,
+        316.01,
+        125.49
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_77",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text77"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Skakt",
+      "bbox_px": [
+        174.21,
+        108.97,
+        179.71,
+        111.37
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_78",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text78"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K04.1",
+      "bbox_px": [
+        174.21,
+        110.97,
+        188.51,
+        113.37
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_79",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text79"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "IT-server rum",
+      "bbox_px": [
+        119.11,
+        92.09,
+        133.41,
+        94.49
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_80",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text80"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K01",
+      "bbox_px": [
+        119.11,
+        94.09,
+        131.21,
+        96.49
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_81",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text81"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Køle og varmecentral",
+      "bbox_px": [
+        119.11,
+        167.99,
+        141.11,
+        170.39
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_82",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text82"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K02",
+      "bbox_px": [
+        119.11,
+        169.99,
+        131.21,
+        172.39
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_83",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text83"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Affald",
+      "bbox_px": [
+        119.11,
+        246.85,
+        125.71,
+        249.25
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_84",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text84"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K03",
+      "bbox_px": [
+        119.11,
+        248.85,
+        131.21,
+        251.25
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_85",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text85"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Teknikrum",
+      "bbox_px": [
+        174.21,
+        123.74,
+        184.11,
+        126.14
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_86",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text86"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K04",
+      "bbox_px": [
+        174.21,
+        125.74,
+        186.31,
+        128.14
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_87",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text87"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Toilet",
+      "bbox_px": [
+        200.05,
+        114.24,
+        206.65,
+        116.64
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_88",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text88"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K05",
+      "bbox_px": [
+        200.05,
+        116.24,
+        212.15,
+        118.64
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_89",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text89"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Toilet",
+      "bbox_px": [
+        200.05,
+        133.49,
+        206.65,
+        135.89
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_90",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text90"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K06",
+      "bbox_px": [
+        200.05,
+        135.49,
+        212.15,
+        137.89
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_91",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text91"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Toilet",
+      "bbox_px": [
+        200.05,
+        156.74,
+        206.65,
+        159.14
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_92",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text92"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K07",
+      "bbox_px": [
+        200.05,
+        158.74,
+        212.15,
+        161.14
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_93",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text93"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Gang",
+      "bbox_px": [
+        300.71,
+        198.49,
+        305.11,
+        200.89
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_94",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text94"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K13",
+      "bbox_px": [
+        300.71,
+        200.49,
+        312.81,
+        202.89
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_95",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text95"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Omklædning - Dame",
+      "bbox_px": [
+        252.65,
+        247.85,
+        271.35,
+        250.25
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_96",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text96"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K09",
+      "bbox_px": [
+        252.65,
+        249.85,
+        264.75,
+        252.25
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_97",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text97"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Omklædning - Herre",
+      "bbox_px": [
+        347.71,
+        247.85,
+        367.51,
+        250.25
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_98",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text98"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K12",
+      "bbox_px": [
+        347.71,
+        249.85,
+        359.81,
+        252.25
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_99",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text99"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Bad - Dame",
+      "bbox_px": [
+        288.65,
+        247.85,
+        299.65,
+        250.25
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_100",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text100"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K10",
+      "bbox_px": [
+        288.65,
+        249.85,
+        300.75,
+        252.25
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_101",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text101"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Bad - Herre",
+      "bbox_px": [
+        309.65,
+        247.85,
+        321.75,
+        250.25
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_102",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text102"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "Rum nr. K11",
+      "bbox_px": [
+        309.65,
+        249.85,
+        321.75,
+        252.25
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_103",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text103"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 4
+      },
+      "text": "Molio Demo-hus — Plantegning: Kælder",
+      "bbox_px": [
+        6,
+        398.78,
+        85.2,
+        403.58
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_104",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text104"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2.6
+      },
+      "text": "Målestok 1:100 · snit 1.20 m over etagens niveau · Genereret fra IFC (Molio_with_URIs.ifc, IfcOpenShell IfcConvert 0.9.0)",
+      "bbox_px": [
+        6,
+        406.38,
+        179.03,
+        409.5
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_105",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text105"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2
+      },
+      "text": "© Molio Demo-hus, (C) original authors (unnamed) - buildingSMART Community Sample-Test-Files contributors · CC-BY-4.0",
+      "bbox_px": [
+        6,
+        411.78,
+        134.7,
+        414.18
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_106",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text106"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "font_size_px": 2.2
+      },
+      "text": "0",
+      "bbox_px": [
+        422.58,
+        390.08,
+        423.79,
+        392.72
+      ],
+      "angle_deg": 0,
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    },
+    {
+      "id": "text_107",
+      "confidence": 0.95,
+      "provenance": {
+        "extractor": "vector_svg",
+        "source_ref": "text107"
+      },
+      "status": "active",
+      "superseded_by": null,
+      "level_id": null,
+      "flags": [],
+      "properties": {
+        "value": {
+          "number": 5,
+          "unit": "m"
+        },
+        "font_size_px": 2.2
+      },
+      "text": "5 m",
+      "bbox_px": [
+        472.58,
+        390.08,
+        476.21,
+        392.72
+      ],
+      "angle_deg": 0,
+      "role": "dimension",
+      "room_id": null,
+      "global_id": null,
+      "ifc_class": null,
+      "classifications": []
+    }
+  ],
+  "edges": [],
+  "coverage": [
+    {
+      "category": "walls",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.8
+    },
+    {
+      "category": "rooms",
+      "region": "page",
+      "status": "partial",
+      "extractor": "vector_svg",
+      "confidence": 0.8,
+      "note": "no room/space layer or class found"
+    },
+    {
+      "category": "doors",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.8
+    },
+    {
+      "category": "windows",
+      "region": "page",
+      "status": "partial",
+      "extractor": "vector_svg",
+      "confidence": 0.8
+    },
+    {
+      "category": "text",
+      "region": "page",
+      "status": "analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.9
+    },
+    {
+      "category": "dimensions",
+      "region": "page",
+      "status": "partial",
+      "extractor": "vector_svg",
+      "confidence": 0.8
+    },
+    {
+      "category": "fixtures",
+      "region": "page",
+      "status": "partial",
+      "extractor": "vector_svg",
+      "confidence": 0.5
+    },
+    {
+      "category": "scale",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0
+    },
+    {
+      "category": "stairs",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.3
+    },
+    {
+      "category": "symbols",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.3
+    },
+    {
+      "category": "legend",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0.3
+    },
+    {
+      "category": "materials",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0,
+      "note": "a SVG drawing carries no materials"
+    },
+    {
+      "category": "element_types",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0,
+      "note": "a SVG drawing carries no element types"
+    },
+    {
+      "category": "systems",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0,
+      "note": "a SVG drawing carries no systems"
+    },
+    {
+      "category": "schedules",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0,
+      "note": "not derived for the SVG route"
+    },
+    {
+      "category": "relationships",
+      "region": "page",
+      "status": "not_analysed",
+      "extractor": "vector_svg",
+      "confidence": 0,
+      "note": "not derived for the SVG route"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-11-15T00:25:38.282Z",
+      "extractor": "vector_svg",
+      "action": "extract",
+      "note": "SVG extractor (built-in reader) 1: 0 rooms, 48 walls, 14 openings, 12 objects, 33 texts, 0 units, 0 levels; 0 room name(s) via glossary/geometry",
+      "cost_usd": 0
+    },
+    {
+      "at": "2026-11-15T00:25:38.296Z",
+      "extractor": "schema_v0.3",
+      "action": "build",
+      "note": "built as schema v0.3 from the svg extraction"
+    }
+  ],
+  "statistics": [
+    {
+      "id": "stat_1",
+      "name": "count.levels",
+      "value": 0,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "levels",
+      "exact": false,
+      "scope": {
+        "collection": "levels"
+      }
+    },
+    {
+      "id": "stat_2",
+      "name": "count.rooms",
+      "value": 0,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "rooms",
+      "exact": false,
+      "scope": {
+        "collection": "rooms"
+      }
+    },
+    {
+      "id": "stat_3",
+      "name": "count.walls",
+      "value": 48,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "walls",
+      "exact": true,
+      "scope": {
+        "collection": "walls"
+      }
+    },
+    {
+      "id": "stat_4",
+      "name": "count.openings.door",
+      "value": 14,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "openings",
+      "exact": true,
+      "scope": {
+        "collection": "openings",
+        "category": "door"
+      }
+    },
+    {
+      "id": "stat_5",
+      "name": "count.openings.window",
+      "value": 0,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "openings",
+      "exact": false,
+      "scope": {
+        "collection": "openings",
+        "category": "window"
+      }
+    },
+    {
+      "id": "stat_6",
+      "name": "count.objects.other",
+      "value": 8,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "objects",
+      "exact": false,
+      "scope": {
+        "collection": "objects",
+        "category": "other"
+      }
+    },
+    {
+      "id": "stat_7",
+      "name": "count.objects.stair",
+      "value": 4,
+      "unit": "count",
+      "status": "calculated",
+      "method": "count of active entities",
+      "source": "objects",
+      "exact": false,
+      "scope": {
+        "collection": "objects",
+        "category": "stair"
+      }
+    },
+    {
+      "id": "stat_8",
+      "name": "sum.rooms.area_m2",
+      "value": null,
+      "unit": "m2",
+      "status": "not_available",
+      "method": "sum of rooms[].area_m2",
+      "source": "rooms[].area_m2",
+      "exact": false,
+      "scope": {
+        "collection": "rooms"
+      },
+      "inputs": 0,
+      "missing": 0
+    },
+    {
+      "id": "stat_9",
+      "name": "sum.walls.length_m",
+      "value": null,
+      "unit": "m",
+      "status": "not_available",
+      "method": "sum of walls[].length_m",
+      "source": "walls[].length_m",
+      "exact": false,
+      "scope": {
+        "collection": "walls"
+      },
+      "inputs": 48,
+      "missing": 48
+    }
+  ]
+}

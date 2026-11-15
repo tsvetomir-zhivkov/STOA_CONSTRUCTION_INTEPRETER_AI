@@ -244,8 +244,8 @@ def test_translate_runs_swiss_extractor_and_validates(tmp_path):
     p.save(tmp_path / "floor1.dxf")
     (tmp_path / "floor1.pdf").write_bytes(b"")  # question file; the router prefers the DXF sibling
     doc = translate(str(tmp_path / "floor1.pdf"), str(tmp_path))
-    assert doc["drawing"]["route"] == "dxf"
-    assert doc["drawing"]["scale"]["source"] == "vector_units"
+    assert doc["drawings"][0]["route"] == "dxf"
+    assert doc["drawings"][0]["scale"]["source"] == "vector_units"
     assert [r["number"] for r in doc["rooms"]] == ["1.01"]
     validate(doc)
 

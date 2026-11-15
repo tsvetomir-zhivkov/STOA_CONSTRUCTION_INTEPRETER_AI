@@ -1,24 +1,9 @@
-"""Step 4: IFC extractor. One document per IfcBuildingStorey, all values in metres.
+"""IfcOpenShell extraction with SI world geometry and untruncated source properties.
 
-Rules (no per-file cases):
-  storey     an element's storey is found through containment, then aggregation (IfcSpace is
-             aggregated into the storey, not contained; nested stair parts are aggregated into stairs).
-  IfcSpace   room: name = LongName, number = Name, label = "LongName (Name)". Area = NetFloorArea
-             quantity when present (area_written_m2), else the footprint of the space mesh: union of
-             the triangles at the lowest z (area_computed_m2). height_m = mesh z extent.
-  IfcDoor/IfcWindow  openings. IfcWall (incl. IfcWallStandardCase) -> walls: Length / NetSideArea /
-             NetVolume quantities, else length = longest side of the footprint's minimum rectangle and
-             volume = mesh volume.
-  IfcSlab/IfcColumn/IfcBeam  objects, category "other", subtype = IFC kind (no schema category);
-             volume = NetVolume quantity, else mesh volume.
-  IfcStair   objects, category "stair"; only top-level stairs (not parts aggregated into a stair).
-  sanitary   IfcSanitaryTerminal; only when a model has none, every IfcFlowTerminal (IFC2X3 has no
-             IfcSanitaryTerminal class). Toilet / sink / shower / bathtub by predefined type or type
-             name, else category "other", subtype "sanitary".
-Elements in no storey go to an extra document without a level.
-
-Geometry is slow on big models, so the extracted records are cached per model in
-index/_raw/ifc/<stem>.json, keyed on file size, mtime and EXTRACTOR_VERSION.
+The existing documents() function emits internal storey fragments for alignment compatibility.
+The public translator combines all fragments per building and enriches them with IFC metadata,
+types, systems, material layers, quantities and relationships before v0.3 validation/persistence.
+Geometry is cached by absolute source path, size, timestamp and extractor version.
 """
 
 from __future__ import annotations
@@ -37,7 +22,7 @@ from translator import glossary
 from translator.config import INDEX_DIR
 
 EXTRACTOR = "ifc"
-EXTRACTOR_VERSION = "3"
+EXTRACTOR_VERSION = "5-building-0.3"
 CACHE_DIR = INDEX_DIR / "_raw" / "ifc"
 Z_TOL = 1e-3  # m, triangles within this of the lowest z form the footprint
 AREA_TOL = 0.02  # written vs computed area: flag check_this above 2% (vector source)
@@ -47,7 +32,7 @@ STR_MAX = 200  # characters kept of one property value
 LIST_MAX = 20  # items kept of one list-valued property
 DOC_PROPS_MAX_BYTES = 2_000_000  # per document: extra elements are slimmed beyond this
 # IfcElement kinds that are never real building items (openings, voids, virtual boundaries)
-SKIP_ELEMENT_CLASSES = ("IfcFeatureElement", "IfcVirtualElement")
+SKIP_ELEMENT_CLASSES = ("IfcVirtualElement",)
 
 OBJECT_KINDS = {"IfcSlab": "slab", "IfcColumn": "column", "IfcBeam": "beam"}
 SANITARY_WORDS = [  # (category, words in predefined type / type name / name), first hit wins
@@ -85,9 +70,12 @@ def unit_scales(model) -> dict[str, float]:
     out = {}
     for kind in ("LENGTHUNIT", "AREAUNIT", "VOLUMEUNIT"):
         try:
-            out[kind] = float(uu.calculate_unit_scale(model, kind))
-        except Exception:
-            out[kind] = 1.0
+            unit = uu.get_project_unit(model, kind)
+            out[kind] = float(uu.calculate_unit_scale(model, kind)) if unit is not None else None
+        except Exception as exc:
+            raise ValueError(f"Cannot resolve IFC {kind}") from exc
+    if out["LENGTHUNIT"] is None:
+        raise ValueError("IFC project length unit is missing; cannot normalize geometry")
     return out
 
 
@@ -168,7 +156,7 @@ def mesh_volume(v, f) -> float | None:
 
     try:
         m = trimesh.Trimesh(vertices=v, faces=f, process=True)
-        return abs(float(m.volume))
+        return abs(float(m.volume)) if m.is_watertight else None
     except Exception:
         return None
 
@@ -219,20 +207,15 @@ def _geometry(model, products) -> dict[int, tuple]:
 
 
 def _clean_value(v):
-    if isinstance(v, bool) or v is None or isinstance(v, (int, float)):
-        return v
-    if isinstance(v, str):
-        return v if len(v) <= STR_MAX else v[:STR_MAX] + "..."
-    if isinstance(v, (list, tuple)):
-        items = [_clean_value(x) for x in v[:LIST_MAX] if not isinstance(x, (list, tuple, dict))]
-        return items + (["..."] if len(v) > LIST_MAX else [])
-    return str(v)[:STR_MAX]
+    from translator.extract.ifc_metadata import value
+
+    return value(v)
 
 
 def _clean_psets(psets: dict) -> dict:
     out = {}
     for name, props in psets.items():
-        clean = {k: _clean_value(v) for k, v in props.items() if k != "id" and not isinstance(v, dict)}
+        clean = {k: _clean_value(v) for k, v in props.items() if k != "id"}
         if clean:
             out[str(name)] = clean
     return out
@@ -251,7 +234,7 @@ def _materials(e, L: float):
         return [
             {
                 "name": ly.Material.Name if ly.Material else None,
-                "thickness_m": _r((ly.LayerThickness or 0) * L),
+                "thickness_m": _r(ly.LayerThickness * L if ly.LayerThickness is not None else None),
             }
             for ly in m.MaterialLayers
         ]
@@ -307,7 +290,7 @@ def element_properties(e, L: float) -> dict:
         "psets": _clean_psets(ue.get_psets(e)),  # includes inherited type psets and quantities
     }
     props = {k: (v if k in ("psets", "materials") else _clean_value(v)) for k, v in props.items()}
-    return cap_properties({k: v for k, v in props.items() if v not in (None, [], {})})
+    return {k: v for k, v in props.items() if v not in (None, [], {})}
 
 
 def model_context(model, L: float) -> dict:
@@ -337,7 +320,7 @@ def model_context(model, L: float) -> dict:
                 k: _clean_value(getattr(address, k)) for k in fields if getattr(address, k, None)
             }
         info["psets"] = _clean_psets(ue.get_psets(e))
-        out[key] = cap_properties({k: v for k, v in info.items() if v not in (None, [], {})})
+        out[key] = {k: v for k, v in info.items() if v not in (None, [], {})}
     return out
 
 
@@ -348,13 +331,22 @@ def _r(x, n=6):
     return None if x is None else round(float(x), n)
 
 
+def _scaled(value, factor):
+    return value * factor if value is not None and factor is not None else None
+
+
 def extract_records(ifc_path: str | Path) -> dict:
     """Read one model into plain records (metres). Cached per model."""
     import ifcopenshell
 
     path = Path(ifc_path)
     st = path.stat()
-    key = {"size": st.st_size, "mtime_ns": st.st_mtime_ns, "version": EXTRACTOR_VERSION}
+    key = {
+        "path": str(path.resolve()),
+        "size": st.st_size,
+        "mtime_ns": st.st_mtime_ns,
+        "version": EXTRACTOR_VERSION,
+    }
     cache = CACHE_DIR / f"{path.stem}.json"
     if cache.exists():
         try:
@@ -385,7 +377,7 @@ def extract_records(ifc_path: str | Path) -> dict:
         "IfcSanitaryTerminal" if sanitary_terminals else "IfcFlowTerminal (model has no IfcSanitaryTerminal)"
     )
 
-    geo = _geometry(model, spaces + doors + windows + walls + objs + stairs + sanitary)
+    geo = _geometry(model, spaces + [e for e in has("IfcElement") if not e.is_a("IfcVirtualElement")])
 
     def base(e, kind):
         stv = storey_of(e)
@@ -405,7 +397,7 @@ def extract_records(ifc_path: str | Path) -> dict:
         q = _qtos(e)
         nfa = _qto(q, "NetFloorArea")
         r["long_name"] = e.LongName
-        r["area_qto"] = _r(nfa * A if nfa is not None else None)
+        r["area_qto"] = _r(_scaled(nfa, A))
         if e.id() in geo:
             v, f = geo[e.id()]
             fp = footprint_lowest(v, f)
@@ -415,8 +407,8 @@ def extract_records(ifc_path: str | Path) -> dict:
         records.append(r)
     for e, kind in [(d, "door") for d in doors] + [(w, "window") for w in windows]:
         r = base(e, kind)
-        r["width"] = _r(e.OverallWidth * L if getattr(e, "OverallWidth", None) else None)
-        r["height"] = _r(e.OverallHeight * L if getattr(e, "OverallHeight", None) else None)
+        r["width"] = _r(e.OverallWidth * L if getattr(e, "OverallWidth", None) is not None else None)
+        r["height"] = _r(e.OverallHeight * L if getattr(e, "OverallHeight", None) is not None else None)
         if e.id() in geo:
             r["outline"] = _outline(footprint_projected(*geo[e.id()]))
         records.append(r)
@@ -430,10 +422,12 @@ def extract_records(ifc_path: str | Path) -> dict:
             "qto:Length" if length is not None else ("geometry:footprint" if fp is not None else None)
         )
         side = _qto(q, "NetSideArea")
-        r["net_side_area"] = _r(side * A if side is not None else None)
+        r["net_side_area"] = _r(_scaled(side, A))
         vol = _qto(q, "NetVolume")
         r["net_volume"] = (
-            _r(vol * V) if vol is not None else (_r(mesh_volume(*geo[e.id()])) if e.id() in geo else None)
+            _r(_scaled(vol, V))
+            if vol is not None
+            else (_r(mesh_volume(*geo[e.id()])) if e.id() in geo else None)
         )
         r["volume_source"] = (
             "qto:NetVolume" if vol is not None else ("geometry:mesh" if e.id() in geo else None)
@@ -460,7 +454,9 @@ def extract_records(ifc_path: str | Path) -> dict:
         q = _qtos(e)
         vol = _qto(q, "NetVolume")
         r["net_volume"] = (
-            _r(vol * V) if vol is not None else (_r(mesh_volume(*geo[e.id()])) if e.id() in geo else None)
+            _r(_scaled(vol, V))
+            if vol is not None
+            else (_r(mesh_volume(*geo[e.id()])) if e.id() in geo else None)
         )
         r["volume_source"] = (
             "qto:NetVolume" if vol is not None else ("geometry:mesh" if e.id() in geo else None)
@@ -470,7 +466,7 @@ def extract_records(ifc_path: str | Path) -> dict:
         records.append(r)
 
     # every other building element, for text questions (no geometry, never counted by the rules above)
-    handled = {e.id() for e in spaces + doors + windows + walls + objs + sanitary + has("IfcStair")}
+    handled = {e.id() for e in spaces + doors + windows + walls + objs + sanitary + stairs}
     for e in has("IfcElement"):
         if e.id() in handled or any(e.is_a(c) for c in SKIP_ELEMENT_CLASSES):
             continue
@@ -479,6 +475,10 @@ def extract_records(ifc_path: str | Path) -> dict:
         r["quantities"] = _qtos(e)  # kept when the document budget slims this element
         cls = e.is_a()
         r["subtype"] = (cls[3:] if cls.startswith("Ifc") else cls).lower()
+        if e.id() in geo:
+            r["outline"] = _outline(footprint_projected(*geo[e.id()]))
+            r["net_volume"] = _r(mesh_volume(*geo[e.id()]))
+            r["volume_source"] = "geometry:watertight_mesh"
         records.append(r)
 
     storeys = [
@@ -490,7 +490,18 @@ def extract_records(ifc_path: str | Path) -> dict:
         }
         for s in sorted(has("IfcBuildingStorey"), key=lambda s: s.Elevation or 0.0)
     ]
+    from translator.extract.ifc_metadata import extract as extract_metadata
+
+    metadata = extract_metadata(model, sc, geo)
+    for r in records:
+        if r["ifc_class"].startswith("IfcOpening"):
+            r["kind"] = "void"
+        if r["global_id"] in metadata["entities"]:
+            r["building"] = metadata["membership"].get(r["global_id"])
+    for s in storeys:
+        s["building"] = metadata["membership"].get(s["global_id"])
     data = {
+        "metadata": metadata,
         "key": key,
         "schema": model.schema,
         "units": sc,
@@ -580,7 +591,7 @@ def _entity(r: dict, level_id, read_from) -> dict:
         "flags": _flags(r),
         "properties": r.get("props") or {"ifc_class": r["ifc_class"], "name": r.get("name")},
     }
-    if kind in ("door", "window"):
+    if kind in ("door", "window", "void"):
         return {
             **common,
             "kind": kind,
@@ -696,14 +707,16 @@ def documents(data: dict, read_from: str, level_name: str | None = None) -> list
             ),
             "rooms": [_room(r, level_id, read_from) for r in recs if r["kind"] == "space"],
             "walls": [_entity(r, level_id, read_from) for r in recs if r["kind"] == "wall"],
-            "openings": [_entity(r, level_id, read_from) for r in recs if r["kind"] in ("door", "window")],
+            "openings": [
+                _entity(r, level_id, read_from) for r in recs if r["kind"] in ("door", "window", "void")
+            ],
             "objects": [
                 _entity(r, level_id, read_from)
                 for r in recs
                 if r["kind"] in ("stair", "sanitary", "element", *OBJECT_KINDS.values())
             ],
         }
-        slimmed = apply_document_budget(doc, recs)
+        slimmed = 0  # v0.3 preserves complete source property sets
         n = {k: len(doc[k]) for k in ("rooms", "walls", "openings", "objects")}
         doc["coverage"] = [
             {
