@@ -18,17 +18,27 @@
     <div class="card">
       <h1>Blueprint Viewer</h1>
       <p>Open an IFC model, a drawing (DXF, SVG, PDF) or a plan image (PNG, JPG), or drop it anywhere.</p>
-      <button id="openBtn" type="button">Open files (.ifc, .dxf, .svg, .png, .jpg, .pdf)</button>
+      <div class="upload-buttons">
+        <button type="button" data-upload="building">Upload Building Construction Blueprints</button>
+        <button type="button" data-upload="pipes">Upload Pipes Blueprints</button>
+      </div>
+      <p class="formats">Accepted formats: .ifc, .dxf, .dxr, .svg, .png, .jpg, .pdf</p>
       <p id="error" role="alert"></p>
     </div>
   </main>
-  <input id="fileInput" type="file" accept=".ifc,.dxf,.svg,.png,.jpg,.jpeg,.pdf,image/png,image/jpeg,image/svg+xml,application/pdf" hidden>
+  <input id="fileInput" type="file" accept=".ifc,.dxf,.dxr,.svg,.png,.jpg,.jpeg,.pdf,image/png,image/jpeg,image/svg+xml,application/pdf" hidden>
 
   <!-- uploaded state -->
   <div id="workspace" hidden>
     <header class="topbar">
       <div class="file"><span id="fileName" class="name"></span><span id="fileFormat" class="format"></span></div>
-      <button id="uploadBtn" type="button">Upload file</button>
+      <div class="upload">
+        <div class="upload-buttons">
+          <button type="button" data-upload="building">Upload Building Construction Blueprints</button>
+          <button type="button" data-upload="pipes">Upload Pipes Blueprints</button>
+        </div>
+        <p class="formats">Accepted formats: .ifc, .dxf, .dxr, .svg, .png, .jpg, .pdf</p>
+      </div>
     </header>
     <main class="columns">
       <section class="chat" aria-label="AI chat">

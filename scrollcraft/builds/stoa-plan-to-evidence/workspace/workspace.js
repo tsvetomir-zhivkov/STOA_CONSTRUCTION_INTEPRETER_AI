@@ -8,8 +8,7 @@ import { dxfSegments, renderPdfPages, sheetFormatOf } from '/workspace/viewer/sh
 import { parseDxf } from '/workspace/viewer/vendor/dxfParser.js';
 
 const $ = (id) => document.getElementById(id);
-const ACCEPTED = /\.(ifc|dxf|svg|png|jpe?g|pdf)$/i;
-const VECTOR = /\.(ifc|dxf|svg)$/i; // the formats blueprint-ingest converts to JSON
+const ACCEPTED = /\.(ifc|dxf|dxr|svg|png|jpe?g|pdf)$/i;
 const VIEWER_URL = '/workspace/viewer/';
 const PLAN_CUT = 1.2; // a floor plan is a horizontal cut 1.2 m above the level
 const PLAN_PX = 1600; // longest side of a rendered level plan
@@ -28,18 +27,19 @@ const chat = { outFile: null, context: null, history: [], busy: false };
 
 // ---- file selection (button, top-bar button, drop anywhere) --------------------------------------------------
 const input = $('fileInput');
-$('openBtn').addEventListener('click', () => input.click());
-$('uploadBtn').addEventListener('click', () => input.click());
-input.addEventListener('change', () => { const f = input.files[0]; input.value = ''; if (f) open(f); });
+/** which upload button opened the file picker: 'building' (construction blueprints) or 'pipes' (MEP / piping) */
+let blueprintType = 'building';
+for (const b of document.querySelectorAll('[data-upload]')) b.addEventListener('click', () => { blueprintType = b.dataset.upload; input.click(); });
+input.addEventListener('change', () => { const f = input.files[0]; input.value = ''; if (f) open(f, blueprintType); });
 let depth = 0;
 addEventListener('dragenter', (e) => { if ([...e.dataTransfer.types].includes('Files')) { depth++; document.body.classList.add('dragging'); e.preventDefault(); } });
 addEventListener('dragleave', () => { if (--depth <= 0) { depth = 0; document.body.classList.remove('dragging'); } });
 addEventListener('dragover', (e) => e.preventDefault());
-addEventListener('drop', (e) => { e.preventDefault(); depth = 0; document.body.classList.remove('dragging'); const f = [...e.dataTransfer.files][0]; if (f) open(f); });
+addEventListener('drop', (e) => { e.preventDefault(); depth = 0; document.body.classList.remove('dragging'); const f = [...e.dataTransfer.files][0]; if (f) open(f, 'building'); });
 
-function open(file) {
+function open(file, type = 'building') {
   if (!ACCEPTED.test(file.name)) {
-    $('error').textContent = `${file.name}: not a supported file. Use .ifc, .dxf, .svg, .png, .jpg or .pdf.`;
+    $('error').textContent = `${file.name}: not a supported file. Use .ifc, .dxf, .dxr, .svg, .png, .jpg or .pdf.`;
     return;
   }
   $('error').textContent = '';
@@ -50,7 +50,7 @@ function open(file) {
   $('fileFormat').textContent = ext === 'jpeg' ? 'JPG' : ext.toUpperCase();
   $('picker').hidden = true;
   $('workspace').hidden = false;
-  startChat(file, my);
+  startChat(file, type, my);
   if (ext === 'ifc') showIfc(file, my);
   else showDrawing(file, my).catch((err) => { if (my === token) note(`This file could not be shown: ${err.message}`); });
 }
@@ -100,19 +100,19 @@ function removeJson(outFile) {
 }
 addEventListener('pagehide', () => { removeJson(chat.outFile); chat.outFile = null; });
 
-/** route the upload: vector files are converted to out/<file>.json and their JSON becomes the chat context */
-async function startChat(file, my) {
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (!VECTOR.test(file.name)) {
-    addMessage('status', `${file.name} was not converted: .${ext} files are skipped for now. Vector JSON conversion supports .ifc, .dxf and .svg only, so the AI assistant is not available for this file.`);
-    setChatReady(false);
-    return;
-  }
+/** convert the upload to JSON (the server routes it: vector -> blueprint-ingest, raster -> translator); its JSON becomes the chat context */
+async function startChat(file, type, my) {
   setChatReady(false, 'Converting the file …');
   const status = addMessage('status', `Converting ${file.name} to JSON …`);
   try {
-    const res = await fetch(`/api/convert?${new URLSearchParams({ name: file.name })}`, { method: 'POST', body: file });
+    const res = await fetch(`/api/convert?${new URLSearchParams({ name: file.name, type })}`, { method: 'POST', body: file });
     if (my !== token) return;
+    if (res.status === 415) {
+      const body = await res.json().catch(() => ({}));
+      status.textContent = `${file.name} was not converted: ${body.error || 'this format is not supported'}. The AI assistant is not available for this file.`;
+      setChatReady(false);
+      return;
+    }
     if (!res.ok) throw new Error(res.status === 404 || res.status === 405 ? 'the site was not started with npm start (in scrollcraft/builds/stoa-plan-to-evidence)' : await errorOf(res));
     const out = await res.json();
     if (my !== token) { removeJson(out.file); return; }
@@ -165,7 +165,7 @@ $('chatForm').addEventListener('submit', async (e) => {
 const note = (text) => $('blueprint').replaceChildren(Object.assign(document.createElement('p'), { className: 'note', textContent: text }));
 
 async function showDrawing(file, my) {
-  const fmt = sheetFormatOf(file.name);
+  const fmt = /\.dxr$/i.test(file.name) ? 'dxf' : sheetFormatOf(file.name); // .dxr is DXF content
   note(`Reading ${file.name} …`);
   if (fmt === 'pdf') {
     const pages = await renderPdfPages(new Uint8Array(await file.arrayBuffer()));

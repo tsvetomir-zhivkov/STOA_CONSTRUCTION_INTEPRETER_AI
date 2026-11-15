@@ -1,10 +1,14 @@
-// npm start: serves this site (/, /workspace, /workspace/viewer/) and converts /workspace uploads to JSON with
-// blueprint-ingest's processBlueprint() (what `node src/index.js <file> --out <dest>` runs), writing <repo>/out/<file>.json.
+// npm start: serves this site (/, /workspace, /workspace/viewer/) and converts /workspace uploads to JSON, writing
+// <repo>/out/<file>.json in blueprint-ingest's schema v0.3:
+//   vector (.ifc .dxf .dxr .svg, vector PDF)  -> blueprint-ingest processBlueprint() (what `node src/index.js` runs)
+//   raster (.png .jpg .jpeg, scanned PDF)     -> the raster translator, `python -m translator.upload` (CubiCasa on Modal)
+//   building blueprints use both; pipes blueprints use the vector path only (raster pipes are skipped, as before)
 //
-//   POST   /api/convert?name=<file>   body: the file (.ifc, .dxf, .svg)  -> { file: 'out/<file>.json', json: {...} }
+//   POST   /api/convert?name=<file>&type=building|pipes   body: the file  -> { file, json, route, blueprintType }
 //   DELETE /api/convert?file=<name>   delete a JSON this process wrote to out/ (file removed or replaced)
 //   POST   /api/chat                  { file, question, history } -> answering_agent.answer_question() on out/<file>
 //                                     (Python: <repo>/.venv/bin/python if present, else $PYTHON or python3)
+import './node-compat.mjs'; // first: PDF support on Node 18 (see the file)
 import { createServer } from 'node:http';
 import { createWriteStream, existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
@@ -14,14 +18,18 @@ import { basename, dirname, extname, join, normalize, resolve, sep } from 'node:
 import { fileURLToPath } from 'node:url';
 import { processBlueprint } from '../../../../blueprint-ingest/src/index.js';
 import { createLogger } from '../../../../blueprint-ingest/src/util/logger.js';
+import { classifyBlueprint } from '../../../../blueprint-ingest/src/classifier/blueprintClassifier.js';
 
 const SITE = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const REPO = resolve(SITE, '../../..');
 const OUT = join(REPO, 'out');
 const PYTHON = process.env.PYTHON || (existsSync(join(REPO, '.venv/bin/python')) ? join(REPO, '.venv/bin/python') : 'python3');
 const PORT = Number(process.env.PORT || 3000);
-const VECTOR = new Set(['ifc', 'dxf', 'svg']);
-const written = new Set(); // out/ files this process created: the only ones it may delete
+const VECTOR = new Set(['ifc', 'dxf', 'dxr', 'svg']); // .dxr is DXF content: converted as .dxf
+const RASTER = new Set(['png', 'jpg', 'jpeg']);
+const BLUEPRINT_TYPES = new Set(['building', 'pipes']);
+/** out/ files this process created (the only ones it may delete or chat about) -> their blueprint type */
+const written = new Map();
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
@@ -40,25 +48,67 @@ function outPath(name) {
   return p;
 }
 
+/** run the raster translator (translator/upload.py) on one file; exit code 3 = the Modal side is not set up */
+function runTranslator(input, output, name) {
+  return new Promise((ok) => {
+    const p = spawn(PYTHON, ['-m', 'translator.upload', input, output, '--name', name], { cwd: REPO });
+    let err = '';
+    p.stderr.on('data', (d) => (err += d));
+    p.on('error', (e) => ok({ code: -1, err: `cannot start ${PYTHON}: ${e.message}` }));
+    p.on('close', (code) => ok({ code, err }));
+  });
+}
+
+/** 'vector' (blueprint-ingest), 'raster' (translator) or null (not converted), from the format and, for PDFs, its pages */
+async function routeOf(format, input, blueprintType) {
+  if (VECTOR.has(format)) return 'vector';
+  const raster = blueprintType === 'building' ? 'raster' : null; // pipes: raster is not converted (existing pipeline)
+  if (RASTER.has(format)) return raster;
+  if (format === 'pdf') {
+    // blueprint-ingest's own check: pages with text and vector paths -> vector_extraction; scanned only -> vision_agent
+    const c = await classifyBlueprint(input, { logger: createLogger('error') });
+    if (c.route === 'vector_extraction' || c.route === 'mixed') return 'vector';
+    if (c.route === 'vision_agent') return raster;
+    throw new Error(`the PDF could not be read (${c.reason}${c.warnings?.length ? `: ${c.warnings[0]}` : ''})`);
+  }
+  return null;
+}
+
 async function convert(req, res, url) {
   const name = basename(url.searchParams.get('name') || '').replace(/[^\w.\- ()]+/g, '_');
   const format = extname(name).slice(1).toLowerCase();
-  if (!VECTOR.has(format)) { req.resume(); return send(res, 415, { error: `.${format || '?'} files are not converted to JSON: only .ifc, .dxf and .svg` }); }
+  const blueprintType = url.searchParams.get('type') || 'building';
+  if (!BLUEPRINT_TYPES.has(blueprintType)) { req.resume(); return send(res, 400, { error: 'type must be building or pipes' }); }
+  if (!VECTOR.has(format) && !RASTER.has(format) && format !== 'pdf') {
+    req.resume();
+    return send(res, 415, { error: `.${format || '?'} files are not supported: use .ifc, .dxf, .dxr, .svg, .png, .jpg or .pdf` });
+  }
   await mkdir(OUT, { recursive: true });
   const tmp = await mkdtemp(join(tmpdir(), 'stoa-upload-'));
-  const input = join(tmp, name);
+  const input = join(tmp, format === 'dxr' ? `${name.slice(0, -4)}.dxf` : name);
   const output = outPath(name);
   try {
     await new Promise((ok, fail) => req.pipe(createWriteStream(input)).on('finish', ok).on('error', fail));
-    const result = await processBlueprint({ inputFilePath: input, outputJsonPath: output, mode: 'create', logger: createLogger('error'), file: name, source: 'workspace' });
-    if (!result.outputs?.length || !existsSync(output)) throw new Error('the converter produced no drawing for this file');
-    written.add(output);
+    const route = await routeOf(format, input, blueprintType);
+    if (!route) return send(res, 415, { skipped: true, error: `${format === 'pdf' ? 'scanned (non-vector) PDFs' : `.${format} files`} are not converted for pipes blueprints yet` });
+    if (route === 'vector') {
+      const result = await processBlueprint({ inputFilePath: input, outputJsonPath: output, mode: 'create', logger: createLogger('error'), file: name, source: 'workspace' });
+      if (!result.outputs?.length || !existsSync(output)) throw new Error('the converter produced no drawing for this file');
+    } else {
+      const r = await runTranslator(input, output, name);
+      if (r.code !== 0) {
+        const line = r.err.trim().split('\n').filter(Boolean).pop() || 'the raster translator failed';
+        if (r.code !== 3) console.error(`[translator] ${r.err.trim().split('\n').slice(-5).join('\n')}`);
+        return send(res, r.code === 3 ? 503 : 422, { error: line.replace(/^\w+: /, '') });
+      }
+    }
+    written.set(output, blueprintType);
     const text = await readFile(output, 'utf8');
-    return send(res, 201, `{"file":${JSON.stringify(`out/${basename(output)}`)},"json":${text}}`);
+    return send(res, 201, `{"file":${JSON.stringify(`out/${basename(output)}`)},"route":"${route}","blueprintType":"${blueprintType}","json":${text}}`);
   } catch (err) {
-    if (existsSync(output) && !written.has(output)) await rm(output, { force: true });
     return send(res, 422, { error: err?.message || String(err) });
   } finally {
+    if (existsSync(output) && !written.has(output)) await rm(output, { force: true });
     await rm(tmp, { recursive: true, force: true });
   }
 }
@@ -95,7 +145,7 @@ async function chat(req, res) {
   if (!written.has(document)) return send(res, 404, { error: 'no converted JSON for this chat: upload the file again' });
   const history = (Array.isArray(msg.history) ? msg.history : [])
     .filter((t) => t && (t.role === 'user' || t.role === 'assistant') && typeof t.content === 'string').slice(-20);
-  const r = await runAgent(document, { question, history });
+  const r = await runAgent(document, { question, history, blueprint_type: written.get(document) });
   if (r.code === 0) {
     try { return send(res, 200, JSON.parse(r.out)); } catch { return send(res, 502, { error: 'the agent returned no answer' }); }
   }

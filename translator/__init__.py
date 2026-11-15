@@ -71,9 +71,33 @@ def translate(path: str, data: str | None = None, part: str | None = None) -> di
 
 def translate_all(path: str, data: str | None = None) -> list[dict]:
     """Validated buildings for one input, including all IFC storeys and uncontained elements."""
+    from translator.building import merge_buildings
+    from translator.store import validate
+
+    doc, r, root, file_path = _base_drawing(path, data)
+    if r["route"] == "ifc":
+        docs = _ifc_buildings(doc, r, root, file_path)
+    else:
+        docs = [merge_buildings(_run_extractor(doc, r, root, file_path))]
+    for d in docs:
+        validate(d, where=r["file"])
+    return docs
+
+
+def translate_drawings(path: str, data: str | None = None) -> list[dict]:
+    """The schema v0.2 drawing document(s) of a non-IFC input, before they are merged into a building.
+
+    Used where the per-drawing format is wanted (translator.upload lifts it to blueprint-ingest's v0.3)."""
+    doc, r, root, file_path = _base_drawing(path, data)
+    if r["route"] == "ifc":
+        raise ValueError(f"{path}: IFC input has no single drawing document; use translate_all()")
+    return _run_extractor(doc, r, root, file_path)
+
+
+def _base_drawing(path: str, data: str | None = None) -> tuple[dict, dict, Path, Path]:
+    """Route one input and build its empty v0.2 drawing document (no extractor has run yet)."""
     from translator import router
     from translator.config import data_root
-    from translator.store import validate
 
     root = data_root(data)
     r = router.route(path, root)
@@ -117,15 +141,7 @@ def translate_all(path: str, data: str | None = None) -> list[dict]:
         ],
         "history": [{"extractor": "router", "action": "route", "note": note}],
     }
-    from translator.building import merge_buildings
-
-    if r["route"] == "ifc":
-        docs = _ifc_buildings(doc, r, root, file_path)
-    else:
-        docs = [merge_buildings(_run_extractor(doc, r, root, file_path))]
-    for d in docs:
-        validate(d, where=r["file"])
-    return docs
+    return doc, r, root, file_path
 
 
 def _ifc_buildings(base, route, root, file_path):
@@ -193,6 +209,38 @@ def _run_extractor(doc: dict, r: dict, root: Path, file_path: Path) -> list[dict
         for key, value in parts.items():
             doc[key] = value
         _map_to_page(doc, file_path)
+        return [doc]
+
+    if r["route"] == "raster":
+        # CubiCasa5K segmentation + OCR from their raw GPU results (modal_app.py, index/_raw/); this never calls
+        # the GPU. Then fusion, priors, scale and coverage (translator.fuse.fuse_raster). A raster without a raw
+        # segmentation file (not run on Modal yet) keeps the empty document, as before.
+        from translator import fuse
+        from translator.extract import cubicasa, ocr
+
+        raw = cubicasa.load_raw(file_path.stem)
+        if raw is None:
+            doc["history"].append(
+                {"extractor": cubicasa.EXTRACTOR, "action": "skip", "note": "no raw segmentation file yet"}
+            )
+            return [doc]
+        if (raw["width_px"], raw["height_px"]) != (
+            doc["drawing"]["image"]["width_px"],
+            doc["drawing"]["image"]["height_px"],
+        ):
+            raise ValueError(f"{r['file']}: raw segmentation size differs from the image")
+        parts = cubicasa.to_parts(raw, r["read_from"])
+        doc["drawing"]["transforms"].extend(parts.pop("transforms"))
+        doc["history"].extend(parts.pop("history"))
+        for key, value in parts.items():
+            doc[key] = value
+        ocr_raw = ocr.load_raw(file_path.stem)
+        if ocr_raw is not None and (ocr_raw["width_px"], ocr_raw["height_px"]) != (
+            raw["width_px"],
+            raw["height_px"],
+        ):
+            raise ValueError(f"{r['file']}: raw OCR size differs from the image")
+        fuse.fuse_raster(doc, raw, ocr_raw, r["read_from"])
         return [doc]
 
     return [doc]

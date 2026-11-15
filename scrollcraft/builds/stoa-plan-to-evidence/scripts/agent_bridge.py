@@ -23,7 +23,10 @@ def main(document: str) -> None:
 
     data = load_document(Path(document))
     msg = json.loads(sys.stdin.read() or "{}")
-    result = answer_question(str(msg.get("question", "")), data, history=msg.get("history") or [])
+    question = str(msg.get("question", ""))
+    if msg.get("blueprint_type") == "pipes":  # uploaded with "Upload Pipes Blueprints": tell the agent what it reads
+        question = f"(Context: this drawing was uploaded as a pipes / MEP piping blueprint.)\n{question}"
+    result = answer_question(question, data, history=msg.get("history") or [])
     sys.stdout.write(json.dumps(result, ensure_ascii=False))
 
 
