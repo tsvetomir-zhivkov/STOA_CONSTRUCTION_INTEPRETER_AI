@@ -7,6 +7,7 @@ questions.jsonl
 # secrets and local config (".end" in 3fb2b30 was a typo for .env)
 .env
 .env.*
+.env.local
 .modal.toml
 
 # generated outputs: regenerate with python -m translator --source <name>; keep the folder itself
